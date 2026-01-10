@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jan 10, 2026 at 07:38 AM
+-- Generation Time: Jan 10, 2026 at 09:45 AM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.4.16
 
@@ -51,7 +51,9 @@ CREATE TABLE `conversations` (
   `conversation_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `title` text NOT NULL,
-  `created_at` datetime NOT NULL
+  `created_at` datetime NOT NULL,
+  `is_published` tinyint(1) DEFAULT 0,
+  `published_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -81,7 +83,8 @@ CREATE TABLE `conversation_participants` (
   `user_id` int(11) NOT NULL,
   `role` enum('owner','collaborator') NOT NULL DEFAULT 'collaborator',
   `added_by` int(11) DEFAULT NULL,
-  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `permission_level` int(11) DEFAULT 2
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -435,7 +438,8 @@ ALTER TABLE `answers`
 --
 ALTER TABLE `conversations`
   ADD PRIMARY KEY (`conversation_id`),
-  ADD KEY `conversations_ibfk_1` (`user_id`);
+  ADD KEY `conversations_ibfk_1` (`user_id`),
+  ADD KEY `idx_published` (`is_published`,`created_at`);
 
 --
 -- Indexes for table `conversation_canvas`
@@ -801,6 +805,24 @@ ALTER TABLE `usage_logs`
 --
 ALTER TABLE `user_onboarding`
   ADD CONSTRAINT `fk_user_onboarding_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+DELIMITER $$
+--
+-- Events
+--
+DROP EVENT IF EXISTS `reset_free_user_daily_usage`$$
+CREATE DEFINER=`apilageai_lk`@`localhost` EVENT `reset_free_user_daily_usage` ON SCHEDULE EVERY 12 HOUR STARTS '2026-01-02 10:30:32' ON COMPLETION NOT PRESERVE ENABLE DO UPDATE free_user_daily_usage
+  SET
+    messages_used = 0,
+    image_uploads_used = 0,
+    file_uploads_used = 0,
+    image_generations_used = 0$$
+
+DROP EVENT IF EXISTS `clear_notific_weekly`$$
+CREATE DEFINER=`apilageai_lk`@`localhost` EVENT `clear_notific_weekly` ON SCHEDULE EVERY 1 WEEK STARTS '2026-01-02 10:36:05' ON COMPLETION NOT PRESERVE ENABLE DO UPDATE notific
+  SET message = NULL$$
+
+DELIMITER ;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
