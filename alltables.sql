@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jan 10, 2026 at 09:45 AM
+-- Generation Time: Jan 12, 2026 at 06:06 AM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.4.16
 
@@ -20,8 +20,6 @@ SET time_zone = "+00:00";
 --
 -- Database: `apilageai_lk`
 --
-CREATE DATABASE IF NOT EXISTS `apilageai_lk` DEFAULT CHARACTER SET latin1 COLLATE latin1_swedish_ci;
-USE `apilageai_lk`;
 
 -- --------------------------------------------------------
 
@@ -29,7 +27,6 @@ USE `apilageai_lk`;
 -- Table structure for table `answers`
 --
 
-DROP TABLE IF EXISTS `answers`;
 CREATE TABLE `answers` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
@@ -46,7 +43,6 @@ CREATE TABLE `answers` (
 -- Table structure for table `conversations`
 --
 
-DROP TABLE IF EXISTS `conversations`;
 CREATE TABLE `conversations` (
   `conversation_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
@@ -62,7 +58,6 @@ CREATE TABLE `conversations` (
 -- Table structure for table `conversation_canvas`
 --
 
-DROP TABLE IF EXISTS `conversation_canvas`;
 CREATE TABLE `conversation_canvas` (
   `conversation_id` bigint(20) NOT NULL,
   `data` longtext NOT NULL,
@@ -76,7 +71,6 @@ CREATE TABLE `conversation_canvas` (
 -- Table structure for table `conversation_participants`
 --
 
-DROP TABLE IF EXISTS `conversation_participants`;
 CREATE TABLE `conversation_participants` (
   `id` int(11) NOT NULL,
   `conversation_id` int(11) NOT NULL,
@@ -93,7 +87,6 @@ CREATE TABLE `conversation_participants` (
 -- Table structure for table `conversation_published`
 --
 
-DROP TABLE IF EXISTS `conversation_published`;
 CREATE TABLE `conversation_published` (
   `id` int(11) NOT NULL,
   `conversation_id` int(11) NOT NULL,
@@ -109,12 +102,12 @@ CREATE TABLE `conversation_published` (
 -- Table structure for table `conversation_share_links`
 --
 
-DROP TABLE IF EXISTS `conversation_share_links`;
 CREATE TABLE `conversation_share_links` (
   `id` int(11) NOT NULL,
   `conversation_id` int(11) NOT NULL,
   `token` varchar(64) NOT NULL,
   `shared_by` int(11) NOT NULL,
+  `target_user_id` int(11) NOT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `expires_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -125,7 +118,6 @@ CREATE TABLE `conversation_share_links` (
 -- Table structure for table `free_user_daily_usage`
 --
 
-DROP TABLE IF EXISTS `free_user_daily_usage`;
 CREATE TABLE `free_user_daily_usage` (
   `user_id` int(11) NOT NULL,
   `date` date NOT NULL,
@@ -141,7 +133,6 @@ CREATE TABLE `free_user_daily_usage` (
 -- Table structure for table `free_user_limits`
 --
 
-DROP TABLE IF EXISTS `free_user_limits`;
 CREATE TABLE `free_user_limits` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
@@ -155,7 +146,6 @@ CREATE TABLE `free_user_limits` (
 -- Table structure for table `games`
 --
 
-DROP TABLE IF EXISTS `games`;
 CREATE TABLE `games` (
   `id` int(11) NOT NULL,
   `host_id` int(11) NOT NULL,
@@ -174,7 +164,6 @@ CREATE TABLE `games` (
 -- Table structure for table `gb_auth`
 --
 
-DROP TABLE IF EXISTS `gb_auth`;
 CREATE TABLE `gb_auth` (
   `user_id` int(11) NOT NULL,
   `auth` longtext NOT NULL
@@ -186,7 +175,6 @@ CREATE TABLE `gb_auth` (
 -- Table structure for table `generated_images`
 --
 
-DROP TABLE IF EXISTS `generated_images`;
 CREATE TABLE `generated_images` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
@@ -205,7 +193,6 @@ CREATE TABLE `generated_images` (
 -- Table structure for table `google_auth`
 --
 
-DROP TABLE IF EXISTS `google_auth`;
 CREATE TABLE `google_auth` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
@@ -220,7 +207,6 @@ CREATE TABLE `google_auth` (
 -- Table structure for table `image_reactions`
 --
 
-DROP TABLE IF EXISTS `image_reactions`;
 CREATE TABLE `image_reactions` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
@@ -234,7 +220,6 @@ CREATE TABLE `image_reactions` (
 -- Table structure for table `messages`
 --
 
-DROP TABLE IF EXISTS `messages`;
 CREATE TABLE `messages` (
   `message_id` int(11) NOT NULL,
   `conversation_id` int(11) NOT NULL,
@@ -254,7 +239,6 @@ CREATE TABLE `messages` (
 -- Table structure for table `notific`
 --
 
-DROP TABLE IF EXISTS `notific`;
 CREATE TABLE `notific` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
@@ -269,7 +253,6 @@ CREATE TABLE `notific` (
 -- Table structure for table `questions`
 --
 
-DROP TABLE IF EXISTS `questions`;
 CREATE TABLE `questions` (
   `id` int(11) NOT NULL,
   `game_id` int(11) NOT NULL,
@@ -286,7 +269,6 @@ CREATE TABLE `questions` (
 -- Table structure for table `sessions`
 --
 
-DROP TABLE IF EXISTS `sessions`;
 CREATE TABLE `sessions` (
   `user_id` int(11) NOT NULL,
   `token` varchar(64) NOT NULL,
@@ -303,7 +285,6 @@ CREATE TABLE `sessions` (
 -- Table structure for table `thinking_usage_logs`
 --
 
-DROP TABLE IF EXISTS `thinking_usage_logs`;
 CREATE TABLE `thinking_usage_logs` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
@@ -320,7 +301,6 @@ CREATE TABLE `thinking_usage_logs` (
 -- Table structure for table `transactions`
 --
 
-DROP TABLE IF EXISTS `transactions`;
 CREATE TABLE `transactions` (
   `invoice_id` tinytext NOT NULL,
   `user_id` int(11) NOT NULL,
@@ -338,7 +318,6 @@ CREATE TABLE `transactions` (
 -- Table structure for table `usage_logs`
 --
 
-DROP TABLE IF EXISTS `usage_logs`;
 CREATE TABLE `usage_logs` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
@@ -361,7 +340,6 @@ CREATE TABLE `usage_logs` (
 -- Table structure for table `users`
 --
 
-DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
   `id` int(11) NOT NULL,
   `first_name` varchar(256) NOT NULL,
@@ -386,7 +364,6 @@ CREATE TABLE `users` (
 --
 -- Triggers `users`
 --
-DROP TRIGGER IF EXISTS `after_balance_update`;
 DELIMITER $$
 CREATE TRIGGER `after_balance_update` AFTER UPDATE ON `users` FOR EACH ROW BEGIN
     -- Only fire if the balance actually increased
@@ -409,7 +386,6 @@ DELIMITER ;
 -- Table structure for table `user_onboarding`
 --
 
-DROP TABLE IF EXISTS `user_onboarding`;
 CREATE TABLE `user_onboarding` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
@@ -805,24 +781,6 @@ ALTER TABLE `usage_logs`
 --
 ALTER TABLE `user_onboarding`
   ADD CONSTRAINT `fk_user_onboarding_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
-
-DELIMITER $$
---
--- Events
---
-DROP EVENT IF EXISTS `reset_free_user_daily_usage`$$
-CREATE DEFINER=`apilageai_lk`@`localhost` EVENT `reset_free_user_daily_usage` ON SCHEDULE EVERY 12 HOUR STARTS '2026-01-02 10:30:32' ON COMPLETION NOT PRESERVE ENABLE DO UPDATE free_user_daily_usage
-  SET
-    messages_used = 0,
-    image_uploads_used = 0,
-    file_uploads_used = 0,
-    image_generations_used = 0$$
-
-DROP EVENT IF EXISTS `clear_notific_weekly`$$
-CREATE DEFINER=`apilageai_lk`@`localhost` EVENT `clear_notific_weekly` ON SCHEDULE EVERY 1 WEEK STARTS '2026-01-02 10:36:05' ON COMPLETION NOT PRESERVE ENABLE DO UPDATE notific
-  SET message = NULL$$
-
-DELIMITER ;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
