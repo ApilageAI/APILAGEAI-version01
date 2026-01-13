@@ -750,7 +750,27 @@
             {/if}
             <!-- Chat Input Area -->
             <div class="chat-wrapper">
+                <!-- Scroll to bottom button -->
+                <button id="scroll-to-bottom-btn" class="scroll-to-bottom-btn" style="display: none; align-self: center;" title="Scroll to latest messages">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
                 <div id="chatInputContainer" class="chat-input-container" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Trial Ended Banner -->
+                    <div id="trial-ended-banner" class="trial-ended-banner" style="display: none;">
+                        <div class="trial-ended-banner-content">
+                            <div class="trial-ended-message">
+                                <strong>Your Access to Apilageai-Master is ended</strong>
+                                <p>Use another model now or upgrade to Pro</p>
+                            </div>
+                            <div class="trial-ended-banner-actions">
+                                <button id="banner-upgrade-btn" class="banner-upgrade-button" type="button">Upgrade to Pro</button>
+                                <button id="banner-close-btn" class="banner-close-button" type="button" aria-label="Close banner">×</button>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- Chat input box above icons -->
                     <div class="chat-input-center" style="flex: 1 1 auto; min-width: 0;">
                         <div class="max-w-3xl mx-auto px-4" style="padding: 0;">
@@ -857,7 +877,7 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 <script src="https://apilageai.lk/assets/scripts/libs/dialog-js/main.min.js?V=01.03.04.2025"></script>
 <script src="https://apilageai.lk/assets/scripts/mp.min.js?V=01.22.22.2025"></script>
-<script src="https://apilageai.lk/assets/scripts/app.min.js?V=51.03.01.2026"></script>
+<script src="https://apilageai.lk/assets/scripts/app.min.js?V=8.13.01.2026"></script>
 <script src="https://apilageai.lk/assets/scripts/prefrence.min.js?V=26.25.11.2025"></script>
 <script src="https://apilageai.lk/assets/scripts/notifications.js?V=03.01.10.2025"></script>
 <script type="module" src="https://apilageai.lk/assets/scripts/gm.min.js?V=12.20.10.2025"></script>

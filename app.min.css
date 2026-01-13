@@ -1635,6 +1635,12 @@ td {
 
 
 
+[data-theme="dark"] .share-link-row button {
+  background-color: #0b5d1b; /* highlighted green */
+}
+
+
+
 .message-icons {
     display: flex;
     gap: 10px;
@@ -1822,7 +1828,7 @@ td {
 }
 
 .chat-area-wrapper.has-messages .chat-wrapper {
-    padding: 16px 0;
+    padding:0px;
 }
 
 .chat-area-wrapper.has-messages .messages-container {
@@ -1895,6 +1901,65 @@ td {
     width: 8px;
     position: absolute;
     right: 0;
+}
+
+
+.scroll-to-bottom-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--primary-red);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    transition: all 0.3s ease;
+    z-index: 10;
+    padding: 0;
+    margin: 8px auto 0 auto;
+}
+
+.scroll-to-bottom-btn:hover {
+    background: var(--primary-red-hover);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: scale(1.1);
+}
+
+.scroll-to-bottom-btn:active {
+    transform: scale(0.95);
+}
+
+.scroll-to-bottom-btn.show {
+    animation: slideDown 0.3s ease forwards;
+}
+
+.scroll-to-bottom-btn.hide {
+    animation: slideUp 0.3s ease forwards;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
 }
 
 #message-input::-webkit-scrollbar-track {
@@ -6273,4 +6338,173 @@ body[data-theme="dark"] .theme-toggle-btn .dark-icon {
 
 .share-modal-status[data-type="info"] {
     color: var(--text-secondary);
+}
+
+/* ============================================
+   File Attach Button Disabled State
+   ============================================ */
+#fileAttach:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: auto;
+}
+
+#fileAttach:disabled:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #1a202c;
+    color: #ffffff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    margin-bottom: 8px;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+#fileAttach:disabled:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #1a202c;
+    margin-bottom: -4px;
+    z-index: 1000;
+}
+
+#fileAttach {
+    position: relative;
+}
+
+/* Dark mode support */
+[data-theme="dark"] #fileAttach:disabled:hover::after {
+    background-color: #e2e8f0;
+    color: #1a202c;
+}
+
+[data-theme="dark"] #fileAttach:disabled:hover::before {
+    border-top-color: #e2e8f0;
+}
+
+/* ============================================
+   Trial Ended Banner Styles
+   ============================================ */
+.trial-ended-banner {
+    background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+    border: 1px solid #b71c1c;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    box-shadow: 0 4px 12px rgba(229, 57, 53, 0.25);
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.trial-ended-banner-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.trial-ended-message {
+    color: #ffffff;
+    flex: 1;
+}
+
+.trial-ended-message strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.trial-ended-message p {
+    margin: 0;
+    font-size: 13px;
+    opacity: 0.95;
+}
+
+.trial-ended-banner-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.banner-upgrade-button {
+    background-color: #ffffff;
+    color: #e53e3e;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.banner-upgrade-button:hover {
+    background-color: #f8f8f8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.banner-upgrade-button:active {
+    transform: translateY(0);
+}
+
+.banner-close-button {
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    opacity: 0.8;
+    flex-shrink: 0;
+}
+
+.banner-close-button:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.banner-close-button:active {
+    transform: scale(0.95);
+}
+
+/* Dark mode support for banner */
+[data-theme="dark"] .trial-ended-banner {
+    background: linear-gradient(135deg, #c53030 0%, #9b2c2c 100%);
+    border-color: #9b2c2c;
+}
+
+[data-theme="dark"] .banner-upgrade-button {
+    background-color: #f5f5f5;
+    color: #c53030;
 }
