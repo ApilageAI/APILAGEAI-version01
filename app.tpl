@@ -657,6 +657,33 @@
                     <button id="copy-share-link-btn" type="button">Copy link</button>
                 </div>
 
+                <div class="share-modal-row">
+                    <div class="share-section-header">Publish to all users</div>
+                    <p class="share-modal-subtitle" style="margin: 8px 0; font-size: 0.9em; color: #666;">Make this chat visible to all Apilageai users. They can read the conversation but cannot edit it.</p>
+                    <div id="publish-status-container" style="display: flex; flex-direction: column; gap: 12px;">
+                        <div id="publish-info-box" style="padding: 12px; background: #f0f8ff; border-radius: 6px; border-left: 4px solid #2196F3;">
+                            <div style="font-size: 0.85em; color: #666;">
+                                <span id="publish-status-text">Click below to publish this chat for all users.</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button id="publish-chat-btn" type="button" class="share-modal-publish-btn" title="Publish this chat to all users">
+                                <i class="fa fa-globe" style="margin-right: 6px;"></i> Publish Chat
+                            </button>
+                            <button id="unpublish-chat-btn" type="button" class="share-modal-unpublish-btn" style="display: none;" title="Make this chat private again">
+                                <i class="fa fa-lock" style="margin-right: 6px;"></i> Unpublish
+                            </button>
+                        </div>
+                        <div id="publish-link-container" style="display: none;">
+                            <label for="publish-link-input" style="font-size: 0.85em; color: #666; display: block; margin-bottom: 4px;">Public link:</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input id="publish-link-input" type="text" readonly aria-label="Public publish link" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85em;" />
+                                <button id="copy-publish-link-btn" type="button" style="padding: 8px 12px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer;">Copy</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="share-modal-status" class="share-modal-status"></div>
             </div>
         </div>
@@ -877,7 +904,7 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 <script src="https://apilageai.lk/assets/scripts/libs/dialog-js/main.min.js?V=01.03.04.2025"></script>
 <script src="https://apilageai.lk/assets/scripts/mp.min.js?V=01.22.22.2025"></script>
-<script src="https://apilageai.lk/assets/scripts/app.min.js?V=1.14.01.2026"></script>
+<script src="https://apilageai.lk/assets/scripts/app.min.js?V=19.14.01.2026"></script>
 <script src="https://apilageai.lk/assets/scripts/prefrence.min.js?V=26.25.11.2025"></script>
 <script src="https://apilageai.lk/assets/scripts/notifications.js?V=03.01.10.2025"></script>
 <script type="module" src="https://apilageai.lk/assets/scripts/gm.min.js?V=12.20.10.2025"></script>

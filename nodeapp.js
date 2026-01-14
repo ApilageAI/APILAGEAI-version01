@@ -2657,6 +2657,101 @@ ${newMessage || ''}`;
       return { error: true, message: error.message };
     }
   }
+
+  async publishConversation(conversationId) {
+    try {
+      const convId = Number(conversationId);
+      if (!convId) return { error: true, message: 'Invalid conversation id' };
+
+      // Check if user is owner
+      const isOwner = await this.isConversationOwner(convId);
+      if (!isOwner) {
+        return { error: true, message: 'Only conversation owner can publish' };
+      }
+
+      // Generate a publish token
+      const publishToken = crypto.randomBytes(24).toString('hex');
+
+      // Update or insert publish record
+      await pool
+        .promise()
+        .execute(
+          `INSERT INTO conversation_published (conversation_id, publish_token, access_level, published_by, created_at)
+           VALUES (?, ?, 'read_only', ?, NOW())
+           ON DUPLICATE KEY UPDATE publish_token = ?, published_by = ?, created_at = NOW()`,
+          [convId, publishToken, this.userData.id, publishToken, this.userData.id]
+        );
+
+      // Mark conversation as published
+      await pool
+        .promise()
+        .execute(
+          'UPDATE conversations SET is_published = 1, published_at = NOW() WHERE conversation_id = ?',
+          [convId]
+        );
+
+      return { error: false, publish_token: publishToken };
+    } catch (error) {
+      console.error('Error publishing conversation:', error);
+      return { error: true, message: error.message };
+    }
+  }
+
+  async unpublishConversation(conversationId) {
+    try {
+      const convId = Number(conversationId);
+      if (!convId) return { error: true, message: 'Invalid conversation id' };
+
+      // Check if user is owner
+      const isOwner = await this.isConversationOwner(convId);
+      if (!isOwner) {
+        return { error: true, message: 'Only conversation owner can unpublish' };
+      }
+
+      // Delete publish record
+      await pool
+        .promise()
+        .execute('DELETE FROM conversation_published WHERE conversation_id = ?', [convId]);
+
+      // Mark conversation as unpublished
+      await pool
+        .promise()
+        .execute(
+          'UPDATE conversations SET is_published = 0, published_at = NULL WHERE conversation_id = ?',
+          [convId]
+        );
+
+      return { error: false };
+    } catch (error) {
+      console.error('Error unpublishing conversation:', error);
+      return { error: true, message: error.message };
+    }
+  }
+
+  async getPublishedConversation(publishToken) {
+    try {
+      if (!publishToken) return { error: true, message: 'Invalid publish token' };
+
+      const [rows] = await pool
+        .promise()
+        .execute(
+          `SELECT cp.conversation_id, cp.access_level, c.title, c.user_id AS owner_id, c.created_at
+           FROM conversation_published cp
+           JOIN conversations c ON c.conversation_id = cp.conversation_id
+           WHERE cp.publish_token = ? LIMIT 1`,
+          [publishToken]
+        );
+
+      if (rows.length === 0) {
+        return { error: true, message: 'Published conversation not found' };
+      }
+
+      return { error: false, data: rows[0] };
+    } catch (error) {
+      console.error('Error getting published conversation:', error);
+      return { error: true, message: error.message };
+    }
+  }
 }
 
 // ====== Socket.IO with auth ======
@@ -3748,6 +3843,138 @@ app.post('/api/conversations/accept-share', authenticateRequest, async (req, res
   } catch (error) {
     console.error('Accept share error:', error);
     res.status(500).json({ error: true, message: 'Failed to accept share link' });
+  }
+});
+
+// Publish chat (make it accessible to all app users)
+app.post('/api/conversations/:id/publish', authenticateRequest, async (req, res) => {
+  const conversationId = Number(req.params.id);
+  if (!conversationId) {
+    return res.status(400).json({ error: true, message: 'Missing conversation id' });
+  }
+
+  try {
+    const cm = new ChatManager(req.userData);
+    const result = await cm.publishConversation(conversationId);
+    if (result.error) {
+      return res.status(403).json(result);
+    }
+
+    try {
+      io.to(getConversationRoom(conversationId)).emit('conversation_published', { conversation_id: conversationId, publish_token: result.publish_token });
+    } catch (_) {}
+    emitConversationSummaryUpdated(conversationId);
+
+    const publishLink = `https://apilageai.lk/app/published/${result.publish_token}`;
+    res.json({
+      error: false,
+      publish_token: result.publish_token,
+      publish_link: publishLink,
+    });
+  } catch (error) {
+    console.error('Publish conversation error:', error);
+    res.status(500).json({ error: true, message: 'Failed to publish conversation' });
+  }
+});
+
+// Unpublish chat
+app.post('/api/conversations/:id/unpublish', authenticateRequest, async (req, res) => {
+  const conversationId = Number(req.params.id);
+  if (!conversationId) {
+    return res.status(400).json({ error: true, message: 'Missing conversation id' });
+  }
+
+  try {
+    const cm = new ChatManager(req.userData);
+    const result = await cm.unpublishConversation(conversationId);
+    if (result.error) {
+      return res.status(403).json(result);
+    }
+
+    try {
+      io.to(getConversationRoom(conversationId)).emit('conversation_unpublished', { conversation_id: conversationId });
+    } catch (_) {}
+    emitConversationSummaryUpdated(conversationId);
+
+    res.json({ error: false });
+  } catch (error) {
+    console.error('Unpublish conversation error:', error);
+    res.status(500).json({ error: true, message: 'Failed to unpublish conversation' });
+  }
+});
+
+// Get published conversation (public endpoint, no auth)
+app.get('/api/conversations/published/:token', async (req, res) => {
+  const publishToken = String(req.params.token || '');
+  if (!publishToken) {
+    return res.status(400).json({ error: true, message: 'Missing publish token' });
+  }
+
+  try {
+    const [rows] = await pool
+      .promise()
+      .execute(
+        `SELECT cp.conversation_id, cp.access_level, c.title, c.user_id AS owner_id, c.created_at, c.is_published
+         FROM conversation_published cp
+         JOIN conversations c ON c.conversation_id = cp.conversation_id
+         WHERE cp.publish_token = ? AND c.is_published = 1 LIMIT 1`,
+        [publishToken]
+      );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: true, message: 'Published conversation not found or has been unpublished' });
+    }
+
+    const publishedConv = rows[0];
+    res.json({ error: false, data: publishedConv });
+  } catch (error) {
+    console.error('Get published conversation error:', error);
+    res.status(500).json({ error: true, message: 'Failed to retrieve published conversation' });
+  }
+});
+
+// Get published conversation messages (public endpoint, no auth)
+app.get('/api/conversations/published/:token/messages', async (req, res) => {
+  const publishToken = String(req.params.token || '');
+  if (!publishToken) {
+    return res.status(400).json({ error: true, message: 'Missing publish token' });
+  }
+
+  try {
+    // First verify the publish token exists and chat is published
+    const [publishedRows] = await pool
+      .promise()
+      .execute(
+        `SELECT cp.conversation_id FROM conversation_published cp
+         JOIN conversations c ON c.conversation_id = cp.conversation_id
+         WHERE cp.publish_token = ? AND c.is_published = 1 LIMIT 1`,
+        [publishToken]
+      );
+
+    if (publishedRows.length === 0) {
+      return res.status(404).json({ error: true, message: 'Published conversation not found' });
+    }
+
+    const conversationId = publishedRows[0].conversation_id;
+
+    // Get messages
+    const [messages] = await pool
+      .promise()
+      .execute(
+        `SELECT m.id, m.user_id, m.text, m.type, m.created_at, m.attach, m.used_model,
+                u.first_name, u.last_name, u.image
+         FROM messages m
+         LEFT JOIN users u ON u.id = m.user_id
+         WHERE m.conversation_id = ? AND m.type != '3'
+         ORDER BY m.created_at ASC
+         LIMIT 500`,
+        [conversationId]
+      );
+
+    res.json({ error: false, messages });
+  } catch (error) {
+    console.error('Get published messages error:', error);
+    res.status(500).json({ error: true, message: 'Failed to retrieve messages' });
   }
 });
 

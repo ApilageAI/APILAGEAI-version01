@@ -3121,6 +3121,34 @@ td {
     background-color: #c62828;
 }
 
+#publish-confirmation-modal .modal-button {
+    padding: 10px 20px;
+    margin: 8px;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+#publish-confirmation-modal .cancel-btn {
+    background-color: #e0e0e0;
+    color: #333;
+}
+
+#publish-confirmation-modal .cancel-btn:hover {
+    background-color: #d0d0d0;
+}
+
+#publish-confirmation-modal .publish-btn {
+    background-color: #2196F3;
+    color: white;
+}
+
+#publish-confirmation-modal .publish-btn:hover {
+    background-color: #1976D2;
+}
+
 .litebox-overlay {
     position: fixed;
     top: 0;
@@ -5434,6 +5462,10 @@ body[data-theme="dark"] .theme-toggle-btn .dark-icon {
     right: 44px;
 }
 
+.conversation-thumbnail .icon-btn.publish-btn {
+    right: 80px;
+}
+
 .conversation-thumbnail .icon-btn:hover {
     background: var(--primary-red);
     color: #fff;
@@ -6338,6 +6370,61 @@ body[data-theme="dark"] .theme-toggle-btn .dark-icon {
 
 .share-modal-status[data-type="info"] {
     color: var(--text-secondary);
+}
+
+/* ============================================
+   Publish Chat Buttons
+   ============================================ */
+.share-modal-publish-btn,
+.share-modal-unpublish-btn {
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.share-modal-publish-btn {
+    background: #2196F3;
+    color: white;
+}
+
+.share-modal-publish-btn:hover {
+    background: #1976D2;
+    transform: translateY(-1px);
+}
+
+.share-modal-unpublish-btn {
+    background: #757575;
+    color: white;
+}
+
+.share-modal-unpublish-btn:hover {
+    background: #616161;
+    transform: translateY(-1px);
+}
+
+#publish-status-container {
+    border: 1px solid #e0e0e0;
+    padding: 12px;
+    border-radius: 8px;
+    background: var(--bg-color);
+}
+
+#publish-info-box {
+    background: #f0f8ff !important;
+    border-left: 4px solid #2196F3 !important;
+    padding: 12px;
+    border-radius: 6px;
+}
+
+[data-theme="dark"] #publish-info-box {
+    background: #1a3a52 !important;
 }
 
 /* ============================================

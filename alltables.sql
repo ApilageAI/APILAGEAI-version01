@@ -88,7 +88,7 @@ CREATE TABLE `conversation_participants` (
 --
 
 CREATE TABLE `conversation_published` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `conversation_id` int(11) NOT NULL,
   `publish_token` varchar(64) NOT NULL,
   `access_level` enum('read_only','read_write') NOT NULL DEFAULT 'read_only',
@@ -438,8 +438,8 @@ ALTER TABLE `conversation_participants`
 --
 ALTER TABLE `conversation_published`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `conversation_id` (`conversation_id`),
   ADD UNIQUE KEY `publish_token` (`publish_token`),
+  ADD KEY `idx_conversation_id` (`conversation_id`),
   ADD KEY `idx_published_by` (`published_by`);
 
 --
@@ -447,9 +447,9 @@ ALTER TABLE `conversation_published`
 --
 ALTER TABLE `conversation_share_links`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `conversation_id` (`conversation_id`),
   ADD UNIQUE KEY `token` (`token`),
   ADD KEY `idx_conversation` (`conversation_id`),
+  ADD KEY `idx_conversation_target` (`conversation_id`, `target_user_id`),
   ADD KEY `idx_shared_by` (`shared_by`);
 
 --
