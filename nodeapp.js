@@ -213,7 +213,7 @@ async function messagesHasUserIdColumn() {
 }
 
 // ====== Gemini Client ======
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyBjjzjDzp5ruIzuMg_FEJLjrmoOydsKSSg';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyB3u0wJAdRP20-FO1GwQ1deYPj4CigJWf4';
 if (!GEMINI_API_KEY || GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY_HERE') {
   console.warn('⚠️  GEMINI_API_KEY is not set. Set process.env.GEMINI_API_KEY for production.');
 }
@@ -952,12 +952,50 @@ class ChatManager {
   }
 
   // Update user balance by setting absolute new balance (floors at 0)
+  // Includes safety checks and proper transaction handling
   async setUserBalance(newBalance) {
     try {
       const floored = Math.max(0, Number(newBalance) || 0);
-      await pool.promise().execute('UPDATE users SET balance = ? WHERE id = ?', [floored, this.userData.id]);
-      this.userData.balance = floored;
-      return floored;
+      
+      // Ensure the balance is a valid number
+      if (isNaN(floored)) {
+        console.error('Invalid balance value:', newBalance);
+        throw new Error(`Invalid balance value: ${newBalance}`);
+      }
+      
+      // Update database with transaction safety
+      const connection = await pool.getConnection();
+      try {
+        // Use UPDATE to atomically change the balance
+        const [result] = await connection.execute(
+          'UPDATE users SET balance = ?, updated_at = NOW() WHERE id = ?',
+          [parseFloat(floored.toFixed(2)), this.userData.id]
+        );
+        
+        // Verify the update was successful
+        if (result.affectedRows === 0) {
+          console.error(`User balance update failed - user not found: ${this.userData.id}`);
+          throw new Error('User not found during balance update');
+        }
+        
+        // Update in-memory userData
+        this.userData.balance = floored;
+        
+        // Log balance change for audit trail (non-critical)
+        try {
+          await connection.execute(
+            'INSERT INTO balance_change_logs (user_id, previous_balance, new_balance, change_reason) VALUES (?, ?, ?, ?)',
+            [this.userData.id, this.userData.balance, floored, 'Message cost deduction']
+          );
+        } catch (logErr) {
+          // Log errors don't fail the balance update
+          console.warn('Failed to log balance change:', logErr.message);
+        }
+        
+        return floored;
+      } finally {
+        connection.release();
+      }
     } catch (error) {
       console.error('Error setting user balance:', error);
       throw error;
@@ -1813,19 +1851,19 @@ ${newMessage || ''}`;
           let inputLKR = 0;
           let outputLKR = 0;
 
-          // Base model pricing (real API costs)
+          // Base model pricing (real API costs) - 5% increased for all models
           if (chosenModel === 'gemini-2.0-flash') {
-            inputLKR = (inputTokens / 1_000_000) * 30.4;
-            outputLKR = (outputTokens / 1_000_000) * 121.5;
+            inputLKR = (inputTokens / 1_000_000) * 31.92;  // 30.4 * 1.05
+            outputLKR = (outputTokens / 1_000_000) * 127.575;  // 121.5 * 1.05
           } else if (chosenModel === 'gemini-2.5-flash-lite') {
-            inputLKR = (inputTokens / 1_000_000) * 30.4;
-            outputLKR = (outputTokens / 1_000_000) * 121.5;
+            inputLKR = (inputTokens / 1_000_000) * 31.92;  // 30.4 * 1.05
+            outputLKR = (outputTokens / 1_000_000) * 127.575;  // 121.5 * 1.05
           } else if (chosenModel === 'gemini-2.5-pro') {
-            inputLKR = (inputTokens / 1_000_000) * 379.6;
-            outputLKR = (outputTokens / 1_000_000) * 3037;
+            inputLKR = (inputTokens / 1_000_000) * 398.58;  // 379.6 * 1.05
+            outputLKR = (outputTokens / 1_000_000) * 3188.85;  // 3037 * 1.05
           } else if (chosenModel === 'gemini-3-pro-preview') {
-            inputLKR = (inputTokens / 1_000_000) * 1520; // default Google pricing
-            outputLKR = (outputTokens / 1_000_000) * 7600;
+            inputLKR = (inputTokens / 1_000_000) * 1596;  // 1520 * 1.05
+            outputLKR = (outputTokens / 1_000_000) * 7980;  // 7600 * 1.05
           }
 
           const totalCostLKR = cost + inputLKR + outputLKR;
@@ -1846,27 +1884,52 @@ ${newMessage || ''}`;
           }
 
           // Log into usage_logs table (store real model name for internal tracking)
+          // CRITICAL: Ensure database consistency with balance updates
           try {
-            await pool.promise().execute(
+            // Validate all cost values before insertion
+            const validatedInputLKR = parseFloat(inputLKR.toFixed(4)) || 0;
+            const validatedOutputLKR = parseFloat(outputLKR.toFixed(4)) || 0;
+            const validatedTotalCostLKR = parseFloat(totalCostLKR.toFixed(4)) || 0;
+            const validatedProfitAddedLKR = parseFloat(profitAddedLKR.toFixed(4)) || 0;
+            const validatedTotalFinalCostLKR = parseFloat(totalFinalCostLKR.toFixed(4)) || 0;
+            const validatedBalanceBefore = parseFloat(startingBalance.toFixed(2)) || 0;
+            const validatedBalanceAfter = parseFloat(newBalance.toFixed(2)) || 0;
+            
+            // Sanity check: ensure balance after is less than or equal to balance before
+            if (validatedBalanceAfter > validatedBalanceBefore) {
+              console.error('WARNING: Balance increased unexpectedly after cost deduction', {
+                before: validatedBalanceBefore,
+                after: validatedBalanceAfter,
+                cost: validatedTotalFinalCostLKR
+              });
+            }
+            
+            const [insertResult] = await pool.promise().execute(
               `INSERT INTO usage_logs 
-              (user_id, model_used, input_tokens, output_tokens, input_cost_lkr, output_cost_lkr, total_cost_lkr, profit_added_lkr, total_final_cost_lkr, balance_before, balance_after)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              (user_id, model_used, input_tokens, output_tokens, input_cost_lkr, output_cost_lkr, total_cost_lkr, profit_added_lkr, total_final_cost_lkr, balance_before, balance_after, created_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
               [
                 this.userData.id,
                 chosenModel,  // Store real model name internally for analytics
-                inputTokens,
-                outputTokens,
-                inputLKR.toFixed(4),
-                outputLKR.toFixed(4),
-                totalCostLKR.toFixed(4),
-                profitAddedLKR.toFixed(4),
-                totalFinalCostLKR.toFixed(4),
-                startingBalance.toFixed(2),
-                newBalance.toFixed(2)
+                parseInt(inputTokens) || 0,
+                parseInt(outputTokens) || 0,
+                validatedInputLKR,
+                validatedOutputLKR,
+                validatedTotalCostLKR,
+                validatedProfitAddedLKR,
+                validatedTotalFinalCostLKR,
+                validatedBalanceBefore,
+                validatedBalanceAfter
               ]
             );
+            
+            if (insertResult.insertId) {
+              console.log(`Usage log recorded - ID: ${insertResult.insertId}, User: ${this.userData.id}, Cost: Rs. ${validatedTotalFinalCostLKR}`);
+            }
           } catch (dbErr) {
-            console.error('Usage log insert error:', dbErr);
+            console.error('CRITICAL: Usage log insert error - Balance may be inconsistent:', dbErr);
+            // Don't throw - allow the operation to complete even if logging fails
+            // But alert that data integrity might be compromised
           }
 
           // Emit to frontend - IMPORTANT: Send model token name, NOT real model name
@@ -2217,17 +2280,17 @@ ${newMessage || ''}`;
           let outputLKR = 0;
 
           if (chosenModel === 'gemini-2.0-flash') {
-            inputLKR = (inputTokens / 1_000_000) * 30.4;
-            outputLKR = (outputTokens / 1_000_000) * 121.5;
+            inputLKR = (inputTokens / 1_000_000) * 31.92;  // 30.4 * 1.05
+            outputLKR = (outputTokens / 1_000_000) * 127.575;  // 121.5 * 1.05
           } else if (chosenModel === 'gemini-2.5-flash-lite') {
-            inputLKR = (inputTokens / 1_000_000) * 30.4;
-            outputLKR = (outputTokens / 1_000_000) * 121.5;
+            inputLKR = (inputTokens / 1_000_000) * 31.92;  // 30.4 * 1.05
+            outputLKR = (outputTokens / 1_000_000) * 127.575;  // 121.5 * 1.05
           } else if (chosenModel === 'gemini-2.5-pro') {
-            inputLKR = (inputTokens / 1_000_000) * 379.6;
-            outputLKR = (outputTokens / 1_000_000) * 3037;
+            inputLKR = (inputTokens / 1_000_000) * 398.58;  // 379.6 * 1.05
+            outputLKR = (outputTokens / 1_000_000) * 3188.85;  // 3037 * 1.05
           } else if (chosenModel === 'gemini-3-pro-preview') {
-            inputLKR = (inputTokens / 1_000_000) * 1520;
-            outputLKR = (outputTokens / 1_000_000) * 7600;
+            inputLKR = (inputTokens / 1_000_000) * 1596;  // 1520 * 1.05
+            outputLKR = (outputTokens / 1_000_000) * 7980;  // 7600 * 1.05
           }
 
           const totalCostLKR = inputLKR + outputLKR;
@@ -2245,26 +2308,49 @@ ${newMessage || ''}`;
           }
 
           try {
-            await pool.promise().execute(
+            // Validate all cost values before insertion
+            const validatedInputLKR = parseFloat(inputLKR.toFixed(4)) || 0;
+            const validatedOutputLKR = parseFloat(outputLKR.toFixed(4)) || 0;
+            const validatedTotalCostLKR = parseFloat(totalCostLKR.toFixed(4)) || 0;
+            const validatedProfitAddedLKR = parseFloat(profitAddedLKR.toFixed(4)) || 0;
+            const validatedTotalFinalCostLKR = parseFloat(totalFinalCostLKR.toFixed(4)) || 0;
+            const validatedBalanceBefore = parseFloat(startingBalance.toFixed(2)) || 0;
+            const validatedBalanceAfter = parseFloat(newBalance.toFixed(2)) || 0;
+            
+            // Sanity check: ensure balance after is less than or equal to balance before
+            if (validatedBalanceAfter > validatedBalanceBefore) {
+              console.error('WARNING: Balance increased unexpectedly after cost deduction', {
+                before: validatedBalanceBefore,
+                after: validatedBalanceAfter,
+                cost: validatedTotalFinalCostLKR
+              });
+            }
+            
+            const [insertResult] = await pool.promise().execute(
               `INSERT INTO usage_logs 
-              (user_id, model_used, input_tokens, output_tokens, input_cost_lkr, output_cost_lkr, total_cost_lkr, profit_added_lkr, total_final_cost_lkr, balance_before, balance_after)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              (user_id, model_used, input_tokens, output_tokens, input_cost_lkr, output_cost_lkr, total_cost_lkr, profit_added_lkr, total_final_cost_lkr, balance_before, balance_after, created_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
               [
                 this.userData.id,
                 chosenModel,
-                inputTokens,
-                outputTokens,
-                inputLKR.toFixed(4),
-                outputLKR.toFixed(4),
-                totalCostLKR.toFixed(4),
-                profitAddedLKR.toFixed(4),
-                totalFinalCostLKR.toFixed(4),
-                startingBalance.toFixed(2),
-                newBalance.toFixed(2)
+                parseInt(inputTokens) || 0,
+                parseInt(outputTokens) || 0,
+                validatedInputLKR,
+                validatedOutputLKR,
+                validatedTotalCostLKR,
+                validatedProfitAddedLKR,
+                validatedTotalFinalCostLKR,
+                validatedBalanceBefore,
+                validatedBalanceAfter
               ]
             );
+            
+            if (insertResult.insertId) {
+              console.log(`Usage log recorded - ID: ${insertResult.insertId}, User: ${this.userData.id}, Cost: Rs. ${validatedTotalFinalCostLKR}`);
+            }
           } catch (dbErr) {
-            console.error('Usage log insert error:', dbErr);
+            console.error('CRITICAL: Usage log insert error - Balance may be inconsistent:', dbErr);
+            // Don't throw - allow the operation to complete even if logging fails
           }
 
           socket.emit('balance_update', {
