@@ -293,6 +293,11 @@ const authenticateSocket = async (socket, next) => {
 
     socket.userData = rows[0];
     socket.chatManager = new ChatManager(rows[0]);
+    
+    // Capture IP address for trial abuse prevention
+    socket.clientIp = getClientIp(socket);
+    socket.deviceFingerprint = parsedCookies['DEVICE_FINGERPRINT'] || 'unknown';
+    
     next();
   } catch (error) {
     next(new Error('Authentication failed: ' + error.message));
@@ -586,6 +591,104 @@ const DAILY_TRIAL_LIMITS = {
   image_generations: 5   // 5 image generations per day
 };
 
+// ====== Trial Abuse Prevention (IP + Device Tracking) ======
+const TRIAL_ABUSE_WINDOW_DAYS = 30;  // Block trial reuse from same IP/device for 30 days
+
+// Get client IP from socket/request (handles proxies)
+function getClientIp(socket) {
+  if (socket.handshake?.headers['x-forwarded-for']) {
+    return socket.handshake.headers['x-forwarded-for'].split(',')[0].trim();
+  }
+  return socket.handshake?.address || socket.remoteAddress || 'unknown';
+}
+
+// Get client IP from HTTP request (handles proxies)
+function getClientIpFromRequest(req) {
+  if (req.headers['x-forwarded-for']) {
+    return req.headers['x-forwarded-for'].split(',')[0].trim();
+  }
+  return req.ip || req.connection.remoteAddress || 'unknown';
+}
+
+// Initialize trial_abuse_tracking table if not exists
+async function initializeTrialAbuseTable() {
+  try {
+    await pool.promise().execute(`
+      CREATE TABLE IF NOT EXISTS trial_abuse_tracking (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT,
+        ip_address VARCHAR(45),
+        device_fingerprint VARCHAR(255),
+        trial_start_date DATE,
+        trial_end_date DATE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_ip_date (ip_address, trial_end_date),
+        INDEX idx_device_date (device_fingerprint, trial_end_date),
+        INDEX idx_user_date (user_id, trial_end_date)
+      )
+    `);
+    console.log('✓ Trial abuse tracking table initialized');
+  } catch (error) {
+    console.error('Error initializing trial_abuse_tracking table:', error);
+  }
+}
+
+// Check if user/IP/device has recently used trial
+async function checkTrialEligibility(userId, ipAddress, deviceFingerprint) {
+  try {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - TRIAL_ABUSE_WINDOW_DAYS);
+    const cutoffDateStr = cutoffDate.toISOString().split('T')[0];
+
+    // Check if this user, IP, or device has used trial recently
+    const [rows] = await pool.promise().execute(`
+      SELECT * FROM trial_abuse_tracking 
+      WHERE (user_id = ? OR ip_address = ? OR device_fingerprint = ?)
+      AND trial_end_date > ?
+      LIMIT 1
+    `, [userId, ipAddress, deviceFingerprint || 'unknown', cutoffDateStr]);
+
+    if (rows.length > 0) {
+      const record = rows[0];
+      const reason = 
+        record.user_id === userId ? 'This user account' :
+        record.ip_address === ipAddress ? 'This IP address' :
+        'This device';
+      
+      return {
+        eligible: false,
+        reason: `${reason} has already used a free trial recently. Please try again on ${new Date(record.trial_end_date).toLocaleDateString()}.`,
+        reusedRecord: record
+      };
+    }
+
+    return { eligible: true };
+  } catch (error) {
+    console.error('Error checking trial eligibility:', error);
+    // Default to allowing trial on error (fail open)
+    return { eligible: true };
+  }
+}
+
+// Record a trial usage for IP/device blocking
+async function recordTrialUsage(userId, ipAddress, deviceFingerprint) {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const trialEndDate = new Date();
+    trialEndDate.setDate(trialEndDate.getDate() + TRIAL_ABUSE_WINDOW_DAYS);
+    const trialEndDateStr = trialEndDate.toISOString().split('T')[0];
+
+    await pool.promise().execute(`
+      INSERT INTO trial_abuse_tracking (user_id, ip_address, device_fingerprint, trial_start_date, trial_end_date)
+      VALUES (?, ?, ?, ?, ?)
+    `, [userId, ipAddress, deviceFingerprint || 'unknown', today, trialEndDateStr]);
+
+    console.log(`📝 Trial recorded for user ${userId}, IP: ${ipAddress}, Device: ${deviceFingerprint}`);
+  } catch (error) {
+    console.error('Error recording trial usage:', error);
+  }
+}
+
 // ====== Chat Manager ======
 class ChatManager {
   constructor(userData) {
@@ -702,6 +805,16 @@ class ChatManager {
     }
   }
 
+  // === Check if user/IP/device is eligible for trial ===
+  async checkTrialAbuseEligibility(ipAddress, deviceFingerprint) {
+    return await checkTrialEligibility(this.userData.id, ipAddress, deviceFingerprint);
+  }
+
+  // === Record trial usage for this user/IP/device ===
+  async recordTrialUsageData(ipAddress, deviceFingerprint) {
+    return await recordTrialUsage(this.userData.id, ipAddress, deviceFingerprint);
+  }
+
   // === Get available models based on user balance and trial status ===
   async getAvailableModels(balance, userId) {
     if (balance > 0) {
@@ -768,6 +881,53 @@ class ChatManager {
     } catch (error) {
       console.error('Error checking conversation existence:', error);
       return false;
+    }
+  }
+
+  async canAccessConversation(conversationId) {
+    try {
+      const [rows] = await pool
+        .promise()
+        .execute(
+          `SELECT c.user_id, c.is_published FROM conversations c
+           WHERE c.conversation_id = ?
+           LIMIT 1`,
+          [conversationId]
+        );
+
+      if (rows.length === 0) return false;
+
+      const conversation = rows[0];
+      
+      // Check if user is owner or participant (has edit permission)
+      const [accessRows] = await pool
+        .promise()
+        .execute(
+          `SELECT 1 FROM conversations c
+           WHERE c.conversation_id = ?
+             AND (c.user_id = ? OR EXISTS (
+               SELECT 1 FROM conversation_participants cp
+               WHERE cp.conversation_id = c.conversation_id AND cp.user_id = ?
+             ))
+           LIMIT 1`,
+          [conversationId, this.userData.id, this.userData.id]
+        );
+
+      if (accessRows.length > 0) {
+        // User has edit permission
+        return { hasAccess: true, canEdit: true, isPublished: conversation.is_published };
+      }
+
+      // Check if conversation is published (read-only access)
+      if (conversation.is_published === 1) {
+        return { hasAccess: true, canEdit: false, isPublished: true };
+      }
+
+      // No access
+      return { hasAccess: false, canEdit: false, isPublished: conversation.is_published };
+    } catch (error) {
+      console.error('Error checking conversation access:', error);
+      return { hasAccess: false, canEdit: false, isPublished: false };
     }
   }
   
@@ -1250,6 +1410,18 @@ ${newMessage || ''}`;
           if (isTrialImageUpload) {
             // Update trial usage for image upload
             await this.updateDailyUsage(userId, 'image_uploads');
+            
+            // Record trial usage for abuse prevention (only on first upload)
+            const dailyUsage = await this.getDailyUsage(userId);
+            if (dailyUsage && dailyUsage.image_uploads_used === 1) {
+              try {
+                await this.recordTrialUsageData(socket.clientIp, socket.deviceFingerprint);
+                console.log(`📝 First trial image upload recorded for user ${userId} to prevent reuse`);
+              } catch (error) {
+                console.error('Error recording trial usage:', error);
+              }
+            }
+            
             cost = 0; // No cost for trial uploads
           } else {
             cost += IMAGE_UPLOAD_COST; // Image upload costs 5 credits
@@ -1647,6 +1819,18 @@ ${newMessage || ''}`;
           if (isTrialImageGen) {
             // Update trial usage for image generation (no cost)
             await this.updateDailyUsage(userId, 'image_generations');
+            
+            // Record trial usage for abuse prevention (only on first generation)
+            const dailyUsage = await this.getDailyUsage(userId);
+            if (dailyUsage && dailyUsage.image_generations_used === 1) {
+              try {
+                await this.recordTrialUsageData(socket.clientIp, socket.deviceFingerprint);
+                console.log(`📝 First trial image generation recorded for user ${userId} to prevent reuse`);
+              } catch (error) {
+                console.error('Error recording trial usage:', error);
+              }
+            }
+            
             imageCostCharged = 0;
           } else {
             // Paid user - deduct cost
@@ -1764,6 +1948,18 @@ ${newMessage || ''}`;
       if (currentBalance <= 0 && hasMessageTrial && chosenToken !== 'free') {
         await this.updateDailyUsage(userId, 'messages');
         isTrialMessage = true;
+        
+        // Record this trial usage for abuse prevention (only record on first message)
+        const dailyUsage = await this.getDailyUsage(userId);
+        if (dailyUsage && dailyUsage.messages_used === 1) {
+          // First trial message - record this user/IP/device for blocking future trials
+          try {
+            await this.recordTrialUsageData(socket.clientIp, socket.deviceFingerprint);
+            console.log(`📝 First trial message recorded for user ${userId} to prevent reuse`);
+          } catch (error) {
+            console.error('Error recording trial usage:', error);
+          }
+        }
       }
 
       // Emit stream_complete immediately (before cost/memory updates)
@@ -2402,8 +2598,8 @@ ${newMessage || ''}`;
 
   async getConversation(conversationId, getMessages = false, messageIds = '') {
     try {
-      const hasAccess = await this.conversationExists(conversationId);
-      if (!hasAccess) {
+      const accessInfo = await this.canAccessConversation(conversationId);
+      if (!accessInfo.hasAccess) {
         return { error: true, message: 'Conversation not found' };
       }
 
@@ -2438,7 +2634,7 @@ ${newMessage || ''}`;
         }
       }
 
-      return { error: false, conversation, messages };
+      return { error: false, conversation, messages, canEdit: accessInfo.canEdit, isPublished: accessInfo.isPublished };
     } catch (error) {
       console.error('Error getting conversation:', error);
       return { error: true, message: error.message };
@@ -2612,14 +2808,16 @@ ${newMessage || ''}`;
   }
 
   async createShareLink(conversationId, targetUserId) {
-    const token = crypto.randomBytes(24).toString('hex');
+    // Use conversation ID as the unique token (single token for all sharing)
+    const token = String(conversationId);
     try {
       await pool
         .promise()
         .execute(
           `INSERT INTO conversation_share_links (conversation_id, token, shared_by, target_user_id, created_at)
-           VALUES (?, ?, ?, ?, NOW())`,
-          [conversationId, token, this.userData.id, targetUserId]
+           VALUES (?, ?, ?, ?, NOW())
+           ON DUPLICATE KEY UPDATE shared_by = ?`,
+          [conversationId, token, this.userData.id, targetUserId, this.userData.id]
         );
       return { error: false, token };
     } catch (error) {
@@ -2631,25 +2829,22 @@ ${newMessage || ''}`;
   async acceptShareToken(token) {
     try {
       if (!token) return { error: true, message: 'Invalid token' };
+      // Token is the conversation ID itself
+      const conversationId = Number(token);
       const [rows] = await pool
         .promise()
         .execute(
-          'SELECT conversation_id, target_user_id FROM conversation_share_links WHERE token = ? LIMIT 1',
+          'SELECT conversation_id FROM conversation_share_links WHERE token = ? LIMIT 1',
           [token]
         );
       if (rows.length === 0) return { error: true, message: 'Share link not found' };
 
-      const share = rows[0];
-      if (Number(share.target_user_id) !== Number(this.userData.id)) {
-        return { error: true, message: 'This share link is not for your account' };
-      }
-
-      const conversationId = share.conversation_id;
       const [convRows] = await pool
         .promise()
         .execute('SELECT 1 FROM conversations WHERE conversation_id = ? LIMIT 1', [conversationId]);
       if (convRows.length === 0) return { error: true, message: 'Conversation not found' };
 
+      // Simply add the user as a participant (no target_user_id check needed)
       await this.addParticipant(conversationId, this.userData.id, this.userData.id);
       return { error: false, conversation_id: conversationId };
     } catch (error) {
@@ -2669,8 +2864,8 @@ ${newMessage || ''}`;
         return { error: true, message: 'Only conversation owner can publish' };
       }
 
-      // Generate a publish token
-      const publishToken = crypto.randomBytes(24).toString('hex');
+      // Use conversation ID as the unique publish token (single token for all publishing)
+      const publishToken = String(convId);
 
       // Update or insert publish record
       await pool
@@ -2678,8 +2873,8 @@ ${newMessage || ''}`;
         .execute(
           `INSERT INTO conversation_published (conversation_id, publish_token, access_level, published_by, created_at)
            VALUES (?, ?, 'read_only', ?, NOW())
-           ON DUPLICATE KEY UPDATE publish_token = ?, published_by = ?, created_at = NOW()`,
-          [convId, publishToken, this.userData.id, publishToken, this.userData.id]
+           ON DUPLICATE KEY UPDATE access_level = 'read_only', published_by = ?, created_at = NOW()`,
+          [convId, publishToken, this.userData.id, this.userData.id]
         );
 
       // Mark conversation as published
@@ -2752,6 +2947,26 @@ ${newMessage || ''}`;
       return { error: true, message: error.message };
     }
   }
+
+  async isConversationPublished(conversationId) {
+    try {
+      const [rows] = await pool
+        .promise()
+        .execute(
+          'SELECT publish_token FROM conversation_published WHERE conversation_id = ? LIMIT 1',
+          [conversationId]
+        );
+
+      if (rows.length > 0) {
+        return { error: false, is_published: true, publish_token: rows[0].publish_token };
+      }
+
+      return { error: false, is_published: false };
+    } catch (error) {
+      console.error('Error checking conversation published status:', error);
+      return { error: true, message: error.message };
+    }
+  }
 }
 
 // ====== Socket.IO with auth ======
@@ -2759,6 +2974,32 @@ io.use(authenticateSocket);
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id, 'User ID:', socket.userData.id);
+
+  // Check trial abuse eligibility (IP + Device tracking)
+  (async () => {
+    try {
+      const userBalance = await socket.chatManager.getUserBalance();
+      
+      // Only check trial abuse for users with zero or negative balance (trial users)
+      if (userBalance <= 0) {
+        const eligibilityCheck = await socket.chatManager.checkTrialAbuseEligibility(socket.clientIp, socket.deviceFingerprint);
+        
+        if (!eligibilityCheck.eligible) {
+          console.warn(`⚠️  Trial abuse detected for user ${socket.userData.id}: ${eligibilityCheck.reason}`);
+          socket.emit('trial_abuse_detected', {
+            message: eligibilityCheck.reason,
+            code: 'TRIAL_REUSE_BLOCKED'
+          });
+          // Optionally disconnect the user
+          // socket.disconnect(true);
+        } else {
+          console.log(`✓ Trial eligibility verified for user ${socket.userData.id} (IP: ${socket.clientIp})`);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking trial abuse:', error);
+    }
+  })();
 
   // Join per-user room so we can push gallery refresh events
   try {
@@ -3006,6 +3247,16 @@ io.on('connection', (socket) => {
 
   socket.on('new_message_stream', async (data) => {
     const conversationId = Number(data.conversation_id) || null;
+    
+    // Check permission if conversation exists
+    if (conversationId) {
+      const accessInfo = await socket.chatManager.canAccessConversation(conversationId);
+      if (!accessInfo.hasAccess || !accessInfo.canEdit) {
+        socket.emit('error', { message: 'You do not have permission to edit this conversation' });
+        return;
+      }
+    }
+    
     const room = conversationId ? getConversationRoom(conversationId) : null;
     const emitToConversation = room
       ? (event, payload) => io.to(room).emit(event, payload)
@@ -3227,9 +3478,10 @@ io.on('connection', (socket) => {
       if (!conversationId) return;
       if (!text.trim() && !attachment) return;
 
-      const hasAccess = await socket.chatManager.conversationExists(conversationId);
-      if (!hasAccess) {
-        socket.emit('error', { message: 'Conversation not found or no access' });
+      // Check if user has edit permission
+      const accessInfo = await socket.chatManager.canAccessConversation(conversationId);
+      if (!accessInfo.hasAccess || !accessInfo.canEdit) {
+        socket.emit('error', { message: 'You do not have permission to edit this conversation' });
         return;
       }
 
@@ -3288,9 +3540,9 @@ io.on('connection', (socket) => {
       const stroke = data?.stroke;
       if (!conversationId || !stroke) return;
 
-      const hasAccess = await socket.chatManager.conversationExists(conversationId);
-      if (!hasAccess) {
-        socket.emit('error', { message: 'Conversation not found or no access' });
+      const accessInfo = await socket.chatManager.canAccessConversation(conversationId);
+      if (!accessInfo.hasAccess || !accessInfo.canEdit) {
+        socket.emit('error', { message: 'You do not have permission to edit this conversation' });
         return;
       }
 
@@ -3371,9 +3623,9 @@ io.on('connection', (socket) => {
       const entry = data?.entry;
       if (!conversationId || !entry) return;
 
-      const hasAccess = await socket.chatManager.conversationExists(conversationId);
-      if (!hasAccess) {
-        socket.emit('error', { message: 'Conversation not found or no access' });
+      const accessInfo = await socket.chatManager.canAccessConversation(conversationId);
+      if (!accessInfo.hasAccess || !accessInfo.canEdit) {
+        socket.emit('error', { message: 'You do not have permission to edit this conversation' });
         return;
       }
 
@@ -3426,8 +3678,8 @@ io.on('connection', (socket) => {
     try {
       const conversationId = Number(data?.conversation_id);
       if (!conversationId) return;
-      const hasAccess = await socket.chatManager.conversationExists(conversationId);
-      if (!hasAccess) return;
+      const accessInfo = await socket.chatManager.canAccessConversation(conversationId);
+      if (!accessInfo.hasAccess || !accessInfo.canEdit) return;
 
       const room = getConversationRoom(conversationId);
       socket.join(room);
@@ -3453,9 +3705,9 @@ io.on('connection', (socket) => {
       const conversationId = Number(data?.conversation_id);
       if (!conversationId) return;
 
-      const hasAccess = await socket.chatManager.conversationExists(conversationId);
-      if (!hasAccess) {
-        socket.emit('error', { message: 'Conversation not found or no access' });
+      const accessInfo = await socket.chatManager.canAccessConversation(conversationId);
+      if (!accessInfo.hasAccess || !accessInfo.canEdit) {
+        socket.emit('error', { message: 'You do not have permission to edit this conversation' });
         return;
       }
 
@@ -3903,6 +4155,36 @@ app.post('/api/conversations/:id/unpublish', authenticateRequest, async (req, re
   }
 });
 
+// Check if conversation is published
+app.get('/api/conversations/:id/publish-status', authenticateRequest, async (req, res) => {
+  const conversationId = Number(req.params.id);
+  if (!conversationId) {
+    return res.status(400).json({ error: true, message: 'Missing conversation id' });
+  }
+
+  try {
+    const [rows] = await pool
+      .promise()
+      .execute(
+        `SELECT publish_token FROM conversation_published 
+         WHERE conversation_id = ? AND conversation_id IN 
+         (SELECT conversation_id FROM conversations WHERE conversation_id = ? AND (user_id = ? OR conversation_id IN 
+         (SELECT conversation_id FROM conversation_participants WHERE user_id = ?)))
+         LIMIT 1`,
+        [conversationId, conversationId, req.userData.id, req.userData.id]
+      );
+
+    if (rows.length > 0) {
+      res.json({ error: false, is_published: true, publish_token: rows[0].publish_token });
+    } else {
+      res.json({ error: false, is_published: false });
+    }
+  } catch (error) {
+    console.error('Check publish status error:', error);
+    res.status(500).json({ error: true, message: 'Failed to check publish status' });
+  }
+});
+
 // Get published conversation (public endpoint, no auth)
 app.get('/api/conversations/published/:token', async (req, res) => {
   const publishToken = String(req.params.token || '');
@@ -3926,7 +4208,12 @@ app.get('/api/conversations/published/:token', async (req, res) => {
     }
 
     const publishedConv = rows[0];
-    res.json({ error: false, data: publishedConv });
+    // Return a redirect to the normal chat view instead of opening in separate view
+    res.json({ 
+      error: false, 
+      data: publishedConv,
+      redirect_to: `/app/chat/${publishedConv.conversation_id}?published=${publishToken}&readonly=true`
+    });
   } catch (error) {
     console.error('Get published conversation error:', error);
     res.status(500).json({ error: true, message: 'Failed to retrieve published conversation' });
@@ -4007,9 +4294,12 @@ process.on('SIGINT', () => {
   });
 });
 
-server.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, '0.0.0.0', async () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/health`);
+  
+  // Initialize trial abuse tracking table
+  await initializeTrialAbuseTable();
 });
 
 module.exports = { ChatManager, app, server, io };
