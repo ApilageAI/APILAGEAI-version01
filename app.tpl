@@ -613,18 +613,58 @@
     
     <!-- Main Content --> 
     <main class="main-content">
-    <!-- Conversation Gallery View -->
-<div id="conversation-gallery" style="display:none;">
-  <div id="conversation-search-box">
-    <input type="text" id="conversation-search-input" name="conversation_search" placeholder="Search conversations..." autocomplete="off" aria-label="Search conversations">
-    <select id="conversation-sort-select" name="conversation_sort" aria-label="Sort conversations">
-        <option value="updated_desc">Latest updated</option>
-        <option value="created_desc">Latest created</option>
-        <option value="created_asc">Oldest created</option>
-      </select>
-  </div>
-  <div id="conversation-gallery-grid"></div>
+        <!-- Conversation Gallery View -->
+<div id="conversation-gallery" class="conversation-gallery" style="display:none;">
+    <section class="gallery-hero">
+        <div class="gallery-hero-sheen"></div>
+        <div class="gallery-hero-content">
+            <div class="hero-text">
+                <p class="hero-kicker">Conversation gallery</p>
+                <h1>Find, filter, and jump back in.</h1>
+                <p class="hero-subtitle">Browse everything you have published, own, or share. Search by title or teammate and sort by recency.</p>
+            </div>
+            <div class="hero-card" aria-hidden="true">
+                <div class="hero-card-label">Quick actions</div>
+                <ul class="hero-card-list">
+                    <li>Publish or unpublish chats</li>
+                    <li>Share with collaborators</li>
+                    <li>Rename, edit, or delete</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <div class="gallery-controls">
+        <div class="gallery-filter-chips" role="tablist" aria-label="Filter conversations">
+            <button class="conversation-filter-chip is-active" data-filter="all" role="tab" aria-selected="true" aria-pressed="true">All</button>
+            <button class="conversation-filter-chip" data-filter="published" role="tab" aria-selected="false" aria-pressed="false">Published</button>
+            <button class="conversation-filter-chip" data-filter="owned" role="tab" aria-selected="false" aria-pressed="false">Owned by me</button>
+            <button class="conversation-filter-chip" data-filter="shared-by-me" role="tab" aria-selected="false" aria-pressed="false">Shared by me</button>
+            <button class="conversation-filter-chip" data-filter="shared-with-me" role="tab" aria-selected="false" aria-pressed="false">Shared with me</button>
+        </div>
+
+        <div class="gallery-search-sort">
+            <div class="gallery-search">
+                <i class="fa fa-search" aria-hidden="true"></i>
+                <input type="text" id="conversation-search-input" name="conversation_search" placeholder="Search with name or keyword…" autocomplete="off" aria-label="Search conversations">
+            </div>
+            <div class="gallery-sort">
+                <label for="conversation-sort-select">Sort by</label>
+                <select id="conversation-sort-select" name="conversation_sort" aria-label="Sort conversations">
+                    <option value="updated_desc">Latest edited</option>
+                    <option value="updated_asc">Oldest edited</option>
+                    <option value="created_desc">Latest chats</option>
+                    <option value="created_asc">Oldest chats</option>
+                </select>
+            </div>
+        </div>
     </div>
+
+    <div class="gallery-hint">Tip: click a card to open it; use the icons to publish, edit, share, or delete without leaving the gallery.</div>
+
+    <div id="conversation-gallery-grid" class="conversation-gallery-grid"></div>
+</div>
+
     <!-- Share Modal -->
     <div id="share-modal" class="share-modal hidden" role="dialog" aria-labelledby="share-modal-title">
         <div class="share-modal-content">
@@ -904,7 +944,7 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 <script src="https://apilageai.lk/assets/scripts/libs/dialog-js/main.min.js?V=01.03.04.2025"></script>
 <script src="https://apilageai.lk/assets/scripts/mp.min.js?V=01.22.22.2025"></script>
-<script src="https://apilageai.lk/assets/scripts/app.min.js?V=3.3.15.01.2026"></script>
+<script src="https://apilageai.lk/assets/scripts/app.min.js?V=8.15.01.2026"></script>
 <script src="https://apilageai.lk/assets/scripts/prefrence.min.js?V=26.25.11.2025"></script>
 <script src="https://apilageai.lk/assets/scripts/notifications.js?V=03.01.10.2025"></script>
 <script type="module" src="https://apilageai.lk/assets/scripts/gm.min.js?V=12.20.10.2025"></script>
