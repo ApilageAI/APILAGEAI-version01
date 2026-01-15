@@ -581,8 +581,8 @@ const IMAGE_UPLOAD_COST = 5;      // Cost for uploading one image
 
 // ====== Daily Trial Limits for Free Users ======
 const DAILY_TRIAL_LIMITS = {
-  messages: 5,           // 5 messages per day using any model
-  image_uploads: 3,      // 3 image uploads per day
+  messages: 3,           // 3 messages per day using any model
+  image_uploads: 2,      // 2 image uploads per day
   image_generations: 5   // 5 image generations per day
 };
 
