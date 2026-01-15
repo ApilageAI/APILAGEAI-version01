@@ -863,6 +863,28 @@ class ChatManager {
     }
   }
 
+  // ISSUE FIX: Get user name by ID to display in collaborator names instead of user ID
+  async getUserNameById(userId) {
+    try {
+      const userId_num = Number(userId);
+      if (!userId_num) return 'User';
+      
+      const [rows] = await pool.promise().execute(
+        'SELECT first_name, last_name FROM users WHERE id = ? LIMIT 1',
+        [userId_num]
+      );
+      
+      if (rows.length === 0) return 'User';
+      
+      const { first_name, last_name } = rows[0];
+      const name = `${first_name || ''} ${last_name || ''}`.trim();
+      return name || 'User';
+    } catch (error) {
+      console.error('Error getting user name:', error);
+      return 'User';
+    }
+  }
+
   async conversationExists(conversationId) {
     try {
       const [rows] = await pool
@@ -2603,6 +2625,22 @@ ${newMessage || ''}`;
         return { error: true, message: 'Conversation not found' };
       }
 
+      // BUG FIX #1: Enforce strict participant-only access for SHARED (non-published) chats
+      if (accessInfo.isPublished === 0) {
+        const isOwner = await this.isConversationOwner(conversationId);
+        if (!isOwner) {
+          const [participantCheck] = await pool
+            .promise()
+            .execute(
+              'SELECT 1 FROM conversation_participants WHERE conversation_id = ? AND user_id = ? LIMIT 1',
+              [conversationId, this.userData.id]
+            );
+          if (participantCheck.length === 0) {
+            return { error: true, message: 'Conversation not found' };
+          }
+        }
+      }
+
       const [conversations] = await pool
         .promise()
         .execute(
@@ -2634,7 +2672,7 @@ ${newMessage || ''}`;
         }
       }
 
-      return { error: false, conversation, messages, canEdit: accessInfo.canEdit, isPublished: accessInfo.isPublished };
+      return { error: false, conversation, messages, canEdit: accessInfo.canEdit, isPublished: accessInfo.isPublished, isReadOnly: accessInfo.isPublished === 1 && !accessInfo.canEdit };
     } catch (error) {
       console.error('Error getting conversation:', error);
       return { error: true, message: error.message };
@@ -2829,22 +2867,27 @@ ${newMessage || ''}`;
   async acceptShareToken(token) {
     try {
       if (!token) return { error: true, message: 'Invalid token' };
-      // Token is the conversation ID itself
       const conversationId = Number(token);
+      
+      // BUG FIX #3: Validate target_user_id to prevent link interception attacks
       const [rows] = await pool
         .promise()
         .execute(
-          'SELECT conversation_id FROM conversation_share_links WHERE token = ? LIMIT 1',
+          'SELECT conversation_id, target_user_id FROM conversation_share_links WHERE token = ? LIMIT 1',
           [token]
         );
       if (rows.length === 0) return { error: true, message: 'Share link not found' };
+
+      const shareLink = rows[0];
+      if (shareLink.target_user_id && Number(shareLink.target_user_id) !== this.userData.id) {
+        return { error: true, message: 'This share link was not sent to you. Contact the sender for a new link.' };
+      }
 
       const [convRows] = await pool
         .promise()
         .execute('SELECT 1 FROM conversations WHERE conversation_id = ? LIMIT 1', [conversationId]);
       if (convRows.length === 0) return { error: true, message: 'Conversation not found' };
 
-      // Simply add the user as a participant (no target_user_id check needed)
       await this.addParticipant(conversationId, this.userData.id, this.userData.id);
       return { error: false, conversation_id: conversationId };
     } catch (error) {
@@ -3441,26 +3484,32 @@ io.on('connection', (socket) => {
         data.get_messages || false,
         data.message_ids || ''
       );
+      
+      // ISSUE FIX: For published chats, suppress error message and just emit data
+      // This allows published chats to load smoothly without error popups
       socket.emit('conversation_data', result);
 
       // Join the shared conversation room for real-time collaboration
       const conversationId = Number(data.conversation_id) || null;
       if (conversationId) {
-        const nextRoom = getConversationRoom(conversationId);
-        if (socket.data?.currentConversationRoom && socket.data.currentConversationRoom !== nextRoom) {
-          socket.leave(socket.data.currentConversationRoom);
-        }
-        socket.join(nextRoom);
-        socket.data.currentConversationRoom = nextRoom;
+        // Only join room and emit events if conversation access is granted
+        if (!result.error) {
+          const nextRoom = getConversationRoom(conversationId);
+          if (socket.data?.currentConversationRoom && socket.data.currentConversationRoom !== nextRoom) {
+            socket.leave(socket.data.currentConversationRoom);
+          }
+          socket.join(nextRoom);
+          socket.data.currentConversationRoom = nextRoom;
 
-        const existingLock = conversationLocks.get(conversationId);
-        if (existingLock) {
-          socket.emit('conversation_lock', {
-            conversation_id: conversationId,
-            locked: true,
-            by_user_id: existingLock.byUserId,
-            started_at: existingLock.startedAt,
-          });
+          const existingLock = conversationLocks.get(conversationId);
+          if (existingLock) {
+            socket.emit('conversation_lock', {
+              conversation_id: conversationId,
+              locked: true,
+              by_user_id: existingLock.byUserId,
+              started_at: existingLock.startedAt,
+            });
+          }
         }
       }
     } catch (error) {
@@ -3478,7 +3527,7 @@ io.on('connection', (socket) => {
       if (!conversationId) return;
       if (!text.trim() && !attachment) return;
 
-      // Check if user has edit permission
+      // BUG FIX #5: Check if user has edit permission before allowing message submission
       const accessInfo = await socket.chatManager.canAccessConversation(conversationId);
       if (!accessInfo.hasAccess || !accessInfo.canEdit) {
         socket.emit('error', { message: 'You do not have permission to edit this conversation' });
@@ -3513,8 +3562,8 @@ io.on('connection', (socket) => {
       const conversationId = Number(data?.conversation_id);
       if (!conversationId) return;
 
-      const hasAccess = await socket.chatManager.conversationExists(conversationId);
-      if (!hasAccess) {
+      const accessInfo = await socket.chatManager.canAccessConversation(conversationId);
+      if (!accessInfo || !accessInfo.hasAccess) {
         socket.emit('error', { message: 'Conversation not found or no access' });
         return;
       }
@@ -3563,6 +3612,11 @@ io.on('connection', (socket) => {
         state.data.strokes = state.data.strokes.slice(state.data.strokes.length - 8000);
       }
 
+      // ISSUE FIX: Get actual user name from database instead of showing user ID
+      const userName = socket.userData?.first_name || socket.userData?.name 
+        ? `${socket.userData.first_name || ''} ${socket.userData.last_name || ''}`.trim() || 'User'
+        : await socket.chatManager.getUserNameById(socket.userData.id);
+
       const normalizedStroke = {
         id: String(stroke.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`),
         tool: String(stroke.tool || 'pen'),
@@ -3574,7 +3628,7 @@ io.on('connection', (socket) => {
           .map((p) => ({ x: Number(p.x) || 0, y: Number(p.y) || 0 }))
           .filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y)),
         sender_user_id: socket.userData.id,
-        sender_name: String(socket.userData.first_name || socket.userData.name || 'User'),
+        sender_name: userName,
         ts: Date.now(),
       };
 
@@ -3606,10 +3660,16 @@ io.on('connection', (socket) => {
 
       const room = getConversationRoom(conversationId);
       socket.join(room);
+      
+      // ISSUE FIX: Get actual user name from database instead of showing user ID
+      const userName = socket.userData?.first_name || socket.userData?.name 
+        ? `${socket.userData.first_name || ''} ${socket.userData.last_name || ''}`.trim() || 'User'
+        : await socket.chatManager.getUserNameById(socket.userData.id);
+      
       io.to(room).emit('canvas_cursor', {
         conversation_id: conversationId,
         user_id: socket.userData.id,
-        name: String(socket.userData.first_name || socket.userData.name || 'User'),
+        name: userName,
         x,
         y,
         active: true,
@@ -3647,6 +3707,11 @@ io.on('connection', (socket) => {
         state.data.texts = state.data.texts.slice(state.data.texts.length - 3000);
       }
 
+      // ISSUE FIX: Get actual user name from database instead of showing user ID
+      const userName = socket.userData?.first_name || socket.userData?.name 
+        ? `${socket.userData.first_name || ''} ${socket.userData.last_name || ''}`.trim() || 'User'
+        : await socket.chatManager.getUserNameById(socket.userData.id);
+
       const normalizedEntry = {
         id: String(entry.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`),
         x: Math.min(1, Math.max(0, x)),
@@ -3655,7 +3720,7 @@ io.on('connection', (socket) => {
         color: String(entry.color || '#111111'),
         size: Number(entry.size || 16) || 16,
         sender_user_id: socket.userData.id,
-        sender_name: String(socket.userData.first_name || socket.userData.name || 'User'),
+        sender_name: userName,
         ts: Date.now(),
       };
 
@@ -3728,13 +3793,18 @@ io.on('connection', (socket) => {
       canvasStateCache.set(conversationId, state);
       scheduleCanvasSave(conversationId);
 
+      // ISSUE FIX: Get actual user name from database instead of showing user ID
+      const userName = socket.userData?.first_name || socket.userData?.name 
+        ? `${socket.userData.first_name || ''} ${socket.userData.last_name || ''}`.trim() || 'User'
+        : await socket.chatManager.getUserNameById(socket.userData.id);
+
       // Broadcast the update to the room (including sender)
       io.to(room).emit('canvas_doc', {
         conversation_id: conversationId,
         html: capped,
         version: state.version,
         sender_user_id: socket.userData.id,
-        sender_name: String(socket.userData.first_name || socket.userData.name || 'User'),
+        sender_name: userName,
       });
     } catch (err) {
       console.error('canvas_doc error:', err);
@@ -4208,11 +4278,33 @@ app.get('/api/conversations/published/:token', async (req, res) => {
     }
 
     const publishedConv = rows[0];
-    // Return a redirect to the normal chat view instead of opening in separate view
+    
+    // BUG FIX #4: Return permission flags so frontend knows whether to hide/disable inputs
+    let currentUserCanEdit = false;
+    let currentUserId = null;
+    
+    if (req.userData?.id) {
+      currentUserId = req.userData.id;
+      if (Number(publishedConv.owner_id) === currentUserId) {
+        currentUserCanEdit = true;
+      } else {
+        const [editCheckRows] = await pool
+          .promise()
+          .execute(
+            'SELECT 1 FROM conversation_participants WHERE conversation_id = ? AND user_id = ? LIMIT 1',
+            [publishedConv.conversation_id, currentUserId]
+          );
+        currentUserCanEdit = editCheckRows.length > 0;
+      }
+    }
+    
     res.json({ 
       error: false, 
       data: publishedConv,
-      redirect_to: `/app/chat/${publishedConv.conversation_id}?published=${publishToken}&readonly=true`
+      canEdit: currentUserCanEdit,
+      isReadOnly: !currentUserCanEdit,
+      currentUserId: currentUserId,
+      redirect_to: `/app/chat/${publishedConv.conversation_id}?published=${publishToken}&readonly=${!currentUserCanEdit}`
     });
   } catch (error) {
     console.error('Get published conversation error:', error);

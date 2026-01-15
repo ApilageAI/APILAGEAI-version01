@@ -904,7 +904,7 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 <script src="https://apilageai.lk/assets/scripts/libs/dialog-js/main.min.js?V=01.03.04.2025"></script>
 <script src="https://apilageai.lk/assets/scripts/mp.min.js?V=01.22.22.2025"></script>
-<script src="https://apilageai.lk/assets/scripts/app.min.js?V=19.14.01.2026"></script>
+<script src="https://apilageai.lk/assets/scripts/app.min.js?V=3.3.15.01.2026"></script>
 <script src="https://apilageai.lk/assets/scripts/prefrence.min.js?V=26.25.11.2025"></script>
 <script src="https://apilageai.lk/assets/scripts/notifications.js?V=03.01.10.2025"></script>
 <script type="module" src="https://apilageai.lk/assets/scripts/gm.min.js?V=12.20.10.2025"></script>
