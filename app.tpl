@@ -19,51 +19,65 @@
         </div>
 
     <div class="sidebar-items" style="padding: 16px; display: flex; flex-direction: column; gap: 12px;">
-        <button class="sidebar-but new-chat-btn" id="sidebar-new-chat" type="button">
+        <button class="sidebar-but new-chat-btn" id="sidebar-new-chat" type="button" title="New chat">
             <span class="sidebar-but-icon"><i class="fa fa-plus"></i></span>
             <span class="sidebar-but-text">New chat</span>
             <span class="sidebar-but-shortcut" aria-hidden="true">⇧⌘O</span>
         </button>
-        <button class="sidebar-but" id="open-conversation-gallery" type="button">
+        <button class="sidebar-but" id="open-conversation-gallery" type="button" title="Conversations">
             <span class="sidebar-but-icon"><i class="fa fa-comments"></i></span>
             <span class="sidebar-but-text">Conversations</span>
             <span class="sidebar-but-shortcut" aria-hidden="true">⇧⌘K</span>
         </button>
-        <button class="sidebar-but" id="open-share-modal" type="button">
+        <button class="sidebar-but" id="open-share-modal" type="button" title="Share with friends">
             <span class="sidebar-but-icon"><i class="fa fa-share-alt"></i></span>
             <span class="sidebar-but-text">Share with friends</span>
             <span class="sidebar-but-shortcut" aria-hidden="true">⇧⌘S</span>
         </button>
 
         <!-- Collaborative voice mic (shown only for shared chats) -->
-        <button class="sidebar-but" id="collab-mic-toggle" type="button" style="display:none;">
-            <i class="fa fa-microphone-slash" style="margin-right: 8px;"></i> Mic
+        <button class="sidebar-but" id="collab-mic-toggle" type="button" style="display:none;" title="Mic">
+            <span class="sidebar-but-icon"><i class="fa fa-microphone-slash"></i></span>
+            <span class="sidebar-but-text">Mic</span>
         </button>
-        <button class="sidebar-but" id="mindmap-open-btn" type="button">
-            <i class="fa-solid fa-brain" style="margin-right: 8px;"></i> Mind map
+        <button class="sidebar-but" id="mindmap-open-btn" type="button" title="Mind map">
+            <span class="sidebar-but-icon"><i class="fa-solid fa-brain"></i></span>
+            <span class="sidebar-but-text">Mind map</span>
         </button>
-        <button class="sidebar-but" id="mcqblust-gameyard-icon" type="button">
-            <i class="fas fa-gamepad" style="margin-right: 8px;"></i> MCQ game
+        <button class="sidebar-but" id="mcqblust-gameyard-icon" type="button" title="MCQ game">
+            <span class="sidebar-but-icon"><i class="fas fa-gamepad"></i></span>
+            <span class="sidebar-but-text">MCQ game</span>
         </button>
-         <button class="sidebar-but" type="button" onclick="window.open('https://apilageai.lk/dashboard', '_self');">
-            <i class="fa fa-image" style="margin-right: 8px;"></i> Image Gallery
+         <button class="sidebar-but" type="button" onclick="window.open('https://apilageai.lk/dashboard', '_self');" title="Image Gallery">
+            <span class="sidebar-but-icon"><i class="fa fa-image"></i></span>
+            <span class="sidebar-but-text">Image Gallery</span>
         </button>
     </div>
 
  <!-- Sidebar Footer User Info -->
-<div class="sidebar-footer sidebar-footer-userinfo" id="sidebarUserInfo" title="Open settings">
-  <div class="user-avatar">
-    <img
-      src="{if !empty($user->_data.image)}https://apilageai.lk{$user->_data.image}{else}https://apilageai.lk/assets/images/user.png{/if}"
-      alt="{$user->_data.first_name} Avatar"
-      onerror="this.onerror=null;this.src='https://apilageai.lk/assets/images/user.png';"
-    />
-  </div>
-  <div class="user-details">
-    <div class="user-name" id="sidebar-user-name">{$user->_data['first_name']}</div>
-    <div class="user-credit-text" id="sidebar-credit-text">Credit: Loading...</div>
-    <div class="credit-bar-container">
-      <div class="credit-bar-fill" id="sidebar-credit-bar" style="width: 0%;"></div>
+<div class="sidebar-footer">
+  <button id="sidebarMinimize" class="sidebar-minimize-btn" aria-label="Minimize sidebar" style="display: none;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+      <path d="M9 3v18"></path>
+      <path d="m14 9 3 3-3 3"></path>
+    </svg>
+    <span class="minimize-text">Focused</span>
+  </button>
+  <div class="sidebar-footer-userinfo" id="sidebarUserInfo" title="Open settings">
+    <div class="user-avatar">
+      <img
+        src="{if !empty($user->_data.image)}https://apilageai.lk{$user->_data.image}{else}https://apilageai.lk/assets/images/user.png{/if}"
+        alt="{$user->_data.first_name} Avatar"
+        onerror="this.onerror=null;this.src='https://apilageai.lk/assets/images/user.png';"
+      />
+    </div>
+    <div class="user-details">
+      <div class="user-name" id="sidebar-user-name">{$user->_data['first_name']}</div>
+      <div class="user-credit-text" id="sidebar-credit-text">Credit: Loading...</div>
+      <div class="credit-bar-container">
+        <div class="credit-bar-fill" id="sidebar-credit-bar" style="width: 0%;"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -620,8 +634,8 @@
         <div class="gallery-hero-content">
             <div class="hero-text">
                 <p class="hero-kicker">Conversation gallery</p>
-                <h1>Find, filter, and jump back in.</h1>
-                <p class="hero-subtitle">Browse everything you have published, own, or share. Search by title or teammate and sort by recency.</p>
+                <h1>Make your studies more productive with APILAGEAI PRO</h1>
+                <p class="hero-subtitle">Study alone or study with friends, we are here to help !</p>
             </div>
             <div class="hero-card" aria-hidden="true">
                 <div class="hero-card-label">Quick actions</div>
@@ -730,59 +744,56 @@
     </div>
    <!-- Navbar -->
 <nav class="navbar">
-    <!-- Sidebar open button -->
-    <button id="toggleSidebar" class="sidebar-icon-btn" aria-label="Toggle sidebar" style="display: none;">
-<svg xmlns="http://www.w3.org/2000/svg" 
-     width="24" height="24" viewBox="0 0 24 24" fill="none" 
-     stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
-     class="tabler-icon tabler-icon-layout-sidebar-left-expand h-6 w-6">
-  <path d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" />
-  <path d="M9 4v16" />
-  <path d="M14 10l2 2l-2 2" />
-</svg>
-    </button>
-
-<!-- Model Switcher Dropdown (right side of navbar) -->
-<div id="modelSwitcher" class="model-switcher">
-  <div class="brand-model">
-    Apilage AI
-    <sup><span id="currentModelLabel"></span></sup>
-  </div>
-  <div class="dropdown">
-    <button class="model-switcher-btn" id="modelDropdownBtn" type="button">
-      ▼
-    </button>
-    <ul id="modelDropdownMenu" class="dropdown-menu"></ul>
-  </div>
-</div>
-
-
-<!-- Notification Bell -->
-<div class="notification-wrapper">
-  <button id="notificationBell" class="notification-btn">
-    <i class="fa fa-bell"></i>
-    <span id="notificationCount" class="notification-count" style="display:none;">0</span>
-  </button>
-
-  <!-- Dropdown -->
-  <div id="notificationDropdown" class="notification-dropdown">
-    <div class="dropdown-header">
-      <span>Notifications</span>
-      <button id="clearNotifications" class="clear-btn">Clear All</button>
+    <!-- Left side: Sidebar toggle button -->
+    <div class="navbar-left">
+        <button id="toggleSidebar" class="sidebar-icon-btn" aria-label="Toggle sidebar" style="display: none;">
+            <svg xmlns="http://www.w3.org/2000/svg" 
+                 width="24" height="24" viewBox="0 0 24 24" fill="none" 
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
+                 class="tabler-icon tabler-icon-layout-sidebar-left-expand h-6 w-6">
+              <path d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" />
+              <path d="M9 4v16" />
+              <path d="M14 10l2 2l-2 2" />
+            </svg>
+        </button>
     </div>
-    <ul id="notificationList" class="notification-list">
-      <li class="no-notification">No notifications</li>
-    </ul>
-  </div>
-</div>
 
-    <!-- Centered Button Section -->
-    <div class="question-sheet-center">
-        <div class="btn-group">
-            <!-- Buttons moved to sidebar-action-row -->
+    <!-- Center: Model Switcher -->
+    <div class="navbar-center">
+        <div id="modelSwitcher" class="model-switcher">
+          <div class="brand-model">
+            Apilage AI
+            <sup><span id="currentModelLabel"></span></sup>
+          </div>
+          <div class="dropdown">
+            <button class="model-switcher-btn" id="modelDropdownBtn" type="button">
+              ▼
+            </button>
+            <ul id="modelDropdownMenu" class="dropdown-menu"></ul>
+          </div>
         </div>
     </div>
 
+    <!-- Right side: Notification Bell -->
+    <div class="navbar-right">
+        <div class="notification-wrapper">
+          <button id="notificationBell" class="notification-btn">
+            <i class="fa fa-bell"></i>
+            <span id="notificationCount" class="notification-count" style="display:none;">0</span>
+          </button>
+
+          <!-- Dropdown -->
+          <div id="notificationDropdown" class="notification-dropdown">
+            <div class="dropdown-header">
+              <span>Notifications</span>
+              <button id="clearNotifications" class="clear-btn">Clear All</button>
+            </div>
+            <ul id="notificationList" class="notification-list">
+              <li class="no-notification">No notifications</li>
+            </ul>
+          </div>
+        </div>
+    </div>
 </nav>
         <div style="margin-top: 62px;"></div>
 
@@ -944,7 +955,7 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 <script src="https://apilageai.lk/assets/scripts/libs/dialog-js/main.min.js?V=01.03.04.2025"></script>
 <script src="https://apilageai.lk/assets/scripts/mp.min.js?V=01.22.22.2025"></script>
-<script src="https://apilageai.lk/assets/scripts/app.min.js?V=8.15.01.2026"></script>
+<script src="https://apilageai.lk/assets/scripts/app.min.js?V=3.23.01.2026{get_hash_token()}"></script>
 <script src="https://apilageai.lk/assets/scripts/prefrence.min.js?V=26.25.11.2025"></script>
 <script src="https://apilageai.lk/assets/scripts/notifications.js?V=03.01.10.2025"></script>
 <script type="module" src="https://apilageai.lk/assets/scripts/gm.min.js?V=12.20.10.2025"></script>
