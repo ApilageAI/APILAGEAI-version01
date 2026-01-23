@@ -98,27 +98,72 @@
         </div>
 
         <div class="canvas-toolbar" role="toolbar" aria-label="Canvas tools">
-            <select id="canvas-font-size" class="canvas-font-size" aria-label="Font size">
-                <option value="10">10</option>
-                <option value="12">12</option>
-                <option value="14">14</option>
-                <option value="16" selected>16</option>
-                <option value="18">18</option>
-                <option value="20">20</option>
-                <option value="24">24</option>
-                <option value="28">28</option>
-                <option value="32">32</option>
-                <option value="36">36</option>
-                <option value="48">48</option>
-            </select>
+            <!-- Page Size Selection -->
+            <div class="canvas-toolbar-group">
+                <select id="canvas-page-size" class="canvas-page-size" aria-label="Page size" title="Page size">
+                    <option value="A4" selected>A4</option>
+                    <option value="Letter">Letter</option>
+                    <option value="Legal">Legal</option>
+                    <option value="A3">A3</option>
+                </select>
+            </div>
 
-            <button id="canvas-bold-btn" type="button" class="canvas-tool-btn" aria-pressed="false" aria-label="Bold"><i class="fa-solid fa-bold" aria-hidden="true"></i></button>
-            <button id="canvas-italic-btn" type="button" class="canvas-tool-btn" aria-pressed="false" aria-label="Italic"><i class="fa-solid fa-italic" aria-hidden="true"></i></button>
-            <button id="canvas-underline-btn" type="button" class="canvas-tool-btn" aria-pressed="false" aria-label="Underline"><i class="fa-solid fa-underline" aria-hidden="true"></i></button>
-            <button id="canvas-highlight-btn" type="button" class="canvas-tool-btn" aria-label="Highlight yellow"><i class="fa-solid fa-highlighter" aria-hidden="true"></i></button>
+            <div class="canvas-toolbar-separator"></div>
 
-            <button id="canvas-undo-btn" type="button" class="canvas-tool-btn" aria-label="Undo"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></button>
-            <button id="canvas-redo-btn" type="button" class="canvas-tool-btn" aria-label="Redo"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i></button>
+            <!-- Font Controls -->
+            <div class="canvas-toolbar-group">
+                <select id="canvas-font-size" class="canvas-font-size" aria-label="Font size" title="Font size">
+                    <option value="10">10</option>
+                    <option value="12">12</option>
+                    <option value="14">14</option>
+                    <option value="16" selected>16</option>
+                    <option value="18">18</option>
+                    <option value="20">20</option>
+                    <option value="24">24</option>
+                    <option value="28">28</option>
+                    <option value="32">32</option>
+                    <option value="36">36</option>
+                    <option value="48">48</option>
+                </select>
+
+                <button id="canvas-bold-btn" type="button" class="canvas-tool-btn" aria-pressed="false" aria-label="Bold" title="Bold (Ctrl+B)"><i class="fa-solid fa-bold" aria-hidden="true"></i></button>
+                <button id="canvas-italic-btn" type="button" class="canvas-tool-btn" aria-pressed="false" aria-label="Italic" title="Italic (Ctrl+I)"><i class="fa-solid fa-italic" aria-hidden="true"></i></button>
+                <button id="canvas-underline-btn" type="button" class="canvas-tool-btn" aria-pressed="false" aria-label="Underline" title="Underline (Ctrl+U)"><i class="fa-solid fa-underline" aria-hidden="true"></i></button>
+            </div>
+
+            <div class="canvas-toolbar-separator"></div>
+
+            <!-- Color Controls -->
+            <div class="canvas-toolbar-group">
+                <input type="color" id="canvas-text-color" class="canvas-color-picker" value="#000000" aria-label="Text color" title="Text color" />
+                <button id="canvas-highlight-btn" type="button" class="canvas-tool-btn" aria-label="Highlight" title="Highlight (Ctrl+H)"><i class="fa-solid fa-highlighter" aria-hidden="true"></i></button>
+                <input type="color" id="canvas-highlight-color" class="canvas-color-picker" value="#ffff00" aria-label="Highlight color" title="Highlight color" />
+            </div>
+
+            <div class="canvas-toolbar-separator"></div>
+
+            <!-- List Controls -->
+            <div class="canvas-toolbar-group">
+                <button id="canvas-bullet-btn" type="button" class="canvas-tool-btn" aria-label="Bullet list" title="Bullet list"><i class="fa-solid fa-list-ul" aria-hidden="true"></i></button>
+                <button id="canvas-numbered-btn" type="button" class="canvas-tool-btn" aria-label="Numbered list" title="Numbered list"><i class="fa-solid fa-list-ol" aria-hidden="true"></i></button>
+            </div>
+
+            <div class="canvas-toolbar-separator"></div>
+
+            <!-- Undo/Redo -->
+            <div class="canvas-toolbar-group">
+                <button id="canvas-undo-btn" type="button" class="canvas-tool-btn" aria-label="Undo" title="Undo (Ctrl+Z)"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></button>
+                <button id="canvas-redo-btn" type="button" class="canvas-tool-btn" aria-label="Redo" title="Redo (Ctrl+Y)"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i></button>
+            </div>
+
+            <div class="canvas-toolbar-separator"></div>
+
+            <!-- Advanced Features -->
+            <div class="canvas-toolbar-group">
+                <button id="canvas-ruler-toggle" type="button" class="canvas-tool-btn active" aria-pressed="true" aria-label="Toggle ruler" title="Show/Hide ruler"><i class="fa-solid fa-ruler-horizontal" aria-hidden="true"></i></button>
+                <button id="canvas-latex-btn" type="button" class="canvas-tool-btn" aria-label="Insert LaTeX" title="Insert LaTeX formula"><i class="fa-solid fa-square-root-alt" aria-hidden="true"></i></button>
+                <button id="canvas-format-markdown" type="button" class="canvas-tool-btn" aria-label="Format markdown" title="Auto-format as Markdown"><i class="fa-brands fa-markdown" aria-hidden="true"></i></button>
+            </div>
         </div>
 
         <div class="canvas-stage" id="canvas-stage">
@@ -946,6 +991,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/3.0.4/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://www.desmos.com/api/v1.10/calculator.js?apiKey=b77098fe4afd4179b5626ad2c0f17ad6"></script>
+
+<!-- Canvas Document Editor Libraries -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+
 <script>
   window.userBalance = {$user->_data['balance']|intval};
 </script>
@@ -961,5 +1010,7 @@
 <script type="module" src="https://apilageai.lk/assets/scripts/gm.min.js?V=12.20.10.2025"></script>
 <script src="https://apilageai.lk/assets/scripts/ob.js?V=10.26.09.2025"></script>
 <script src="https://apilageai.lk/assets/scripts/report-data.js?V=03.06.10.2025"></script>
+<script src="https://apilageai.lk/assets/scripts/canvo.min.js?V=3.23.01.2026{get_hash_token()}"></script>
+
 </body>
 </html>
