@@ -607,6 +607,9 @@ class CanvasDocumentEditor {
         }
         // If MathJax is available
         else if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+            if (!this.canvasDoc || !this.canvasDoc.isConnected) {
+                return;
+            }
             MathJax.typesetPromise([this.canvasDoc]).catch((err) => {
                 console.error('MathJax render error:', err);
             });

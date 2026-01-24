@@ -1,24 +1,28 @@
 /**
- * ApilageAI Backend Server
+ * ApilageAI Backend Server - Enterprise Security Edition
+ * 
+ * SECURITY FEATURES:
+ * - Redis-backed rate limiting
+ * - Input sanitization & validation
+ * - Security headers (CSP, HSTS, etc.)
+ * - Brute force protection
+ * - Request ID tracking
+ * - Secure error handling
  * 
  * Model Selection Logic:
  * - Users with balance > 0: Can select all models (auto, free, pro, super, master)
- *   - Can upload images (costs 5 credits per upload)
- *   - Can generate images (costs 5 credits per generation)
- *   - Balance reduces based on token usage
- * 
  * - Users with balance <= 0: Can only use 'free' model
- *   - No image uploads allowed
- *   - No image generation allowed
- *   - Balance does NOT reduce for free model usage
- * 
  * - All models support Google Search
- * - Model token names (auto, free, pro, super, master) sent to frontend
- * - Real model names stored internally for analytics only
  * 
- * Uses latest @google/genai SDK (GoogleGenAI) + generateContent/Stream
+ * Uses latest @google/genai SDK (GoogleGenAI)
  */
 
+'use strict';
+
+// ===== LOAD ENVIRONMENT VARIABLES FIRST =====
+require('dotenv').config();
+
+// ===== Core Dependencies =====
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -33,7 +37,13 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const https = require('https');
 
-// ===== Google GenAI SDK (latest) =====
+// ===== Security Modules =====
+const security = require('./security');
+
+// ===== Performance Modules =====
+const perf = require('./performance');
+
+// ===== Google GenAI SDK =====
 const { GoogleGenAI } = require('@google/genai');
 
 // ====== App ======
@@ -168,7 +178,7 @@ async function emitConversationSummaryUpdated(conversationId) {
   for (const uid of userIds) {
     try {
       io.to(getUserRoom(uid)).emit('conversation_summary_updated', { conversation_id: cid });
-    } catch (_) {}
+    } catch (_) { }
   }
 }
 
@@ -186,16 +196,26 @@ const io = socketIo(server, {
   },
 });
 
-// ====== DB Pool ======
+// ====== DB Pool (Secure Configuration) ======
 const dbConfig = {
-  host: 'localhost',
-  user: 'apilageai_lk',
-  password: 'Dam9WVqPAciD62O',
-  database: 'apilageai_lk',
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: parseInt(process.env.DB_PORT, 10) || 3306,
   waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
+  connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT, 10) || 10,
+  queueLimit: parseInt(process.env.DB_QUEUE_LIMIT, 10) || 0,
+  multipleStatements: false, // Prevent SQL injection via multiple statements
+  connectTimeout: 10000,
 };
+
+// Validate required database configuration
+if (!dbConfig.user || !dbConfig.password || !dbConfig.database) {
+  console.error('[CRITICAL] Database configuration missing! Set DB_USER, DB_PASSWORD, and DB_NAME in .env');
+  process.exit(1);
+}
+
 const pool = mysql.createPool(dbConfig);
 
 // Messages table optional author column support (backward compatible)
@@ -212,12 +232,12 @@ async function messagesHasUserIdColumn() {
   return messagesHasUserIdColumnCache;
 }
 
-// ====== Gemini Client ======
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyB3u0wJAdRP20-FO1GwQ1deYPj4CigJWf4';
-if (!GEMINI_API_KEY || GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY_HERE') {
-  console.warn('⚠️  GEMINI_API_KEY is not set. Set process.env.GEMINI_API_KEY for production.');
+// ====== Gemini Client (Secure) ======
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+if (!GEMINI_API_KEY) {
+  console.error('[CRITICAL] GEMINI_API_KEY is not set in .env file!');
+  process.exit(1);
 }
-// New SDK entrypoint
 const genAI = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
 // ====== Cookies ======
@@ -244,16 +264,25 @@ app.use((req, res, next) => {
 });
 
 // ====== Middleware ======
+// Security headers (CSP, HSTS, X-Frame-Options, etc.)
+app.use(security.securityHeaders());
+
+// Request logging with security event tracking
+app.use(security.requestLogger());
+
+// Input sanitization for XSS prevention
+app.use(security.inputSanitizer({ logDangerous: true, blockDangerous: false }));
+
+// API rate limiting (Redis-backed)
+app.use(security.apiRateLimiter());
+
+// Body parsing with size limits
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
 // ====== Static/Uploads ======
-const publicDir = path.join(__dirname, 'public');
 const uploadsDir = path.join(__dirname, '/../public_html/uploads');
-if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-app.use(express.static(publicDir));
 
 // ====== Auth Middlewares ======
 const authenticateSocket = async (socket, next) => {
@@ -271,33 +300,45 @@ const authenticateSocket = async (socket, next) => {
     const userToken = parsedCookies[COOKIE_USER_TOKEN];
     if (!userId || !userToken) return next(new Error('Authentication cookies missing'));
 
-    const [rows] = await pool
-      .promise()
-      .execute(
-        `SELECT u.*, s.token, o.school, o.interests, o.preference
- FROM users u
- JOIN sessions s ON u.id = s.user_id
- LEFT JOIN user_onboarding o ON u.id = o.user_id
- WHERE u.id = ? AND s.token = ? AND s.active = '1'`,
-        [userId, userToken]
-      );
+    // Try session cache first
+    const sessionCacheKey = `session:${userId}:${userToken}`;
+    const cachedSession = perf.sessionCache.get(sessionCacheKey);
 
-    if (rows.length !== 1) return next(new Error('Invalid session'));
+    let userData;
+    if (cachedSession) {
+      userData = cachedSession;
+    } else {
+      const [rows] = await pool
+        .promise()
+        .execute(
+          `SELECT u.*, s.token, o.school, o.interests, o.preference
+   FROM users u
+   JOIN sessions s ON u.id = s.user_id
+   LEFT JOIN user_onboarding o ON u.id = o.user_id
+   WHERE u.id = ? AND s.token = ? AND s.active = '1'`,
+          [userId, userToken]
+        );
 
-    await pool
-      .promise()
-      .execute('UPDATE sessions SET last_seen = NOW() WHERE user_id = ? AND token = ?', [
-        userId,
-        userToken,
-      ]);
+      if (rows.length !== 1) return next(new Error('Invalid session'));
 
-    socket.userData = rows[0];
-    socket.chatManager = new ChatManager(rows[0]);
-    
+      userData = rows[0];
+      // Cache session for 30 seconds
+      perf.sessionCache.set(sessionCacheKey, userData, 30000);
+    }
+
+    // Update last_seen asynchronously (don't await)
+    pool.promise().execute('UPDATE sessions SET last_seen = NOW() WHERE user_id = ? AND token = ?', [
+      userId,
+      userToken,
+    ]).catch(err => console.error('Session last_seen update error:', err));
+
+    socket.userData = userData;
+    socket.chatManager = new ChatManager(userData);
+
     // Capture IP address for trial abuse prevention
     socket.clientIp = getClientIp(socket);
     socket.deviceFingerprint = parsedCookies['DEVICE_FINGERPRINT'] || 'unknown';
-    
+
     next();
   } catch (error) {
     next(new Error('Authentication failed: ' + error.message));
@@ -313,7 +354,7 @@ const authenticateRequest = async (req, res, next) => {
     const [rows] = await pool
       .promise()
       .execute(
-       `SELECT u.*, s.token, o.school, o.interests, o.preference
+        `SELECT u.*, s.token, o.school, o.interests, o.preference
  FROM users u
  JOIN sessions s ON u.id = s.user_id
  LEFT JOIN user_onboarding o ON u.id = o.user_id
@@ -569,10 +610,10 @@ END OF SYSTEM INSTRUCTION
 
 // ====== Model Token Map (frontend -> real model ids) ======
 const MODEL_TOKEN_MAP = {
-  auto:   'gemini-2.5-flash-lite',  // Auto uses pro model internally
-  free:   'gemini-2.0-flash',
-  pro:    'gemini-2.5-flash-lite',
-  super:  'gemini-2.5-pro',
+  auto: 'gemini-2.5-flash-lite',  // Auto uses pro model internally
+  free: 'gemini-2.0-flash',
+  pro: 'gemini-2.5-flash-lite',
+  super: 'gemini-2.5-pro',
   master: 'gemini-3-flash-preview',
 };
 
@@ -650,11 +691,11 @@ async function checkTrialEligibility(userId, ipAddress, deviceFingerprint) {
 
     if (rows.length > 0) {
       const record = rows[0];
-      const reason = 
+      const reason =
         record.user_id === userId ? 'This user account' :
-        record.ip_address === ipAddress ? 'This IP address' :
-        'This device';
-      
+          record.ip_address === ipAddress ? 'This IP address' :
+            'This device';
+
       return {
         eligible: false,
         reason: `${reason} has already used a free trial recently. Please try again on ${new Date(record.trial_end_date).toLocaleDateString()}.`,
@@ -699,23 +740,23 @@ class ChatManager {
   async getDailyUsage(userId) {
     try {
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-      
+
       // Try to get existing record
       const [rows] = await pool.promise().execute(
         'SELECT * FROM free_user_daily_usage WHERE user_id = ? AND date = ?',
         [userId, today]
       );
-      
+
       if (rows.length > 0) {
         return rows[0];
       }
-      
+
       // Create new record for today
       await pool.promise().execute(
         'INSERT INTO free_user_daily_usage (user_id, date, messages_used, image_uploads_used, image_generations_used) VALUES (?, ?, 0, 0, 0)',
         [userId, today]
       );
-      
+
       return {
         user_id: userId,
         date: today,
@@ -738,10 +779,10 @@ class ChatManager {
         'image_uploads': 'image_uploads_used',
         'image_generations': 'image_generations_used'
       };
-      
+
       const column = columnMap[type];
       if (!column) return false;
-      
+
       await pool.promise().execute(
         `UPDATE free_user_daily_usage SET ${column} = ${column} + 1 WHERE user_id = ? AND date = ?`,
         [userId, today]
@@ -757,16 +798,16 @@ class ChatManager {
   async checkTrialLimit(userId, type) {
     const usage = await this.getDailyUsage(userId);
     if (!usage) return { allowed: false, message: "Unable to check trial limits. Please try again." };
-    
+
     const limitMap = {
       'messages': { used: usage.messages_used, limit: DAILY_TRIAL_LIMITS.messages },
       'image_uploads': { used: usage.image_uploads_used, limit: DAILY_TRIAL_LIMITS.image_uploads },
       'image_generations': { used: usage.image_generations_used, limit: DAILY_TRIAL_LIMITS.image_generations }
     };
-    
+
     const { used, limit } = limitMap[type];
     const remaining = limit - used;
-    
+
     if (used >= limit) {
       const messages = {
         'messages': `You've used all ${limit} trial messages for today. Come back tomorrow or top up your balance for unlimited access.`,
@@ -775,7 +816,7 @@ class ChatManager {
       };
       return { allowed: false, remaining: 0, message: messages[type] };
     }
-    
+
     return { allowed: true, remaining, used };
   }
 
@@ -820,14 +861,14 @@ class ChatManager {
     if (balance > 0) {
       return { models: ALL_MODELS, isTrial: false, hasMessageTrial: false };
     }
-    
+
     // Check trial limits for free users
     const trialCheck = await this.checkTrialLimit(userId, 'messages');
     if (trialCheck.allowed) {
       // Trial still has messages left - allow all models
       return { models: ALL_MODELS, isTrial: true, hasMessageTrial: true, trialRemaining: trialCheck.remaining };
     }
-    
+
     // Trial exhausted - still allow FREE model (unlimited), but other models unavailable
     // User can still use free model unlimited + any remaining image upload/generation trials
     return { models: FREE_USER_MODELS, isTrial: false, hasMessageTrial: false };
@@ -838,24 +879,35 @@ class ChatManager {
     if (balance > 0) {
       return { allowed: true, isTrial: false };
     }
-    
+
     // Check trial limits for free users
     const trialCheck = await this.checkTrialLimit(userId, type);
     if (trialCheck.allowed) {
       return { allowed: true, isTrial: true, remaining: trialCheck.remaining };
     }
-    
+
     return { allowed: false, isTrial: false, message: trialCheck.message };
   }
 
-  // RETURN numeric balance (0 if missing)
+  // RETURN numeric balance (0 if missing) - WITH CACHING
   async getUserBalance() {
+    const cacheKey = `balance:${this.userData.id}`;
+
+    // Try cache first
+    const cached = perf.userCache.get(cacheKey);
+    if (cached !== undefined) {
+      return cached;
+    }
+
     try {
       const [rows] = await pool.promise().execute('SELECT balance FROM users WHERE id = ?', [
         this.userData.id,
       ]);
       if (rows.length === 0) return 0;
       const bal = Number(rows[0].balance) || 0;
+
+      // Cache for 30 seconds
+      perf.userCache.set(cacheKey, bal, 30000);
       return bal;
     } catch (error) {
       console.error('Error checking user balance:', error);
@@ -868,14 +920,14 @@ class ChatManager {
     try {
       const userId_num = Number(userId);
       if (!userId_num) return 'User';
-      
+
       const [rows] = await pool.promise().execute(
         'SELECT first_name, last_name FROM users WHERE id = ? LIMIT 1',
         [userId_num]
       );
-      
+
       if (rows.length === 0) return 'User';
-      
+
       const { first_name, last_name } = rows[0];
       const name = `${first_name || ''} ${last_name || ''}`.trim();
       return name || 'User';
@@ -920,7 +972,7 @@ class ChatManager {
       if (rows.length === 0) return false;
 
       const conversation = rows[0];
-      
+
       // Check if user is owner or participant (has edit permission)
       const [accessRows] = await pool
         .promise()
@@ -952,7 +1004,7 @@ class ChatManager {
       return { hasAccess: false, canEdit: false, isPublished: false };
     }
   }
-  
+
   // Privacy: shared chats should not use/update per-user memory.
   async isSharedConversation(conversationId) {
     try {
@@ -1014,15 +1066,15 @@ class ChatManager {
            FROM messages
            WHERE type != '3' AND conversation_id = ?`;
       const params = [conversationId];
-      
+
       // For regeneration: get messages before the specified message ID
       if (stopBeforeMessageId) {
         query += ` AND message_id < ?`;
         params.push(stopBeforeMessageId);
       }
-      
+
       query += ` ORDER BY message_id DESC LIMIT 4`;
-      
+
       const [rows] = await pool
         .promise()
         .execute(query, params);
@@ -1139,6 +1191,10 @@ class ChatManager {
       const floored = Math.max(0, Number(newBalance) || 0);
       await pool.promise().execute('UPDATE users SET balance = ? WHERE id = ?', [floored, this.userData.id]);
       this.userData.balance = floored;
+
+      // Invalidate cache so next read gets fresh value
+      perf.userCache.delete(`balance:${this.userData.id}`);
+
       return floored;
     } catch (error) {
       console.error('Error setting user balance:', error);
@@ -1226,12 +1282,12 @@ ${newMessage || ''}`;
   // Helper: Add inline citations from Google Search grounding metadata
   addInlineCitations(text, groundingMetadata) {
     if (!groundingMetadata || !text) return text;
-    
+
     const supports = groundingMetadata.groundingSupports || [];
     const chunks = groundingMetadata.groundingChunks || [];
-    
+
     if (!supports.length || !chunks.length) return text;
-    
+
     // Collect all unique source indices used
     const usedSourceIndices = new Set();
     supports.forEach(support => {
@@ -1239,7 +1295,7 @@ ${newMessage || ''}`;
         support.groundingChunkIndices.forEach(i => usedSourceIndices.add(i));
       }
     });
-    
+
     // Build a simple citation string with all sources at the end
     const citationLinks = Array.from(usedSourceIndices)
       .sort((a, b) => a - b)
@@ -1252,14 +1308,14 @@ ${newMessage || ''}`;
         return null;
       })
       .filter(Boolean);
-    
+
     // Add citations at the end of the text if there are any
     if (citationLinks.length > 0) {
       const citationString = ` <sup class="citation-group">${citationLinks.join(' ')}</sup>`;
       // Add to the end of the text (after trimming)
       text = text.trimEnd() + citationString;
     }
-    
+
     return text;
   }
 
@@ -1285,8 +1341,8 @@ ${newMessage || ''}`;
       const MAX_TOKENS = 20000; // Approx 20k tokens limit
       const tokenEstimate = (text || '').split(/\s+/).length;
       if (tokenEstimate > MAX_TOKENS) {
-          await this.emitAndSaveError(socket, conversationId, null, "The message you submitted is too long and can't process.");
-          return;
+        await this.emitAndSaveError(socket, conversationId, null, "The message you submitted is too long and can't process.");
+        return;
       }
 
       // ====== NEW MODEL SELECTION LOGIC WITH TRIAL SUPPORT ======
@@ -1294,14 +1350,14 @@ ${newMessage || ''}`;
       const modelInfo = await this.getAvailableModels(currentBalance, userId);
       const availableModels = modelInfo.models;
       const isTrialUser = modelInfo.isTrial;
-      
+
       // Check image capabilities with trial support
       const imageUploadCheck = await this.canUseImages(currentBalance, userId, 'image_uploads');
       const imageGenCheck = await this.canUseImages(currentBalance, userId, 'image_generations');
-      
+
       // Check if user has message trial remaining (for non-free models)
       const hasMessageTrial = modelInfo.hasMessageTrial || false;
-      
+
       // Send available models to frontend
       socket.emit('available_models', {
         models: availableModels,
@@ -1422,17 +1478,17 @@ ${newMessage || ''}`;
           await this.emitAndSaveError(socket, conversationId, null, imageUploadCheck.message || "Image uploads not available.");
           return;
         }
-        
+
         // Check if this is a trial image upload
         isTrialImageUpload = imageUploadCheck.isTrial;
-        
+
         try {
           attachmentName = await this.processImage(attachment);
-          
+
           if (isTrialImageUpload) {
             // Update trial usage for image upload
             await this.updateDailyUsage(userId, 'image_uploads');
-            
+
             // Record trial usage for abuse prevention (only on first upload)
             const dailyUsage = await this.getDailyUsage(userId);
             if (dailyUsage && dailyUsage.image_uploads_used === 1) {
@@ -1443,7 +1499,7 @@ ${newMessage || ''}`;
                 console.error('Error recording trial usage:', error);
               }
             }
-            
+
             cost = 0; // No cost for trial uploads
           } else {
             cost += IMAGE_UPLOAD_COST; // Image upload costs 5 credits
@@ -1540,7 +1596,7 @@ ${newMessage || ''}`;
 
       // Build generate configuration - Enable Google Search for ALL models
       const generateConfig = {};
-      
+
       // Enable thinking only for Gemini 2.5 models (pro or flash-lite) and only for super/master users with positive balance
       const allowThinking = currentBalance > 0 && this.isDeepThinkAllowed();
       if (
@@ -1550,13 +1606,13 @@ ${newMessage || ''}`;
         let thinkingBudget = 512;
         if (currentBalance >= 800) thinkingBudget = 2048;
         else if (currentBalance >= 600) thinkingBudget = 1024;
-        
+
         // Enable thinking with thought summaries and streaming
-        generateConfig.thinkingConfig = { 
+        generateConfig.thinkingConfig = {
           includeThoughts: true,      // Enable thought summaries in streaming
           thinkingBudget: thinkingBudget
         };
-        
+
         // Notify client about thinking budget
         socket.emit('thinking_enabled', {
           conversation_id: finalConversationId,
@@ -1564,7 +1620,7 @@ ${newMessage || ''}`;
           thinking_budget: thinkingBudget
         });
       }
-      
+
       // Enable web search (Google Search) for ALL models
       generateConfig.tools = [{ googleSearch: {} }];
       emit('stream_searching', {
@@ -1609,24 +1665,24 @@ ${newMessage || ''}`;
             try {
               // Check if thinking is enabled for this request
               const allowThinkingStream = currentBalance > 0 && this.isDeepThinkAllowed();
-              const thinkingEnabled = 
+              const thinkingEnabled =
                 (chosenModel === 'gemini-2.5-pro' || chosenModel === 'gemini-2.5-flash-lite') &&
                 allowThinkingStream;
-              
+
               // Get the thinking budget from config
               if (thinkingEnabled && generateConfig.thinkingConfig) {
                 thinkingBudget = generateConfig.thinkingConfig.thinkingBudget;
               }
-              
+
               // --- Extract and stream both thinking AND content chunks
               const parts = event?.candidates?.[0]?.content?.parts || [];
-              
+
               for (const part of parts) {
                 if (part.thought) {
                   // This is a thinking chunk - stream it separately with budget info
                   const thinkingChunk = part.text || '';
                   fullThinking += thinkingChunk;
-                  
+
                   emit('stream_thinking', {
                     conversation_id: finalConversationId,
                     message_id: aiMessageId,
@@ -1650,17 +1706,17 @@ ${newMessage || ''}`;
                   }
                 }
               }
-              
+
               // Capture grounding metadata (Google Search citations)
               if (event?.candidates?.[0]?.groundingMetadata) {
                 groundingMetadata = event.candidates[0].groundingMetadata;
-                
+
                 // Extract search entry point and grounding chunks for citations
                 const searchEntryPoint = groundingMetadata.searchEntryPoint;
                 const groundingChunks = groundingMetadata.groundingChunks || [];
                 const groundingSupports = groundingMetadata.groundingSupports || [];
                 const webSearchQueries = groundingMetadata.webSearchQueries || [];
-                
+
                 // Send grounding metadata to client for displaying citations
                 emit('stream_grounding', {
                   conversation_id: finalConversationId,
@@ -1674,11 +1730,11 @@ ${newMessage || ''}`;
                   sender_user_id: userId,
                 });
               }
-              
+
               // Track usage metadata (thinking tokens) - updated in real-time as we stream
               if (event?.usageMetadata?.thoughtsTokenCount) {
                 thinkingTokensCount = event.usageMetadata.thoughtsTokenCount;
-                
+
                 // Emit budget update during streaming so user sees tokens used / budget
                 if (thinkingEnabled) {
                   emit('thinking_budget_update', {
@@ -1780,7 +1836,7 @@ ${newMessage || ''}`;
           });
           return;
         }
-        
+
         const isTrialImageGen = imageGenTrialCheck.isTrial;
 
         // 3. Build Gemini contents for image generation
@@ -1804,6 +1860,7 @@ ${newMessage || ''}`;
         // 4. Generate image using Gemini
         let imageUrl = null;
         let errorMsg = null;
+        let errorDetail = null;
         const imageCost = IMAGE_GENERATION_COST;  // 5 credits for image generation
         // Ensure uploads/genimg directory exists
         const genimgDir = path.join(uploadsDir, 'genimg');
@@ -1811,37 +1868,66 @@ ${newMessage || ''}`;
           fs.mkdirSync(genimgDir, { recursive: true });
         }
         try {
-          const response = await genAI.models.generateContent({
-            model: "gemini-2.5-flash-image-preview",
-            contents,
-          });
-          const parts = response.candidates?.[0]?.content?.parts || [];
-          for (const part of parts) {
-            if (part.inlineData) {
-              const b64 = part.inlineData.data;
-              const buffer = Buffer.from(b64, 'base64');
-              const imageName = `${Date.now()}-${Math.round(Math.random() * 1e9)}.png`;
-              const outputPath = path.join(genimgDir, imageName);
-              fs.writeFileSync(outputPath, buffer);
-              imageUrl = `https://apilageai.lk/uploads/genimg/${imageName}`;
-              break;
+          const candidateModels = [
+            process.env.GEMINI_IMAGE_MODEL,
+            'gemini-3-pro-image-preview',
+            'gemini-2.5-flash-image',
+            'gemini-2.5-flash-image'
+          ].filter(Boolean);
+
+          let lastErr = null;
+          for (const modelName of candidateModels) {
+            try {
+              const response = await genAI.models.generateContent({
+                model: modelName,
+                contents,
+              });
+              const parts = response.candidates?.[0]?.content?.parts || [];
+              for (const part of parts) {
+                if (part.inlineData) {
+                  const b64 = part.inlineData.data;
+                  const buffer = Buffer.from(b64, 'base64');
+                  const imageName = `${Date.now()}-${Math.round(Math.random() * 1e9)}.png`;
+                  const outputPath = path.join(genimgDir, imageName);
+                  fs.writeFileSync(outputPath, buffer);
+                  imageUrl = `https://apilageai.lk/uploads/genimg/${imageName}`;
+                  break;
+                }
+              }
+              if (imageUrl) {
+                break;
+              }
+              lastErr = new Error('Image data missing from response');
+            } catch (modelErr) {
+              lastErr = modelErr;
+              console.error(`Image generation error for model ${modelName}:`, modelErr);
+              // Try next model
             }
           }
-          if (!imageUrl) errorMsg = 'Image generation failed.';
+
+          if (!imageUrl) {
+            const safeDetail = (lastErr && lastErr.message ? lastErr.message : String(lastErr || 'unknown error'))
+              .replace(/[<>&]/g, (ch) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[ch]));
+            errorDetail = `Tried models: ${candidateModels.join(', ')} | Last error: ${safeDetail}`;
+            errorMsg = `Image generation failed. ${errorDetail}`;
+          }
         } catch (err) {
           console.error("Image generation/editing error:", err);
-          errorMsg = "Image generation failed due to internal error.";
+          const safeDetail = (err && err.message ? err.message : String(err || 'unknown error'))
+            .replace(/[<>&]/g, (ch) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[ch]));
+          errorDetail = safeDetail;
+          errorMsg = `Image generation failed due to internal error. Details: ${safeDetail}`;
         }
 
         // 5. Return result (always include both the text and the image together)
         if (imageUrl) {
           let newBalance = currentBalance;
           let imageCostCharged = 0;
-          
+
           if (isTrialImageGen) {
             // Update trial usage for image generation (no cost)
             await this.updateDailyUsage(userId, 'image_generations');
-            
+
             // Record trial usage for abuse prevention (only on first generation)
             const dailyUsage = await this.getDailyUsage(userId);
             if (dailyUsage && dailyUsage.image_generations_used === 1) {
@@ -1852,7 +1938,7 @@ ${newMessage || ''}`;
                 console.error('Error recording trial usage:', error);
               }
             }
-            
+
             imageCostCharged = 0;
           } else {
             // Paid user - deduct cost
@@ -1860,7 +1946,7 @@ ${newMessage || ''}`;
             await this.setUserBalance(newBalance);
             imageCostCharged = imageCost;
           }
-          
+
           // Save generated image info to database
           try {
             await pool.promise().execute(
@@ -1917,6 +2003,7 @@ ${newMessage || ''}`;
             balance_after: currentBalance,
             model_used: chosenToken,  // Send model token name, not real model name
             error: true,
+            error_detail: errorDetail,
             sender_user_id: userId,
           });
         }
@@ -1955,7 +2042,7 @@ ${newMessage || ''}`;
       const allowThinkingStorage = currentBalance > 0 && this.isDeepThinkAllowed();
       if (allowThinkingStorage && fullThinking) {
         await this.updateMessageWithThinking(aiMessageId, cleanedContent, fullThinking, chosenToken, thinkingTokensCount);
-        
+
         // Log thinking usage
         const thinkingBudget = generateConfig.thinkingConfig?.thinkingBudget || 512;
         const thinkingCostLKR = (thinkingTokensCount / 1_000_000) * 100;  // Estimate: $0.001 per 10 tokens
@@ -1970,7 +2057,7 @@ ${newMessage || ''}`;
       if (currentBalance <= 0 && hasMessageTrial && chosenToken !== 'free') {
         await this.updateDailyUsage(userId, 'messages');
         isTrialMessage = true;
-        
+
         // Record this trial usage for abuse prevention (only record on first message)
         const dailyUsage = await this.getDailyUsage(userId);
         if (dailyUsage && dailyUsage.messages_used === 1) {
@@ -2013,7 +2100,7 @@ ${newMessage || ''}`;
             }
             return;
           }
-          
+
           // For users with balance <= 0 using free model: do NOT deduct balance
           if (currentBalance <= 0 && chosenToken === 'free') {
             // No balance deduction for free users using free model
@@ -2284,7 +2371,7 @@ ${newMessage || ''}`;
 
       // Build generate configuration - Enable Google Search for ALL models
       const generateConfig = {};
-      
+
       // Enable thinking only for Gemini 2.5 models and paying users
       const allowThinking = currentBalance > 0;
       if (
@@ -2296,7 +2383,7 @@ ${newMessage || ''}`;
         else if (currentBalance >= 600) thinkingBudget = 1024;
         generateConfig.thinkingConfig = { thinkingBudget };
       }
-      
+
       // Enable web search for ALL models
       generateConfig.tools = [{ googleSearch: {} }];
       emit('stream_searching', {
@@ -2868,7 +2955,7 @@ ${newMessage || ''}`;
     try {
       if (!token) return { error: true, message: 'Invalid token' };
       const conversationId = Number(token);
-      
+
       // BUG FIX #3: Validate target_user_id to prevent link interception attacks
       const [rows] = await pool
         .promise()
@@ -3012,8 +3099,9 @@ ${newMessage || ''}`;
   }
 }
 
-// ====== Socket.IO with auth ======
+// ====== Socket.IO with auth and rate limiting ======
 io.use(authenticateSocket);
+io.use(security.socketRateLimiter());
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id, 'User ID:', socket.userData.id);
@@ -3022,11 +3110,11 @@ io.on('connection', (socket) => {
   (async () => {
     try {
       const userBalance = await socket.chatManager.getUserBalance();
-      
+
       // Only check trial abuse for users with zero or negative balance (trial users)
       if (userBalance <= 0) {
         const eligibilityCheck = await socket.chatManager.checkTrialAbuseEligibility(socket.clientIp, socket.deviceFingerprint);
-        
+
         if (!eligibilityCheck.eligible) {
           console.warn(`⚠️  Trial abuse detected for user ${socket.userData.id}: ${eligibilityCheck.reason}`);
           socket.emit('trial_abuse_detected', {
@@ -3047,7 +3135,7 @@ io.on('connection', (socket) => {
   // Join per-user room so we can push gallery refresh events
   try {
     socket.join(getUserRoom(socket.userData.id));
-  } catch (_) {}
+  } catch (_) { }
 
   // Helper function to pair two sockets
   function pairUsers(s1, s2) {
@@ -3166,7 +3254,7 @@ io.on('connection', (socket) => {
   // Calculate available models based on user balance and trial status
   const userBalance = Number(socket.userData.balance) || 0;
   const userId = socket.userData.id;
-  
+
   // Async IIFE to handle trial checking
   (async () => {
     try {
@@ -3174,20 +3262,20 @@ io.on('connection', (socket) => {
       let canUseImages = true;
       let hasMessageTrial = false;
       let trialRemaining = { messages: 0, image_uploads: 0, image_generations: 0 };
-      
+
       if (userBalance <= 0) {
         // Check trial status for free users
         const dailyUsage = await socket.chatManager.getDailyUsage(userId);
         const messagesRemaining = Math.max(0, DAILY_TRIAL_LIMITS.messages - dailyUsage.messages_used);
         const uploadsRemaining = Math.max(0, DAILY_TRIAL_LIMITS.image_uploads - dailyUsage.image_uploads_used);
         const generationsRemaining = Math.max(0, DAILY_TRIAL_LIMITS.image_generations - dailyUsage.image_generations_used);
-        
+
         trialRemaining = {
           messages: messagesRemaining,
           image_uploads: uploadsRemaining,
           image_generations: generationsRemaining
         };
-        
+
         if (messagesRemaining > 0) {
           // User has trial messages remaining - give all models for trial
           availableModels = ALL_MODELS;
@@ -3198,11 +3286,11 @@ io.on('connection', (socket) => {
           availableModels = FREE_USER_MODELS;
           hasMessageTrial = false;
         }
-        
+
         // Image capabilities: allowed if user has trial remaining OR paid user
         canUseImages = uploadsRemaining > 0 || generationsRemaining > 0;
       }
-      
+
       socket.emit('authenticated', {
         success: true,
         user: {
@@ -3225,7 +3313,7 @@ io.on('connection', (socket) => {
       // Fallback to basic logic
       const availableModels = userBalance > 0 ? ALL_MODELS : FREE_USER_MODELS;
       const canUseImages = userBalance > 0;
-      
+
       socket.emit('authenticated', {
         success: true,
         user: {
@@ -3253,7 +3341,7 @@ io.on('connection', (socket) => {
       const modelInfo = await socket.chatManager.getAvailableModels(currentBalance, userId);
       const imageUploadCheck = await socket.chatManager.canUseImages(currentBalance, userId, 'image_uploads');
       const imageGenCheck = await socket.chatManager.canUseImages(currentBalance, userId, 'image_generations');
-      
+
       // Get full trial remaining info
       let trialRemaining = { messages: 0, image_uploads: 0, image_generations: 0 };
       if (currentBalance <= 0) {
@@ -3264,7 +3352,7 @@ io.on('connection', (socket) => {
           image_generations: Math.max(0, DAILY_TRIAL_LIMITS.image_generations - dailyUsage.image_generations_used)
         };
       }
-      
+
       socket.emit('available_models', {
         models: modelInfo.models,
         balance: currentBalance,
@@ -3289,8 +3377,31 @@ io.on('connection', (socket) => {
   });
 
   socket.on('new_message_stream', async (data) => {
+    const userId = socket.userData.id;
     const conversationId = Number(data.conversation_id) || null;
-    
+
+    // Rate limiting: Check message cooldown
+    const cooldownCheck = await security.checkMessageCooldown(userId);
+    if (!cooldownCheck.allowed) {
+      socket.emit('rate_limit_exceeded', {
+        message: `Please wait ${Math.ceil(cooldownCheck.waitMs / 1000)} seconds before sending another message`,
+        code: 'MESSAGE_COOLDOWN',
+        waitMs: cooldownCheck.waitMs,
+      });
+      return;
+    }
+
+    // Rate limiting: Check AI request limit
+    const aiLimitCheck = await security.checkAIRateLimit(userId);
+    if (!aiLimitCheck.allowed) {
+      socket.emit('rate_limit_exceeded', {
+        message: 'Too many AI requests. Please slow down.',
+        code: 'AI_RATE_LIMIT',
+        remaining: aiLimitCheck.remaining,
+      });
+      return;
+    }
+
     // Check permission if conversation exists
     if (conversationId) {
       const accessInfo = await socket.chatManager.canAccessConversation(conversationId);
@@ -3299,7 +3410,7 @@ io.on('connection', (socket) => {
         return;
       }
     }
-    
+
     const room = conversationId ? getConversationRoom(conversationId) : null;
     const emitToConversation = room
       ? (event, payload) => io.to(room).emit(event, payload)
@@ -3378,27 +3489,27 @@ io.on('connection', (socket) => {
 
     try {
       const { user_message_id, conversation_id, model } = data;
-      
+
       if (!user_message_id || !conversation_id) {
         socket.emit('error', { message: 'Missing required parameters for regeneration' });
         return;
       }
-      
+
       // Get the original user message from database
       const [messageRows] = await pool.promise().execute(
         'SELECT text, attach FROM messages WHERE message_id = ? AND conversation_id = ?',
         [user_message_id, conversation_id]
       );
-      
+
       if (messageRows.length === 0) {
         socket.emit('error', { message: 'Original message not found' });
         return;
       }
-      
+
       const originalMessage = messageRows[0];
       const text = originalMessage.text || '';
       const attachment = originalMessage.attach ? { name: originalMessage.attach, existing: true } : null;
-      
+
       // Call regenerateMessage with the original message text and attachment
       // The attachment is marked as 'existing' so it won't be re-uploaded or charged
       // Pass both user_message_id and the AI message_id to update instead of create new
@@ -3484,7 +3595,7 @@ io.on('connection', (socket) => {
         data.get_messages || false,
         data.message_ids || ''
       );
-      
+
       // ISSUE FIX: For published chats, suppress error message and just emit data
       // This allows published chats to load smoothly without error popups
       socket.emit('conversation_data', result);
@@ -3613,7 +3724,7 @@ io.on('connection', (socket) => {
       }
 
       // ISSUE FIX: Get actual user name from database instead of showing user ID
-      const userName = socket.userData?.first_name || socket.userData?.name 
+      const userName = socket.userData?.first_name || socket.userData?.name
         ? `${socket.userData.first_name || ''} ${socket.userData.last_name || ''}`.trim() || 'User'
         : await socket.chatManager.getUserNameById(socket.userData.id);
 
@@ -3660,12 +3771,12 @@ io.on('connection', (socket) => {
 
       const room = getConversationRoom(conversationId);
       socket.join(room);
-      
+
       // ISSUE FIX: Get actual user name from database instead of showing user ID
-      const userName = socket.userData?.first_name || socket.userData?.name 
+      const userName = socket.userData?.first_name || socket.userData?.name
         ? `${socket.userData.first_name || ''} ${socket.userData.last_name || ''}`.trim() || 'User'
         : await socket.chatManager.getUserNameById(socket.userData.id);
-      
+
       io.to(room).emit('canvas_cursor', {
         conversation_id: conversationId,
         user_id: socket.userData.id,
@@ -3674,7 +3785,7 @@ io.on('connection', (socket) => {
         y,
         active: true,
       });
-    } catch (_) {}
+    } catch (_) { }
   });
 
   socket.on('canvas_text', async (data) => {
@@ -3708,7 +3819,7 @@ io.on('connection', (socket) => {
       }
 
       // ISSUE FIX: Get actual user name from database instead of showing user ID
-      const userName = socket.userData?.first_name || socket.userData?.name 
+      const userName = socket.userData?.first_name || socket.userData?.name
         ? `${socket.userData.first_name || ''} ${socket.userData.last_name || ''}`.trim() || 'User'
         : await socket.chatManager.getUserNameById(socket.userData.id);
 
@@ -3794,7 +3905,7 @@ io.on('connection', (socket) => {
       scheduleCanvasSave(conversationId);
 
       // ISSUE FIX: Get actual user name from database instead of showing user ID
-      const userName = socket.userData?.first_name || socket.userData?.name 
+      const userName = socket.userData?.first_name || socket.userData?.name
         ? `${socket.userData.first_name || ''} ${socket.userData.last_name || ''}`.trim() || 'User'
         : await socket.chatManager.getUserNameById(socket.userData.id);
 
@@ -4055,11 +4166,7 @@ app.post('/upload', authenticateRequest, upload.single('image'), (req, res) => {
 });
 
 app.get('/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    server: 'Apilage AI Backend (Gemini)',
-  });
+  res.json({ status: 'OK' });
 });
 
 // === Conversation sharing and search ===
@@ -4101,7 +4208,7 @@ app.post('/api/conversations/:id/participants/remove', authenticateRequest, asyn
     if (result.error) return res.status(403).json(result);
     try {
       io.to(getConversationRoom(conversationId)).emit('conversation_participants_updated', { conversation_id: conversationId });
-    } catch (_) {}
+    } catch (_) { }
     emitConversationSummaryUpdated(conversationId);
     res.json(result);
   } catch (error) {
@@ -4132,7 +4239,7 @@ app.post('/api/conversations/:id/share', authenticateRequest, async (req, res) =
     await cm.addParticipant(conversationId, targetUserId, req.userData.id);
     try {
       io.to(getConversationRoom(conversationId)).emit('conversation_participants_updated', { conversation_id: conversationId });
-    } catch (_) {}
+    } catch (_) { }
     emitConversationSummaryUpdated(conversationId);
     const linkResult = await cm.createShareLink(conversationId, targetUserId);
     if (linkResult.error) {
@@ -4159,7 +4266,7 @@ app.post('/api/conversations/accept-share', authenticateRequest, async (req, res
     if (result.error) return res.status(400).json(result);
     try {
       io.to(getConversationRoom(result.conversation_id)).emit('conversation_participants_updated', { conversation_id: result.conversation_id });
-    } catch (_) {}
+    } catch (_) { }
     emitConversationSummaryUpdated(result.conversation_id);
     res.json(result);
   } catch (error) {
@@ -4184,7 +4291,7 @@ app.post('/api/conversations/:id/publish', authenticateRequest, async (req, res)
 
     try {
       io.to(getConversationRoom(conversationId)).emit('conversation_published', { conversation_id: conversationId, publish_token: result.publish_token });
-    } catch (_) {}
+    } catch (_) { }
     emitConversationSummaryUpdated(conversationId);
 
     const publishLink = `https://apilageai.lk/app/published/${result.publish_token}`;
@@ -4215,7 +4322,7 @@ app.post('/api/conversations/:id/unpublish', authenticateRequest, async (req, re
 
     try {
       io.to(getConversationRoom(conversationId)).emit('conversation_unpublished', { conversation_id: conversationId });
-    } catch (_) {}
+    } catch (_) { }
     emitConversationSummaryUpdated(conversationId);
 
     res.json({ error: false });
@@ -4278,11 +4385,11 @@ app.get('/api/conversations/published/:token', async (req, res) => {
     }
 
     const publishedConv = rows[0];
-    
+
     // BUG FIX #4: Return permission flags so frontend knows whether to hide/disable inputs
     let currentUserCanEdit = false;
     let currentUserId = null;
-    
+
     if (req.userData?.id) {
       currentUserId = req.userData.id;
       if (Number(publishedConv.owner_id) === currentUserId) {
@@ -4297,9 +4404,9 @@ app.get('/api/conversations/published/:token', async (req, res) => {
         currentUserCanEdit = editCheckRows.length > 0;
       }
     }
-    
-    res.json({ 
-      error: false, 
+
+    res.json({
+      error: false,
       data: publishedConv,
       canEdit: currentUserCanEdit,
       isReadOnly: !currentUserCanEdit,
@@ -4357,41 +4464,91 @@ app.get('/api/conversations/published/:token/messages', async (req, res) => {
   }
 });
 
-// ====== Error/404 ======
-app.use((error, req, res, next) => {
-  console.error('Express error:', error);
-  res.status(500).json({ error: 'Internal server error: ' + error.message });
-});
+// ====== Error/404 (Secure - No information leakage) ======
+app.use(security.secureErrorHandler());
 app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+  res.status(404).json({ error: true, message: 'Route not found', code: 'NOT_FOUND' });
 });
 
 // ====== Start / Shutdown ======
 const PORT = process.env.PORT || 5001;
 
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received');
-  server.close(() => {
-    console.log('Server closed');
-    pool.end();
+// Graceful shutdown
+const gracefulShutdown = async (signal) => {
+  console.log(`${signal} received, starting graceful shutdown...`);
+
+  server.close(async () => {
+    console.log('HTTP server closed');
+
+    // Close database pool
+    try {
+      await pool.end();
+      console.log('Database pool closed');
+    } catch (err) {
+      console.error('Error closing database pool:', err);
+    }
+
+    // Close Redis connection
+    try {
+      const redis = security.getRedisClient();
+      if (redis) {
+        await redis.quit();
+        console.log('Redis connection closed');
+      }
+    } catch (err) {
+      console.error('Error closing Redis:', err);
+    }
+
     process.exit(0);
   });
-});
-process.on('SIGINT', () => {
-  console.log('SIGINT received');
-  server.close(() => {
-    console.log('Server closed');
-    pool.end();
-    process.exit(0); 
-  });
+
+  // Force exit after 30 seconds
+  setTimeout(() => {
+    console.error('Forced shutdown after timeout');
+    process.exit(1);
+  }, 30000);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Uncaught exception handler
+process.on('uncaughtException', (error) => {
+  console.error('[CRITICAL] Uncaught Exception:', error);
+  security.securityLog('critical', 'uncaught_exception', { error: error.message, stack: error.stack });
+  gracefulShutdown('uncaughtException');
 });
 
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[CRITICAL] Unhandled Rejection:', reason);
+  security.securityLog('critical', 'unhandled_rejection', { reason: String(reason) });
+});
+
+// Server startup
 server.listen(PORT, '0.0.0.0', async () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/health`);
-  
+  console.log('='.repeat(60));
+  console.log('  ApilageAI Server - Enterprise Security Edition');
+  console.log('='.repeat(60));
+  console.log(`  Port: ${PORT}`);
+  console.log(`  Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`  Health check: http://localhost:${PORT}/health`);
+  console.log('='.repeat(60));
+
+  // Initialize Redis for rate limiting
+  try {
+    await security.initRedis();
+    console.log('✓ Redis rate limiter initialized');
+  } catch (err) {
+    console.warn('⚠ Redis initialization failed, rate limiting will use fallback:', err.message);
+  }
+
   // Initialize trial abuse tracking table
   await initializeTrialAbuseTable();
+  console.log('✓ Trial abuse tracking initialized');
+
+  console.log('='.repeat(60));
+  console.log('  Server ready to accept connections');
+  console.log('='.repeat(60));
 });
 
 module.exports = { ChatManager, app, server, io };

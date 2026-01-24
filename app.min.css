@@ -716,6 +716,7 @@ td {
             opacity: 0;
             transform: translateY(-50%) translateX(-5px);
         }
+
         to {
             opacity: 1;
             transform: translateY(-50%) translateX(0);
@@ -975,7 +976,7 @@ td {
     .sidebar.hidden {
         cursor: pointer;
     }
-    
+
     .sidebar.hidden .sidebar-but {
         cursor: pointer;
     }
@@ -1653,6 +1654,7 @@ td {
 .message-attachment img {
     display: block;
     margin: 6px 0;
+    margin-bottom: 25px;
     border-radius: 14px;
     object-fit: cover;
     /* keeps aspect ratio, crops neatly if needed */
@@ -1953,7 +1955,7 @@ td {
     flex-direction: column;
     align-items: center;
     width: 100%;
-    gap: 12px;
+    gap: 0px;
     flex-shrink: 0;
     padding: 12px 0 24px 0;
     background: var(--bg-color);
@@ -1979,7 +1981,7 @@ td {
     width: calc(100% - 32px);
     max-width: 960px;
     border-radius: 1rem;
-    padding: 16px 20px;
+    padding: 0px 20px;
     box-sizing: border-box;
     background: var(--input-bg);
     border: 1px solid var(--border-color);
@@ -1993,8 +1995,8 @@ td {
 }
 
 .chat-input-container:focus-within {
-    border-color: var(--primary-red);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    border-color: var(--border-color);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
 @keyframes fadeInUp {
@@ -2129,12 +2131,6 @@ td {
     line-height: 1.4;
 }
 
-/* When the textarea (or any child) is focused, highlight container with red rounded border */
-.chat-input-container:focus-within {
-    border-color: var(--primary-red);
-    box-shadow: 0 6px 18px rgba(229, 62, 62, 0.16);
-    transform: translateY(-1px);
-}
 
 /* stronger visible ring on focus for accessibility */
 .chat-input-container:focus-within::after {
@@ -2143,7 +2139,10 @@ td {
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.08);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.04);
+}
+#chatInputContainer {
+  gap: 0 !important;
 }
 
 /* Remove native textarea focus outline for consistent style */
@@ -4736,7 +4735,10 @@ pre[class*=language-].line-numbers {
         margin: 0 auto 10px;
         width: calc(100% - 24px);
         max-width: 1000px;
-        border-radius: 1.5rem;
+
+        /* 👇 top-only rounding */
+        border-radius: 1.5rem 1.5rem 0 0;
+
         padding: 1rem;
         box-sizing: border-box;
         background: var(--input-bg);
@@ -5484,15 +5486,15 @@ body[data-theme="dark"] .theme-toggle-btn .dark-icon {
 .gallery-hero {
     position: relative;
     background:
-            radial-gradient(circle at top left,
-                rgba(255, 178, 178, 0.45),
-                transparent 60%),
-            radial-gradient(circle at bottom right,
-                rgba(255, 200, 150, 0.40),
-                transparent 55%),
-            linear-gradient(135deg,
-                rgba(255, 150, 120, 0.35),
-                rgba(255, 190, 140, 0.30));
+        radial-gradient(circle at top left,
+            rgba(255, 178, 178, 0.45),
+            transparent 60%),
+        radial-gradient(circle at bottom right,
+            rgba(255, 200, 150, 0.40),
+            transparent 55%),
+        linear-gradient(135deg,
+            rgba(255, 150, 120, 0.35),
+            rgba(255, 190, 140, 0.30));
     border-radius: 12px;
     padding: 24px;
     overflow: hidden;
@@ -5556,7 +5558,7 @@ body[data-theme="dark"] .theme-toggle-btn .dark-icon {
 }
 
 .hero-card {
-display: none;
+    display: none;
 }
 
 .hero-card-label {
@@ -5705,8 +5707,8 @@ display: none;
     font-weight: 700;
     letter-spacing: 0.01em;
     background: linear-gradient(135deg,
-                rgba(185, 28, 28, 0.28),
-                rgba(127, 29, 29, 0.16));
+            rgba(185, 28, 28, 0.28),
+            rgba(127, 29, 29, 0.16));
     border-bottom: 1px solid var(--border-color);
     overflow: visible;
 }
@@ -7323,7 +7325,7 @@ display: none;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
     transition: all 0.2s ease;
     padding: 16px 20px;
-    margin: 0 auto 24px;
+    margin: 0 auto 5px;
     max-width: 800px;
 }
 
@@ -7799,8 +7801,8 @@ select:focus {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 12px;
-    margin-top: 8px;
+    gap: 0px;
+    margin-top: 0px;
 }
 
 .chat-input-left {
@@ -7922,14 +7924,14 @@ select:focus {
     }
 
     .chat-input-container {
-        margin: 0 16px 16px !important;
+        margin: 0 0px 0px !important;
         border-radius: 12px;
         padding: 12px 16px;
-        max-width: calc(100% - 32px);
+        max-width: 100%;
     }
 
     .chat-bottom-row {
-        gap: 8px;
+        gap: 0px;
     }
 
     #message-input {
