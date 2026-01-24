@@ -12,10 +12,11 @@
 <div class="app-container">
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-          <button id="sidebarback" class="sidebar-backn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-panel-right-open h-6 w-6" style="color: black;"> <rect width="18" height="18" x="3" y="3" rx="2"></rect> <path d="M15 3v18"></path> <path d="m10 15-3-3 3-3"></path> </svg>
-          </button>
+        <div class="sidebar-header" style="display: flex; align-items: center; justify-content: center; position: relative;">
+            <img class="sidebar-logo" src="https://apilageai.lk/assets/images/icon.png" alt="Apilageai logo" style="width: 44px; height: 44px; object-fit: contain;" />
+            <button id="sidebarback" class="sidebar-backn" aria-label="Open sidebar" style="position: absolute; right: 0;">
+                <i class="fa fa-chevron-left" aria-hidden="true"></i>
+            </button>
         </div>
 
     <div class="sidebar-items" style="padding: 16px; display: flex; flex-direction: column; gap: 12px;">
@@ -56,14 +57,10 @@
 
  <!-- Sidebar Footer User Info -->
 <div class="sidebar-footer">
-  <button id="sidebarMinimize" class="sidebar-minimize-btn" aria-label="Minimize sidebar" style="display: none;">
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <rect width="18" height="18" x="3" y="3" rx="2"></rect>
-      <path d="M9 3v18"></path>
-      <path d="m14 9 3 3-3 3"></path>
-    </svg>
-    <span class="minimize-text">Focused</span>
-  </button>
+    <button id="sidebarMinimize" class="sidebar-minimize-btn" aria-label="Minimize sidebar" style="display: none;">
+        <i class="fa fa-bullseye" aria-hidden="true"></i>
+        <span class="minimize-text">Focused</span>
+    </button>
   <div class="sidebar-footer-userinfo" id="sidebarUserInfo" title="Open settings">
     <div class="user-avatar">
       <img
@@ -405,6 +402,7 @@
                             <div>
                                 <input type="file" id="profilePhotoInput" accept="image/*" style="display:none;">
                                 <button class="btn btn-primary" id="changePhotoBtn">Change Photo</button>
+                                <span id="profileLoader" style="display:none; margin-left: 8px; font-size: 12px; color: var(--text-secondary);" aria-live="polite">Uploading...</span>
                                 <p style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">JPG, GIF or PNG. 1MB max.</p>
                             </div>
                         </div>
@@ -468,14 +466,10 @@
                                 <label for="notStudentInput">මම student කෙනක් නෙමයි</label>
                             </div>
                             <label>Interested Subjects</label>
-                            <div class="checkbox-group" id="subjectCheckboxes">
-                              <label><input type="checkbox" name="subjects" value="science"> Science</label><br>
-                              <label><input type="checkbox" name="subjects" value="life"> Life</label><br>
-                              <label><input type="checkbox" name="subjects" value="maths"> Maths</label><br>
-                              <label><input type="checkbox" name="subjects" value="art"> Art</label><br>
-                              <label><input type="checkbox" name="subjects" value="business"> Business</label><br>
-                              <label><input type="checkbox" name="subjects" value="coding"> Coding</label>
-                            </div>
+                                                        <input type="text" id="subjectInput" placeholder="e.g., Maths, Science" aria-describedby="subjectHelpText">
+                                                        <div id="subjectHelpText" style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                                                            Use only text, spaces, and commas. Max 5 values.
+                                                        </div>
                         </div>
                     </div>
                     <div class="form-section">
@@ -525,7 +519,6 @@
                                     <th>Amount</th>
                                     <th>Date</th>
                                     <th>Status</th>
-                                    <th>Receipt</th>
                                   </tr>
                                 </thead>
                                 <tbody id="billingHistoryBody"></tbody>
@@ -792,14 +785,7 @@
     <!-- Left side: Sidebar toggle button -->
     <div class="navbar-left">
         <button id="toggleSidebar" class="sidebar-icon-btn" aria-label="Toggle sidebar" style="display: none;">
-            <svg xmlns="http://www.w3.org/2000/svg" 
-                 width="24" height="24" viewBox="0 0 24 24" fill="none" 
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
-                 class="tabler-icon tabler-icon-layout-sidebar-left-expand h-6 w-6">
-              <path d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" />
-              <path d="M9 4v16" />
-              <path d="M14 10l2 2l-2 2" />
-            </svg>
+            <i class="fa fa-chevron-right" aria-hidden="true"></i>
         </button>
     </div>
 
@@ -1005,12 +991,12 @@
 <script src="https://apilageai.lk/assets/scripts/libs/dialog-js/main.min.js?V=01.03.04.2025"></script>
 <script src="https://apilageai.lk/assets/scripts/mp.min.js?V=01.22.22.2025"></script>
 <script src="https://apilageai.lk/assets/scripts/app.min.js?V=10.23.01.2026{get_hash_token()}"></script>
-<script src="https://apilageai.lk/assets/scripts/prefrence.min.js?V=26.25.11.2025"></script>
+<script src="https://apilageai.lk/assets/scripts/prefrence.min.js?V=1.25.1.2026"></script>
 <script src="https://apilageai.lk/assets/scripts/notifications.js?V=03.01.10.2025"></script>
 <script type="module" src="https://apilageai.lk/assets/scripts/gm.min.js?V=12.20.10.2025"></script>
 <script src="https://apilageai.lk/assets/scripts/ob.js?V=10.26.09.2025"></script>
-<script src="https://apilageai.lk/assets/scripts/report-data.js?V=03.06.10.2025"></script>
-<script src="https://apilageai.lk/assets/scripts/canvo.min.js?V=10.23.01.2026{get_hash_token()}"></script>
+<script src="https://apilageai.lk/assets/scripts/report-data.js?V=1.25.01.2026{get_hash_token()}"></script>
+<script src="https://apilageai.lk/assets/scripts/canvo.min.js?V=1.25.01.2026{get_hash_token()}"></script>
 
 </body>
 </html>
