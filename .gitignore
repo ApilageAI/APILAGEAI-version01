@@ -70,6 +70,13 @@ web_modules/
 .env.*
 !.env.example
 
+# Sensitive config / secrets (project-specific)
+backend/config.php
+backend/config.local.php
+node/.env
+node/.env.*
+!.env.example
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache
@@ -137,3 +144,37 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Backups / temp files
+*.bak
+*.tmp
+*.swp
+*~
+
+# Database dumps / local db files
+*.sql
+*.sql.gz
+*.dump
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+
+# Credentials / keys / certs
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+id_rsa
+id_rsa.pub
+
+# User uploads / generated assets
+uploads/
+upload/

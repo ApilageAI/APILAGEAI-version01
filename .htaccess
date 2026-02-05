@@ -1,0 +1,35 @@
+# Friendly URL routing for ApilageAI
+# Requires Apache mod_rewrite and AllowOverride All
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Allow direct access to existing files and directories
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # App routes
+  RewriteRule ^app/?$ app.php [L,QSA]
+  RewriteRule ^app/([^/]+)/?$ app.php?view=$1 [L,QSA]
+  RewriteRule ^app/([^/]+)/([^/]+)/?$ app.php?view=$1&sub_view=$2 [L,QSA]
+
+  # Dashboard routes
+  RewriteRule ^dashboard/?$ dashboard.php [L,QSA]
+  RewriteRule ^dashboard/([^/]+)/?$ dashboard.php?view=$1 [L,QSA]
+
+  # Auth routes
+  RewriteRule ^auth/login/?$ auth.php?do=log [L,QSA]
+  RewriteRule ^auth/register/?$ auth.php?do=reg [L,QSA]
+  RewriteRule ^auth/logout/?$ auth.php?do=out [L,QSA]
+  RewriteRule ^auth/reset-request/?$ auth.php?do=reset-request [L,QSA]
+  RewriteRule ^auth/reset-password/?$ auth.php?do=reset-password [L,QSA]
+  RewriteRule ^auth/verify-email/?$ auth.php?do=verify-email [L,QSA]
+  RewriteRule ^auth/resend-verification/?$ auth.php?do=resend-verification [L,QSA]
+  RewriteRule ^auth/google/?$ auth.php?do=google [L,QSA]
+  RewriteRule ^auth/google-callback/?$ auth.php?do=google-callback [L,QSA]
+
+  # Payment routes (amount is parsed inside pay.php)
+  RewriteRule ^pay/([0-9]+(?:\.[0-9]+)?)/?$ pay.php [L,QSA]
+</IfModule>
