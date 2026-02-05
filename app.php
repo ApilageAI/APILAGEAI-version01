@@ -1,27 +1,38 @@
 <?php
-require_once __DIR__ . "/../backend/bootstrap.php";
+/**
+ * ApilageAI App Main Page
+ * 
+ * Main application entry point
+ * 
+ * @package ApilageAI
+ */
 
+require_once __DIR__ . "/backend/bootstrap.php";
+
+// Require authentication
 if (!$user->_logged_in) {
-    header("Location: https://apilageai.lk/auth/login");
+    header("Location: " . APP_URL . "/auth/login");
     exit();
 }
 
 $title = "";
+$view = $_GET["view"] ?? '';
+$sub_view = $_GET["sub_view"] ?? '';
 
-switch ($_GET["view"]) {
+switch ($view) {
     case "":
-        if (isset($_GET['uid']) || isset($_['statusIndicator'])) {
-            header("Location: https://apilageai.lk/app");
-            exit(); // Important: stop script execution after redirect
+        // Handle payment redirect parameters
+        if (isset($_GET['uid']) || isset($_GET['statusIndicator'])) {
+            header("Location: " . APP_URL . "/app");
+            exit();
         }
         $title = " | Playground";
         break;
+        
     case "chat":
-        // IMPORTANT:
-        // Shared chats may not be owned by the current user, so we must allow
-        // rendering the chat page shell for any numeric conversation id.
-        // The Node backend (Socket.IO / APIs) remains the source of truth for access control.
-        if (!is_empty($_GET["sub_view"]) && is_numeric($_GET["sub_view"])) {
+        // Shared chats may not be owned by the current user
+        // The Node backend (Socket.IO / APIs) remains the source of truth for access control
+        if (!empty($sub_view) && is_numeric($sub_view)) {
             $smarty->assign("old_chat", "true");
             if (isset($_GET['share']) && !is_empty($_GET['share'])) {
                 $smarty->assign('share_token', trim((string)$_GET['share']));
@@ -31,16 +42,15 @@ switch ($_GET["view"]) {
             exit();
         }
         break;
+        
     default:
         http_response_code(404);
         exit();
-        break;
 }
 
-$smarty->assign("view", $_GET["view"]);
-$smarty->assign("sub_view", $_GET["sub_view"]);
+$smarty->assign("view", $view);
+$smarty->assign("sub_view", $sub_view);
 $smarty->assign("conversations", $user->get_conversations());
 
 page_header("Apilage AI $title");
 page_footer("app");
-?>

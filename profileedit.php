@@ -7,7 +7,7 @@
  * @package ApilageAI
  */
 
-require_once __DIR__ . "/../backend/bootstrap.php";
+require_once __DIR__ . "/backend/bootstrap.php";
 header('Content-Type: application/json');
 
 // Require authentication
@@ -18,6 +18,15 @@ if (!$user->_logged_in) {
 
 $user_id = (int)$user->_data['id'];
 $action = $_REQUEST['action'] ?? null;
+
+function build_in_clause($count) {
+    if ($count <= 0) return ['clause' => '(NULL)', 'types' => '', 'params' => []];
+    return [
+        'clause' => '(' . implode(',', array_fill(0, $count, '?')) . ')',
+        'types' => str_repeat('i', $count),
+        'params' => []
+    ];
+}
 
 // ----------- LOAD ACTION -----------
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'load') {
@@ -35,7 +44,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'load') {
     $prefData = $stmt->get_result()->fetch_assoc();
     $stmt->close();
 
-    $interests = $prefData['interests'] ? json_decode($prefData['interests'], true) : [];
+    if (!$prefData) {
+        $prefData = [];
+    }
+
+    $interests = !empty($prefData['interests']) ? json_decode($prefData['interests'], true) : [];
     $preference = $prefData['preference'] ?? '';
     $school = $prefData['school'] ?? '';
     $not_student = $prefData['not_student'] ?? 0;
@@ -51,6 +64,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'load') {
     }
     $stmt->close();
 
+    // Check Google connection
+    $stmt = $db->prepare("SELECT google_email FROM google_auth WHERE user_id=? LIMIT 1");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $googleResult = $stmt->get_result();
+    $googleRow = $googleResult->fetch_assoc();
+    $hasGoogleAuth = !empty($googleRow);
+    $googleEmail = $googleRow['google_email'] ?? null;
+    $stmt->close();
+
     echo json_encode([
         'success' => true,
         'user' => $userData,
@@ -58,7 +81,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'load') {
         'not_student' => $not_student,
         'interests' => $interests,
         'preference' => $preference,
-        'billing' => $billing
+        'billing' => $billing,
+        'has_google_auth' => $hasGoogleAuth,
+        'google_email' => $googleEmail
     ]);
     exit();
 }
@@ -209,6 +234,229 @@ if ($action === 'clearmemory' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->close();
     echo json_encode(['success' => $success]);
     exit();
+}
+
+// ----------- PASSWORD RESET REQUEST (LOGGED-IN USER) -----------
+if ($action === 'request_password_reset' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = trim($_POST['email'] ?? '');
+    $result = $user->request_password_reset_for_user($user_id, $email);
+    echo json_encode([
+        'success' => !$result['e'],
+        'message' => $result['m']
+    ]);
+    exit();
+}
+
+// ----------- DELETE ACCOUNT -----------
+if ($action === 'delete_account' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $db->begin_transaction();
+    try {
+        // Fetch conversation ids owned by user
+        $ownedConversationIds = [];
+        $stmt = $db->prepare("SELECT conversation_id FROM conversations WHERE user_id=?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($row = $res->fetch_assoc()) {
+            $ownedConversationIds[] = (int)$row['conversation_id'];
+        }
+        $stmt->close();
+
+        if (!empty($ownedConversationIds)) {
+            $in = build_in_clause(count($ownedConversationIds));
+            $in['params'] = $ownedConversationIds;
+
+            $stmt = $db->prepare("DELETE FROM messages WHERE conversation_id IN {$in['clause']}");
+            $stmt->bind_param($in['types'], ...$in['params']);
+            $stmt->execute();
+            $stmt->close();
+
+            $stmt = $db->prepare("DELETE FROM conversation_canvas WHERE conversation_id IN {$in['clause']}");
+            $stmt->bind_param($in['types'], ...$in['params']);
+            $stmt->execute();
+            $stmt->close();
+
+            $stmt = $db->prepare("DELETE FROM conversation_participants WHERE conversation_id IN {$in['clause']}");
+            $stmt->bind_param($in['types'], ...$in['params']);
+            $stmt->execute();
+            $stmt->close();
+
+            $stmt = $db->prepare("DELETE FROM conversation_published WHERE conversation_id IN {$in['clause']}");
+            $stmt->bind_param($in['types'], ...$in['params']);
+            $stmt->execute();
+            $stmt->close();
+
+            $stmt = $db->prepare("DELETE FROM conversation_share_links WHERE conversation_id IN {$in['clause']}");
+            $stmt->bind_param($in['types'], ...$in['params']);
+            $stmt->execute();
+            $stmt->close();
+
+            $stmt = $db->prepare("DELETE FROM conversations WHERE conversation_id IN {$in['clause']}");
+            $stmt->bind_param($in['types'], ...$in['params']);
+            $stmt->execute();
+            $stmt->close();
+        }
+
+        // Remove any participation or shares involving the user
+        $stmt = $db->prepare("DELETE FROM conversation_participants WHERE user_id=? OR added_by=?");
+        $stmt->bind_param("ii", $user_id, $user_id);
+        $stmt->execute();
+        $stmt->close();
+
+        $stmt = $db->prepare("DELETE FROM conversation_share_links WHERE shared_by=? OR target_user_id=?");
+        $stmt->bind_param("ii", $user_id, $user_id);
+        $stmt->execute();
+        $stmt->close();
+
+        $stmt = $db->prepare("DELETE FROM conversation_published WHERE published_by=?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $stmt->close();
+
+        // Delete game data
+        $gameIds = [];
+        $stmt = $db->prepare("SELECT id FROM games WHERE host_id=?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($row = $res->fetch_assoc()) {
+            $gameIds[] = (int)$row['id'];
+        }
+        $stmt->close();
+
+        if (!empty($gameIds)) {
+            $inGames = build_in_clause(count($gameIds));
+            $inGames['params'] = $gameIds;
+
+            $stmt = $db->prepare("DELETE FROM answers WHERE game_id IN {$inGames['clause']}");
+            $stmt->bind_param($inGames['types'], ...$inGames['params']);
+            $stmt->execute();
+            $stmt->close();
+
+            $stmt = $db->prepare("DELETE FROM questions WHERE game_id IN {$inGames['clause']}");
+            $stmt->bind_param($inGames['types'], ...$inGames['params']);
+            $stmt->execute();
+            $stmt->close();
+
+            $stmt = $db->prepare("DELETE FROM games WHERE id IN {$inGames['clause']}");
+            $stmt->bind_param($inGames['types'], ...$inGames['params']);
+            $stmt->execute();
+            $stmt->close();
+        }
+
+        // Delete answers by user (in other games)
+        $stmt = $db->prepare("DELETE FROM answers WHERE user_id=?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $stmt->close();
+
+        // Delete generated images and reactions
+        $imageIds = [];
+        $stmt = $db->prepare("SELECT id FROM generated_images WHERE user_id=?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($row = $res->fetch_assoc()) {
+            $imageIds[] = (int)$row['id'];
+        }
+        $stmt->close();
+
+        if (!empty($imageIds)) {
+            $inImages = build_in_clause(count($imageIds));
+            $inImages['params'] = $imageIds;
+
+            $stmt = $db->prepare("DELETE FROM image_reactions WHERE image_id IN {$inImages['clause']}");
+            $stmt->bind_param($inImages['types'], ...$inImages['params']);
+            $stmt->execute();
+            $stmt->close();
+        }
+
+        $stmt = $db->prepare("DELETE FROM image_reactions WHERE user_id=?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $stmt->close();
+
+        $stmt = $db->prepare("DELETE FROM generated_images WHERE user_id=?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $stmt->close();
+
+        // Delete messages authored by user (shared conversations)
+        $stmt = $db->prepare("DELETE FROM messages WHERE user_id=?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $stmt->close();
+
+        // Delete misc user data
+        $stmt = $db->prepare("DELETE FROM notific WHERE user_id=?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $stmt->close();
+
+        $stmt = $db->prepare("DELETE FROM sessions WHERE user_id=?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $stmt->close();
+
+        $stmt = $db->prepare("DELETE FROM free_user_daily_usage WHERE user_id=?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $stmt->close();
+
+        $stmt = $db->prepare("DELETE FROM free_user_limits WHERE user_id=?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $stmt->close();
+
+        $stmt = $db->prepare("DELETE FROM google_auth WHERE user_id=?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $stmt->close();
+
+        $stmt = $db->prepare("DELETE FROM gb_auth WHERE user_id=?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $stmt->close();
+
+        $stmt = $db->prepare("DELETE FROM thinking_usage_logs WHERE user_id=?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $stmt->close();
+
+        $stmt = $db->prepare("DELETE FROM usage_logs WHERE user_id=?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $stmt->close();
+
+        $stmt = $db->prepare("DELETE FROM trial_abuse_tracking WHERE user_id=?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $stmt->close();
+
+        $stmt = $db->prepare("DELETE FROM transactions WHERE user_id=?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $stmt->close();
+
+        $stmt = $db->prepare("DELETE FROM user_onboarding WHERE user_id=?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $stmt->close();
+
+        $stmt = $db->prepare("DELETE FROM users WHERE id=?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $stmt->close();
+
+        $db->commit();
+        $user->sign_out();
+        echo json_encode(['success' => true]);
+        exit();
+    } catch (Throwable $e) {
+        $db->rollback();
+        echo json_encode(['success' => false, 'message' => 'Failed to delete account']);
+        exit();
+    }
 }
 
 // ----------- INVALID REQUEST -----------

@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . "/../backend/bootstrap.php";
+require_once __DIR__ . "/backend/bootstrap.php";
 
 // Ensure JSON-only output
 ini_set('display_errors', '0');

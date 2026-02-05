@@ -1,0 +1,30 @@
+{
+  "name": "apilageai-backend",
+  "version": "2.0.0",
+  "description": "ApilageAI Backend Server - Enterprise Security Edition",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "NODE_ENV=development node app.js",
+    "production": "NODE_ENV=production node app.js"
+  },
+  "dependencies": {
+    "@google/genai": "^1.17.0",
+    "@google/generative-ai": "^0.24.1",
+    "axios": "^1.11.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "multer": "^2.0.2",
+    "mysql2": "^3.14.3",
+    "openai": "^5.12.2",
+    "pdf-parse": "^2.4.5",
+    "sharp": "^0.34.5",
+    "socket.io": "^4.8.1",
+    "uuid": "^11.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
