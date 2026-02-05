@@ -24,6 +24,7 @@
   RewriteRule ^auth/login/?$ auth.php?do=log [L,QSA]
   RewriteRule ^auth/register/?$ auth.php?do=reg [L,QSA]
   RewriteRule ^auth/logout/?$ auth.php?do=out [L,QSA]
+  RewriteRule ^auth/signout/?$ auth.php?do=out [L,QSA]
   RewriteRule ^auth/reset-request/?$ auth.php?do=reset-request [L,QSA]
   RewriteRule ^auth/reset-password/?$ auth.php?do=reset-password [L,QSA]
   RewriteRule ^auth/verify-email/?$ auth.php?do=verify-email [L,QSA]

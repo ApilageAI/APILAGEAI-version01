@@ -262,6 +262,10 @@ function _email($email, $subject, $body, $attachments = []) {
     $mail->Password = SMTP_PASS;
     $mail->Port = SMTP_PORT;
     $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+    // Prevent long hangs when SMTP is unreachable (common in local dev)
+    $mail->Timeout = 5;
+    $mail->SMTPConnectTimeout = 5;
+    $mail->SMTPKeepAlive = false;
 
     $mail->XMailer = "ApilageAI";
     $mail->setFrom(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
