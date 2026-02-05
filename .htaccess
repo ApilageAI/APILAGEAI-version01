@@ -20,6 +20,7 @@
   RewriteRule ^dashboard/([^/]+)/?$ dashboard.php?view=$1 [L,QSA]
 
   # Auth routes
+  RewriteRule ^auth/?$ auth.php?do=log [L,QSA]
   RewriteRule ^auth/login/?$ auth.php?do=log [L,QSA]
   RewriteRule ^auth/register/?$ auth.php?do=reg [L,QSA]
   RewriteRule ^auth/logout/?$ auth.php?do=out [L,QSA]
