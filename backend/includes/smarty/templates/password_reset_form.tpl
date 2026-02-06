@@ -26,7 +26,7 @@
         {/if}
       {/if}
 
-      {if !isset($result.e) || !$result.e}
+      {if (empty($reset_complete)) && (!isset($result.e) || !$result.e)}
       <div class="auth-header">
         <h2>Set a new password</h2>
         <p>Password must be longer than 5 characters.</p>
@@ -69,8 +69,8 @@
 
 <script>
   (function () {
-    const result = {if isset($result) && isset($result.e)}{if $result.e}true{else}false{/if}{else}null{/if};
-    if (result === false) {
+    const resetComplete = {if isset($reset_complete) && $reset_complete}true{else}false{/if};
+    if (resetComplete) {
       const overlay = document.getElementById('resetSuccessOverlay');
       if (overlay) overlay.style.display = 'flex';
       setTimeout(() => {

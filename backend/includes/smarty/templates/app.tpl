@@ -4,8 +4,7 @@
 
 <div id="app-loading-overlay" class="app-loading-overlay" aria-hidden="false">
     <div class="app-loading-card">
-        <div class="app-loading-title">Apilageai is here to help <span class="app-loading-cursor" aria-hidden="true"></span></div>
-        <div class="app-loading-subtitle">Loading…</div>
+        <img class="app-loading-logo" src="{$smarty.const.APP_URL}/assets/images/icon.png" alt="Apilageai logo" />
     </div>
 </div>
 
@@ -1029,7 +1028,7 @@
 <script src="{$smarty.const.APP_URL}/assets/scripts/libs/dialog-js/main.min.js?V=01.03.04.2025"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/mp.min.js?V=01.22.22.2025"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/app.min.js?V=1.30.01.2026{get_hash_token()}"></script>
-<script src="{$smarty.const.APP_URL}/assets/scripts/prefrence.min.js?V=1.25.1.2026"></script>
+<script src="{$smarty.const.APP_URL}/assets/scripts/prefrence.min.js?V=1.25.2.2026{get_hash_token()}"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/notifications.js?V=03.01.10.2025"></script>
 <script type="module" src="{$smarty.const.APP_URL}/assets/scripts/gm.min.js?V=12.20.10.2025"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/ob.js?V=10.26.09.2025"></script>

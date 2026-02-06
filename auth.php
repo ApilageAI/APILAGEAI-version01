@@ -50,9 +50,11 @@ elseif ($do === "reset-password") {
         $newPassword = $_POST['password'] ?? '';
         $result = $user->reset_password($token, $newPassword);
         $smarty->assign('result', $result);
+        $smarty->assign('reset_complete', empty($result['e']));
     } else {
         $result = $user->verify_reset_token($token);
         $smarty->assign('result', $result);
+        $smarty->assign('reset_complete', false);
     }
     $title = "Reset Password";
     $page = "password_reset_form";

@@ -1,15 +1,15 @@
 <?php
-/* Smarty version 5.7.0, created on 2026-02-05 17:27:56
+/* Smarty version 5.7.0, created on 2026-02-06 22:12:48
   from 'file:password_reset_form.tpl' */
 
 /* @var \Smarty\Template $_smarty_tpl */
 if ($_smarty_tpl->getCompiled()->isFresh($_smarty_tpl, array (
   'version' => '5.7.0',
-  'unifunc' => 'content_698485c4ef84f8_95511223',
+  'unifunc' => 'content_69861a08bba293_47572336',
   'has_nocache_code' => false,
   'file_dependency' => 
   array (
-    'b88b91ae326bec72ea8aac2fa7190315578f81ee' => 
+    'ca62d6a3d59b11495bc271a753d433ecb443e180' => 
     array (
       0 => 'password_reset_form.tpl',
       1 => 1770292469,
@@ -21,8 +21,8 @@ if ($_smarty_tpl->getCompiled()->isFresh($_smarty_tpl, array (
     'file:components/head.tpl' => 1,
   ),
 ))) {
-function content_698485c4ef84f8_95511223 (\Smarty\Template $_smarty_tpl) {
-$_smarty_current_dir = '/Users/dinethgunawardana/Downloads/apilageai/backend/includes/smarty/templates';
+function content_69861a08bba293_47572336 (\Smarty\Template $_smarty_tpl) {
+$_smarty_current_dir = '/Users/dinethgunawardana/Documents/GitHub/apilageai-personal/backend/includes/smarty/templates';
 $_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_id, $_smarty_tpl->compile_id, 0, $_smarty_tpl->cache_lifetime, array(), (int) 0, $_smarty_current_dir);
 ?>
 

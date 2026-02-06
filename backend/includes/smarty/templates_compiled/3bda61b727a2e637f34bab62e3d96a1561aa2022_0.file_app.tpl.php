@@ -1,18 +1,18 @@
 <?php
-/* Smarty version 5.7.0, created on 2026-02-06 22:05:59
+/* Smarty version 5.7.0, created on 2026-02-06 22:13:36
   from 'file:app.tpl' */
 
 /* @var \Smarty\Template $_smarty_tpl */
 if ($_smarty_tpl->getCompiled()->isFresh($_smarty_tpl, array (
   'version' => '5.7.0',
-  'unifunc' => 'content_6986186f411aa3_30346352',
+  'unifunc' => 'content_69861a3868f809_22534965',
   'has_nocache_code' => false,
   'file_dependency' => 
   array (
     '3bda61b727a2e637f34bab62e3d96a1561aa2022' => 
     array (
       0 => 'app.tpl',
-      1 => 1770395283,
+      1 => 1770396095,
       2 => 'file',
     ),
   ),
@@ -21,7 +21,7 @@ if ($_smarty_tpl->getCompiled()->isFresh($_smarty_tpl, array (
     'file:components/head.tpl' => 1,
   ),
 ))) {
-function content_6986186f411aa3_30346352 (\Smarty\Template $_smarty_tpl) {
+function content_69861a3868f809_22534965 (\Smarty\Template $_smarty_tpl) {
 $_smarty_current_dir = '/Users/dinethgunawardana/Documents/GitHub/apilageai-personal/backend/includes/smarty/templates';
 $_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_id, $_smarty_tpl->compile_id, 0, $_smarty_tpl->cache_lifetime, array(), (int) 0, $_smarty_current_dir);
 echo '<script'; ?>
@@ -33,8 +33,8 @@ echo '<script'; ?>
 
 <div id="app-loading-overlay" class="app-loading-overlay" aria-hidden="false">
     <div class="app-loading-card">
-        <div class="app-loading-title">Apilageai is here to help <span class="app-loading-cursor" aria-hidden="true"></span></div>
-        <div class="app-loading-subtitle">Loading…</div>
+        <img class="app-loading-logo" src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
+/assets/images/icon.png" alt="Apilageai logo" />
     </div>
 </div>
 
@@ -1108,7 +1108,8 @@ echo '<script'; ?>
 >
 <?php echo '<script'; ?>
  src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
-/assets/scripts/prefrence.min.js?V=1.25.1.2026"><?php echo '</script'; ?>
+/assets/scripts/prefrence.min.js?V=1.25.2.2026<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
+"><?php echo '</script'; ?>
 >
 <?php echo '<script'; ?>
  src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>

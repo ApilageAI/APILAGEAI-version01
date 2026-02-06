@@ -5581,8 +5581,8 @@ body[data-theme="dark"] .theme-toggle-btn .dark-icon {
     position: fixed;
     inset: 0;
     z-index: 2147483646;
-    background: var(--bg-color);
-    color: var(--text-primary);
+    background: #000;
+    color: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -5597,12 +5597,18 @@ body[data-theme="dark"] .theme-toggle-btn .dark-icon {
 }
 
 .app-loading-card {
-    width: min(520px, 92vw);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    background: var(--container-bg);
-    padding: 22px 20px;
+    width: min(240px, 80vw);
+    border: none;
+    border-radius: 20px;
+    background: transparent;
+    padding: 20px;
     text-align: center;
+}
+
+.app-loading-logo {
+    width: 120px;
+    height: 120px;
+    object-fit: contain;
 }
 
 .app-loading-title {
@@ -7950,26 +7956,25 @@ body {
 
 /* ========== LOADING OVERLAY ENHANCEMENT ========== */
 .app-loading-overlay {
-    background: linear-gradient(135deg, var(--bg-color) 0%, rgba(249, 250, 251, 0.98) 100%);
+    background: #000;
 }
 
 [data-theme="dark"] .app-loading-overlay {
-    background: linear-gradient(135deg, var(--bg-color) 0%, rgba(26, 26, 26, 0.98) 100%);
+    background: #000;
 }
 
 .app-loading-card {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+    background: transparent;
+    border: none;
+    box-shadow: none;
 }
 
 .app-loading-title {
     font-family: 'Inter', sans-serif;
     font-weight: 700;
-    background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary-red) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #fff;
+    -webkit-text-fill-color: unset;
+    background: none;
 }
 
 /* ========== PREFERENCE BOX ENHANCEMENT ========== */
