@@ -177,6 +177,7 @@ CREATE TABLE `conversation_share_links` (
 CREATE TABLE `free_user_daily_usage` (
   `user_id` int(11) NOT NULL,
   `date` date NOT NULL,
+  `window_id` tinyint(4) NOT NULL DEFAULT '0',
   `messages_used` int(11) DEFAULT '0',
   `image_uploads_used` int(11) DEFAULT '0',
   `file_uploads_used` int(11) DEFAULT '0',
@@ -672,7 +673,7 @@ ALTER TABLE `conversation_share_links`
 -- Indexes for table `free_user_daily_usage`
 --
 ALTER TABLE `free_user_daily_usage`
-  ADD PRIMARY KEY (`user_id`,`date`);
+  ADD PRIMARY KEY (`user_id`,`date`,`window_id`);
 
 --
 -- Indexes for table `free_user_limits`

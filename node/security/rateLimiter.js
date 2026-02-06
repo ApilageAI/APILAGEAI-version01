@@ -13,6 +13,13 @@
 'use strict';
 
 // ============================================================
+// Redis Client (optional)
+// ============================================================
+let RedisClient = null;
+let redisInitAttempted = false;
+let redisClient = null;
+
+// ============================================================
 // Configuration
 // ============================================================
 const config = {
@@ -61,6 +68,18 @@ const config = {
         blocked: 'rl:blocked:',
     },
 };
+
+const TRUST_PROXY = (process.env.TRUST_PROXY || '').toLowerCase() === 'true'
+    || process.env.NODE_ENV === 'production';
+
+function getRequestIp(req) {
+    if (!req) return 'unknown';
+    if (req.ip) return req.ip;
+    if (TRUST_PROXY && req.headers && req.headers['x-forwarded-for']) {
+        return String(req.headers['x-forwarded-for']).split(',')[0].trim();
+    }
+    return req.connection?.remoteAddress || req.socket?.remoteAddress || 'unknown';
+}
 
 // ============================================================
 // In-Memory Store (Redis-free)
@@ -204,11 +223,96 @@ class MemoryRedis {
         }
         return slice.map(item => item.member);
     }
+    // Compatibility with Redis clients
+    async quit() { return 'OK'; }
+    disconnect() { /* no-op */ }
 }
 
 const memoryRedis = new MemoryRedis();
+memoryRedis.status = 'ready';
+
+async function initRedis() {
+    if (redisClient && redisClient.status === 'ready') {
+        return redisClient;
+    }
+    if (redisInitAttempted) {
+        return redisClient;
+    }
+    redisInitAttempted = true;
+
+    try {
+        if (!RedisClient) {
+            RedisClient = require('ioredis');
+        }
+    } catch (error) {
+        console.warn('[Redis] ioredis not installed; using in-memory limiter');
+        return null;
+    }
+
+    const redisUrl = String(process.env.REDIS_URL || '').trim();
+    const redisHost = String(process.env.REDIS_HOST || '127.0.0.1').trim();
+    const redisPort = parseInt(process.env.REDIS_PORT || '6379', 10);
+    const redisPassword = process.env.REDIS_PASSWORD || undefined;
+    const redisDb = Number.isFinite(parseInt(process.env.REDIS_DB || '0', 10))
+        ? parseInt(process.env.REDIS_DB || '0', 10)
+        : 0;
+    const redisTls = String(process.env.REDIS_TLS || '').toLowerCase() === 'true';
+
+    const options = {
+        lazyConnect: true,
+        enableReadyCheck: true,
+        maxRetriesPerRequest: 1,
+        retryStrategy(times) {
+            return Math.min(times * 50, 1000);
+        },
+        reconnectOnError(err) {
+            const message = err?.message || '';
+            if (message.includes('READONLY')) {
+                return 2;
+            }
+            return 1;
+        },
+    };
+
+    if (redisTls) {
+        options.tls = {};
+    }
+
+    let client;
+    if (redisUrl) {
+        client = new RedisClient(redisUrl, options);
+    } else {
+        client = new RedisClient({
+            host: redisHost,
+            port: redisPort,
+            password: redisPassword,
+            db: redisDb,
+            ...options,
+        });
+    }
+
+    client.on('error', (err) => {
+        console.error('[Redis] Error:', err?.message || err);
+    });
+    client.on('ready', () => {
+        console.log('[Redis] Ready for rate limiting');
+    });
+
+    try {
+        await client.connect();
+        redisClient = client;
+        return redisClient;
+    } catch (error) {
+        console.warn('[Redis] Connection failed; using in-memory limiter:', error?.message || error);
+        try { client.disconnect(); } catch (_) { }
+        return null;
+    }
+}
 
 function getRedisClient() {
+    if (redisClient && redisClient.status === 'ready') {
+        return redisClient;
+    }
     return memoryRedis;
 }
 
@@ -585,8 +689,7 @@ function apiRateLimiter(options = {}) {
     const windowMs = options.windowMs || config.limits.api.windowMs;
     const maxRequests = options.maxRequests || config.limits.api.maxRequests;
     const keyGenerator = options.keyGenerator || ((req) => {
-        const ip = req.ip || req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 
-                   req.connection?.remoteAddress || 'unknown';
+        const ip = getRequestIp(req);
         return `${ip}:${req.path}`;
     });
 
@@ -595,7 +698,7 @@ function apiRateLimiter(options = {}) {
             const key = keyGenerator(req);
             
             // Check if IP is blocked
-            const ip = req.ip || req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 'unknown';
+            const ip = getRequestIp(req);
             const blockStatus = await isIPBlocked(ip);
             if (blockStatus.blocked) {
                 return res.status(403).json({
@@ -651,7 +754,7 @@ function authRateLimiter() {
         windowMs: 900000, // 15 minutes
         maxRequests: 20,
         keyGenerator: (req) => {
-            const ip = req.ip || req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 'unknown';
+            const ip = getRequestIp(req);
             return `auth:${ip}`;
         },
     });
@@ -711,6 +814,7 @@ function socketRateLimiter() {
 module.exports = {
     // Initialization
     getRedisClient,
+    initRedis,
     
     // Core rate limiting
     checkRateLimit,

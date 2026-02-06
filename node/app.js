@@ -28,7 +28,7 @@ function formatErrorMessage(defaultMessage, error) {
   return errText || defaultMessage;
 }
 
-async function processUploadedImage(filename) {
+async function processUploadedImage(filename, userId = null, originalName = '') {
   try {
     const uniquePrefix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const imageName = `${uniquePrefix}.jpg`;
@@ -41,6 +41,13 @@ async function processUploadedImage(filename) {
 
     if (fs.existsSync(path.join(userUploadsDir, filename))) {
       fs.unlinkSync(path.join(userUploadsDir, filename));
+    }
+    if (userId) {
+      writeImageMeta(imageName, {
+        user_id: Number(userId),
+        original_name: String(originalName || '').trim(),
+        created_at: Date.now(),
+      });
     }
     return imageName;
   } catch (error) {
@@ -105,7 +112,7 @@ async function extractDocumentText(filePath, mimeType, originalName = '') {
   return text;
 }
 
-async function processUploadedDocument(file) {
+async function processUploadedDocument(file, userId = null) {
   const docId = sanitizeDocId(`${Date.now()}-${Math.round(Math.random() * 1e9)}`);
   const sourcePath = path.join(userDocsDir, file.filename);
   const originalName = path.basename(String(file.originalname || '')).trim() || 'document';
@@ -120,6 +127,7 @@ async function processUploadedDocument(file) {
       name: originalName,
       mimeType,
       size: Number(file.size || 0),
+      user_id: userId ? Number(userId) : null,
       createdAt: Date.now(),
     });
     return {
@@ -213,6 +221,10 @@ function safeParseJson(text, fallback) {
   } catch (_) {
     return fallback;
   }
+}
+
+function generateSecureToken(bytes = 32) {
+  return crypto.randomBytes(bytes).toString('hex');
 }
 
 async function loadCanvasState(conversationId) {
@@ -367,6 +379,29 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.APP_URL || 'h
   .map((origin) => origin.trim())
   .filter(Boolean);
 const APP_BASE_URL = (process.env.APP_URL || process.env.PUBLIC_BASE_URL || allowedOrigins[0] || 'http://localhost:8888').replace(/\/$/, '');
+const TRUST_PROXY = (process.env.TRUST_PROXY || '').toLowerCase() === 'true'
+  || process.env.NODE_ENV === 'production';
+app.set('trust proxy', TRUST_PROXY);
+
+const normalizeOrigin = (value) => {
+  if (!value) return '';
+  try {
+    return new URL(value).origin;
+  } catch (_) {
+    return String(value).replace(/\/$/, '');
+  }
+};
+
+const allowedOriginSet = new Set(
+  [...allowedOrigins, APP_BASE_URL]
+    .filter(Boolean)
+    .map(normalizeOrigin)
+);
+
+const isAllowedOrigin = (value) => {
+  const normalized = normalizeOrigin(value);
+  return normalized && allowedOriginSet.has(normalized);
+};
 
 app.use(
   cors({
@@ -401,6 +436,35 @@ app.use(security.securityHeaders());
 // Request logging with security event tracking
 app.use(security.requestLogger());
 
+// Basic CSRF protection for cookie-authenticated requests
+app.use((req, res, next) => {
+  const safeMethods = ['GET', 'HEAD', 'OPTIONS'];
+  if (safeMethods.includes(req.method)) return next();
+
+  const origin = String(req.headers.origin || '').trim();
+  const referer = String(req.headers.referer || '').trim();
+
+  const originAllowed = (origin && isAllowedOrigin(origin)) || (referer && isAllowedOrigin(referer));
+
+  if (!originAllowed && req.headers.cookie) {
+    security.securityLog('warn', 'csrf_blocked', {
+      requestId: req.requestId,
+      ip: req.ip,
+      method: req.method,
+      path: req.path,
+      origin,
+      referer,
+    });
+    return res.status(403).json({
+      error: true,
+      message: 'CSRF protection: invalid origin',
+      code: 'CSRF_BLOCKED',
+    });
+  }
+
+  return next();
+});
+
 // Input sanitization for XSS prevention
 const blockDangerousInputs = (process.env.BLOCK_DANGEROUS_INPUTS || '').toLowerCase() === 'true'
   || process.env.NODE_ENV === 'production';
@@ -413,7 +477,6 @@ app.use(security.apiRateLimiter());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
-app.use('/uploads', express.static(path.join(__dirname, '/../uploads')));
 
 // ====== Static/Uploads ======
 const baseUploadsDir = path.join(__dirname, '/../uploads');
@@ -421,6 +484,7 @@ const userUploadsDir = path.join(baseUploadsDir, 'userimg');
 const genimgUploadsDir = path.join(baseUploadsDir, 'genimg');
 const userDocsDir = path.join(baseUploadsDir, 'userdocs');
 const userDocsTextDir = path.join(__dirname, '/../doc_text');
+const userImgMetaDir = path.join(userDocsTextDir, 'userimg_meta');
 if (!fs.existsSync(userUploadsDir)) {
   fs.mkdirSync(userUploadsDir, { recursive: true });
 }
@@ -433,6 +497,13 @@ if (!fs.existsSync(userDocsDir)) {
 if (!fs.existsSync(userDocsTextDir)) {
   fs.mkdirSync(userDocsTextDir, { recursive: true });
 }
+if (!fs.existsSync(userImgMetaDir)) {
+  fs.mkdirSync(userImgMetaDir, { recursive: true });
+}
+
+// Serve only image uploads publicly (block direct access to documents)
+app.use('/uploads/userimg', express.static(userUploadsDir, { dotfiles: 'ignore', fallthrough: true, maxAge: '7d' }));
+app.use('/uploads/genimg', express.static(genimgUploadsDir, { dotfiles: 'ignore', fallthrough: true, maxAge: '7d' }));
 
 // ====== Upload Limits ======
 const MAX_IMAGE_UPLOADS_PER_MESSAGE = 5;
@@ -472,7 +543,18 @@ const authenticateSocket = async (socket, next) => {
 
     const origin = String(socket.handshake?.headers?.origin || '').trim();
     const referer = String(socket.handshake?.headers?.referer || '').trim();
-    const sameOrigin = (origin && origin.startsWith(APP_BASE_URL)) || (referer && referer.startsWith(APP_BASE_URL));
+    const sameOrigin = (origin && isAllowedOrigin(origin)) || (referer && isAllowedOrigin(referer));
+
+    if ((origin || referer) && !sameOrigin) {
+      try {
+        security.securityLog('warn', 'socket_origin_blocked', {
+          ip: socket.handshake?.address,
+          origin,
+          referer,
+        });
+      } catch (_) { }
+      return next(new Error('Origin not allowed'));
+    }
 
     if (wantsGuest) {
       attachGuest();
@@ -594,8 +676,14 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter: (req, file, cb) =>
-    file.mimetype.startsWith('image/') ? cb(null, true) : cb(new Error('Only image files are allowed')),
+  fileFilter: (req, file, cb) => {
+    const validation = security.validateFileUpload(file);
+    if (!validation.valid) return cb(new Error(validation.error));
+    if (!file.mimetype.startsWith('image/')) {
+      return cb(new Error('Only image files are allowed'));
+    }
+    return cb(null, true);
+  },
 });
 
 // ====== Multer (documents) ======
@@ -633,6 +721,7 @@ function safeUnlinkUserUpload(filename) {
   try {
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
+      safeUnlinkImageMeta(safeName);
       return true;
     }
   } catch (error) {
@@ -724,6 +813,82 @@ function safeUnlinkDocMeta(docId) {
     console.error('Failed to delete document meta:', error);
   }
   return false;
+}
+
+function getImageMetaPath(filename) {
+  const safeName = path.basename(String(filename || '')).trim();
+  if (!safeName) return '';
+  const metaName = `${safeName}.json`;
+  const filePath = path.join(userImgMetaDir, metaName);
+  if (!filePath.startsWith(userImgMetaDir)) return '';
+  return filePath;
+}
+
+function writeImageMeta(filename, meta) {
+  const filePath = getImageMetaPath(filename);
+  if (!filePath) return false;
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(meta || {}, null, 2), 'utf8');
+    return true;
+  } catch (error) {
+    console.error('Failed to write image meta:', error);
+    return false;
+  }
+}
+
+function readImageMeta(filename) {
+  const filePath = getImageMetaPath(filename);
+  if (!filePath) return null;
+  try {
+    if (!fs.existsSync(filePath)) return null;
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch (error) {
+    console.error('Failed to read image meta:', error);
+    return null;
+  }
+}
+
+function safeUnlinkImageMeta(filename) {
+  const filePath = getImageMetaPath(filename);
+  if (!filePath) return false;
+  try {
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      return true;
+    }
+  } catch (error) {
+    console.error('Failed to delete image meta:', error);
+  }
+  return false;
+}
+
+function isImageOwnedByUser(filename, userId) {
+  const meta = readImageMeta(filename);
+  if (!meta || !meta.user_id) return false;
+  return Number(meta.user_id) === Number(userId);
+}
+
+async function userHasAttachment(userId, filename) {
+  try {
+    const safeName = path.basename(String(filename || '')).trim();
+    if (!safeName) return false;
+    if (!(await messagesHasUserIdColumn())) return false;
+    const like = `%${safeName}%`;
+    const [rows] = await pool
+      .promise()
+      .execute(
+        'SELECT attach FROM messages WHERE user_id = ? AND attach IS NOT NULL AND attach != "" AND attach LIKE ?',
+        [userId, like]
+      );
+    for (const row of rows) {
+      const attachments = normalizeAttachmentList(row.attach || row.a || '');
+      if (attachments.includes(safeName)) return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Error checking attachment ownership:', error);
+    return false;
+  }
 }
 
 function guessDocMimeType(filename, fallback = 'application/octet-stream') {
@@ -1152,30 +1317,45 @@ const FREE_USER_MODELS = ['free'];  // Models available for users with balance <
 const IMAGE_GENERATION_COST = 5;  // Cost for generating one image
 const IMAGE_UPLOAD_COST = 5;      // Cost per uploaded image
 
-// ====== Daily Trial Limits for Free Users ======
+// ====== Share Link TTL (days) ======
+const SHARE_LINK_TTL_DAYS = parseInt(process.env.SHARE_LINK_TTL_DAYS, 10) || 7;
+
+// ====== Trial Limits for Free Users (per 12-hour window) ======
+const TRIAL_WINDOW_HOURS = 12;
 const DAILY_TRIAL_LIMITS = {
-  messages: 3,           // 3 messages per day using any model
-  image_uploads: 2,      // 2 image uploads per day
-  image_generations: 5   // 5 image generations per day
+  messages: 3,           // 3 messages per 12-hour window using any model
+  image_uploads: 2,      // 2 image uploads per 12-hour window
+  image_generations: 5   // 5 image generations per 12-hour window
 };
 
 // ====== Trial Abuse Prevention (IP + Device Tracking) ======
-const TRIAL_ABUSE_WINDOW_DAYS = 30;  // Block trial reuse from same IP/device for 30 days
+const TRIAL_ABUSE_WINDOW_DAYS = 7;  // Block trial reuse from same IP/device for 7 days
+
+function getTrialWindowKey(now = new Date()) {
+  const utcYear = now.getUTCFullYear();
+  const utcMonth = now.getUTCMonth();
+  const utcDay = now.getUTCDate();
+  const utcHour = now.getUTCHours();
+  const windowStartHour = Math.floor(utcHour / TRIAL_WINDOW_HOURS) * TRIAL_WINDOW_HOURS;
+  const windowStart = new Date(Date.UTC(utcYear, utcMonth, utcDay, windowStartHour, 0, 0));
+  const windowEnd = new Date(windowStart.getTime() + TRIAL_WINDOW_HOURS * 60 * 60 * 1000);
+  const dateKey = windowStart.toISOString().split('T')[0];
+  const windowId = Math.floor(utcHour / TRIAL_WINDOW_HOURS);
+
+  return { dateKey, windowId, windowStart, windowEnd };
+}
 
 // Get client IP from socket/request (handles proxies)
 function getClientIp(socket) {
-  if (socket.handshake?.headers['x-forwarded-for']) {
+  if (TRUST_PROXY && socket.handshake?.headers['x-forwarded-for']) {
     return socket.handshake.headers['x-forwarded-for'].split(',')[0].trim();
   }
-  return socket.handshake?.address || socket.remoteAddress || 'unknown';
+  return socket.handshake?.address || socket.conn?.remoteAddress || socket.remoteAddress || 'unknown';
 }
 
 // Get client IP from HTTP request (handles proxies)
 function getClientIpFromRequest(req) {
-  if (req.headers['x-forwarded-for']) {
-    return req.headers['x-forwarded-for'].split(',')[0].trim();
-  }
-  return req.ip || req.connection.remoteAddress || 'unknown';
+  return req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress || 'unknown';
 }
 
 // Initialize trial_abuse_tracking table if not exists
@@ -1198,6 +1378,51 @@ async function initializeTrialAbuseTable() {
     console.log('✓ Trial abuse tracking table initialized');
   } catch (error) {
     console.error('Error initializing trial_abuse_tracking table:', error);
+  }
+}
+
+// Initialize or upgrade free_user_daily_usage for 12-hour trial windows
+async function initializeTrialUsageTable() {
+  try {
+    const [tables] = await pool.promise().execute(`SHOW TABLES LIKE 'free_user_daily_usage'`);
+    if (tables.length === 0) {
+      await pool.promise().execute(`
+        CREATE TABLE free_user_daily_usage (
+          user_id INT NOT NULL,
+          date DATE NOT NULL,
+          window_id TINYINT NOT NULL DEFAULT 0,
+          messages_used INT DEFAULT 0,
+          image_uploads_used INT DEFAULT 0,
+          file_uploads_used INT DEFAULT 0,
+          image_generations_used INT DEFAULT 0,
+          PRIMARY KEY (user_id, date, window_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=latin1
+      `);
+      console.log('✓ free_user_daily_usage table created with 12-hour windows');
+      return;
+    }
+
+    const [columns] = await pool.promise().execute(`SHOW COLUMNS FROM free_user_daily_usage LIKE 'window_id'`);
+    if (columns.length === 0) {
+      await pool.promise().execute(
+        `ALTER TABLE free_user_daily_usage ADD COLUMN window_id TINYINT NOT NULL DEFAULT 0`
+      );
+    }
+
+    const [pkRows] = await pool.promise().execute(
+      `SHOW INDEX FROM free_user_daily_usage WHERE Key_name = 'PRIMARY'`
+    );
+    const pkColumns = pkRows.map((row) => row.Column_name);
+    const pkHasWindow = pkColumns.includes('window_id');
+    if (!pkHasWindow) {
+      await pool.promise().execute(
+        `ALTER TABLE free_user_daily_usage DROP PRIMARY KEY, ADD PRIMARY KEY (user_id, date, window_id)`
+      );
+    }
+
+    console.log('✓ free_user_daily_usage upgraded for 12-hour windows');
+  } catch (error) {
+    console.error('Error initializing free_user_daily_usage table:', error);
   }
 }
 
@@ -1291,27 +1516,30 @@ class ChatManager {
   // === Get or create daily usage record for free user ===
   async getDailyUsage(userId) {
     try {
-      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+      const windowKey = getTrialWindowKey();
+      const today = windowKey.dateKey; // YYYY-MM-DD format (UTC)
+      const windowId = windowKey.windowId;
 
       // Try to get existing record
       const [rows] = await pool.promise().execute(
-        'SELECT * FROM free_user_daily_usage WHERE user_id = ? AND date = ?',
-        [userId, today]
+        'SELECT * FROM free_user_daily_usage WHERE user_id = ? AND date = ? AND window_id = ?',
+        [userId, today, windowId]
       );
 
       if (rows.length > 0) {
         return rows[0];
       }
 
-      // Create new record for today
+      // Create new record for current 12-hour window
       await pool.promise().execute(
-        'INSERT INTO free_user_daily_usage (user_id, date, messages_used, image_uploads_used, image_generations_used) VALUES (?, ?, 0, 0, 0)',
-        [userId, today]
+        'INSERT INTO free_user_daily_usage (user_id, date, window_id, messages_used, image_uploads_used, image_generations_used) VALUES (?, ?, ?, 0, 0, 0)',
+        [userId, today, windowId]
       );
 
       return {
         user_id: userId,
         date: today,
+        window_id: windowId,
         messages_used: 0,
         image_uploads_used: 0,
         image_generations_used: 0
@@ -1325,7 +1553,9 @@ class ChatManager {
   // === Update daily usage for a specific type ===
   async updateDailyUsage(userId, type) {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const windowKey = getTrialWindowKey();
+      const today = windowKey.dateKey;
+      const windowId = windowKey.windowId;
       const columnMap = {
         'messages': 'messages_used',
         'image_uploads': 'image_uploads_used',
@@ -1336,8 +1566,8 @@ class ChatManager {
       if (!column) return false;
 
       await pool.promise().execute(
-        `UPDATE free_user_daily_usage SET ${column} = ${column} + 1 WHERE user_id = ? AND date = ?`,
-        [userId, today]
+        `UPDATE free_user_daily_usage SET ${column} = ${column} + 1 WHERE user_id = ? AND date = ? AND window_id = ?`,
+        [userId, today, windowId]
       );
       return true;
     } catch (error) {
@@ -1362,9 +1592,9 @@ class ChatManager {
 
     if (used >= limit) {
       const messages = {
-        'messages': `You've used all ${limit} trial messages for today. Come back tomorrow or top up your balance for unlimited access.`,
-        'image_uploads': `You've used all ${limit} trial image uploads for today. Come back tomorrow or top up your balance for unlimited access.`,
-        'image_generations': `You've used all ${limit} trial image generations for today. Come back tomorrow or top up your balance for unlimited access.`
+        'messages': `You've used all ${limit} trial messages for this ${TRIAL_WINDOW_HOURS}-hour window. Come back after the next reset or top up your balance for unlimited access.`,
+        'image_uploads': `You've used all ${limit} trial image uploads for this ${TRIAL_WINDOW_HOURS}-hour window. Come back after the next reset or top up your balance for unlimited access.`,
+        'image_generations': `You've used all ${limit} trial image generations for this ${TRIAL_WINDOW_HOURS}-hour window. Come back after the next reset or top up your balance for unlimited access.`
       };
       return { allowed: false, remaining: 0, message: messages[type] };
     }
@@ -1650,7 +1880,7 @@ class ChatManager {
 
 
   async processImage(file) {
-    return processUploadedImage(file);
+    return processUploadedImage(file, this.userData?.id || null);
   }
 
   async addMessage(conversationId, text, attachment = '', type = 1, usedModel = 'APILAGEAI', userId = null) {
@@ -1969,7 +2199,7 @@ ${newMessage || ''}`;
             requested_model: normalizedModelChoice,
             allowed_models: ['free'],
             chosen_model: 'free',
-            message: `Your daily trial for premium models has ended. Using "free" model. You can still send unlimited messages with the free model, or top up for premium access.`,
+            message: `Your ${TRIAL_WINDOW_HOURS}-hour trial window for premium models has ended. Using "free" model. You can still send unlimited messages with the free model, or top up for premium access.`,
           });
           chosenToken = 'free';
         } else {
@@ -2991,7 +3221,7 @@ ${newMessage || ''}`;
             requested_model: normalizedModelChoice,
             allowed_models: ['free'],
             chosen_model: 'free',
-            message: `Your daily trial for premium models has ended. Using "free" model.`,
+            message: `Your ${TRIAL_WINDOW_HOURS}-hour trial window for premium models has ended. Using "free" model.`,
           });
           chosenToken = 'free';
         } else {
@@ -3670,18 +3900,44 @@ ${newMessage || ''}`;
   }
 
   async createShareLink(conversationId, targetUserId) {
-    // Use conversation ID as the unique token (single token for all sharing)
-    const token = String(conversationId);
     try {
+      const convId = Number(conversationId);
+      const targetId = Number(targetUserId);
+      if (!convId || !targetId) {
+        return { error: true, message: 'Invalid conversation or target user' };
+      }
+
+      const expiresAt = new Date(Date.now() + SHARE_LINK_TTL_DAYS * 24 * 60 * 60 * 1000);
+
+      // Remove any previous share link for this conversation/target
       await pool
         .promise()
         .execute(
-          `INSERT INTO conversation_share_links (conversation_id, token, shared_by, target_user_id, created_at)
-           VALUES (?, ?, ?, ?, NOW())
-           ON DUPLICATE KEY UPDATE shared_by = ?`,
-          [conversationId, token, this.userData.id, targetUserId, this.userData.id]
+          'DELETE FROM conversation_share_links WHERE conversation_id = ? AND target_user_id = ?',
+          [convId, targetId]
         );
-      return { error: false, token };
+
+      let token = '';
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        token = generateSecureToken(32);
+        try {
+          await pool
+            .promise()
+            .execute(
+              `INSERT INTO conversation_share_links (conversation_id, token, shared_by, target_user_id, created_at, expires_at)
+               VALUES (?, ?, ?, ?, NOW(), ?)`,
+              [convId, token, this.userData.id, targetId, expiresAt]
+            );
+          return { error: false, token };
+        } catch (err) {
+          if (err && err.code === 'ER_DUP_ENTRY') {
+            continue;
+          }
+          throw err;
+        }
+      }
+
+      return { error: true, message: 'Unable to create share link. Please try again.' };
     } catch (error) {
       console.error('Error creating share link:', error);
       return { error: true, message: error.message };
@@ -3691,18 +3947,22 @@ ${newMessage || ''}`;
   async acceptShareToken(token) {
     try {
       if (!token) return { error: true, message: 'Invalid token' };
-      const conversationId = Number(token);
 
       // BUG FIX #3: Validate target_user_id to prevent link interception attacks
       const [rows] = await pool
         .promise()
         .execute(
-          'SELECT conversation_id, target_user_id FROM conversation_share_links WHERE token = ? LIMIT 1',
+          'SELECT conversation_id, target_user_id, expires_at FROM conversation_share_links WHERE token = ? LIMIT 1',
           [token]
         );
       if (rows.length === 0) return { error: true, message: 'Share link not found' };
 
       const shareLink = rows[0];
+      const conversationId = Number(shareLink.conversation_id);
+      if (!conversationId) return { error: true, message: 'Conversation not found' };
+      if (shareLink.expires_at && new Date(shareLink.expires_at).getTime() < Date.now()) {
+        return { error: true, message: 'Share link has expired. Ask the owner for a new link.' };
+      }
       if (shareLink.target_user_id && Number(shareLink.target_user_id) !== this.userData.id) {
         return { error: true, message: 'This share link was not sent to you. Contact the sender for a new link.' };
       }
@@ -3713,6 +3973,11 @@ ${newMessage || ''}`;
       if (convRows.length === 0) return { error: true, message: 'Conversation not found' };
 
       await this.addParticipant(conversationId, this.userData.id, this.userData.id);
+      try {
+        await pool
+          .promise()
+          .execute('DELETE FROM conversation_share_links WHERE token = ?', [token]);
+      } catch (_) { }
       return { error: false, conversation_id: conversationId };
     } catch (error) {
       console.error('Error accepting share token:', error);
@@ -3731,18 +3996,36 @@ ${newMessage || ''}`;
         return { error: true, message: 'Only conversation owner can publish' };
       }
 
-      // Use conversation ID as the unique publish token (single token for all publishing)
-      const publishToken = String(convId);
-
-      // Update or insert publish record
+      // Remove any previous publish record for this conversation
       await pool
         .promise()
-        .execute(
-          `INSERT INTO conversation_published (conversation_id, publish_token, access_level, published_by, created_at)
-           VALUES (?, ?, 'read_only', ?, NOW())
-           ON DUPLICATE KEY UPDATE access_level = 'read_only', published_by = ?, created_at = NOW()`,
-          [convId, publishToken, this.userData.id, this.userData.id]
-        );
+        .execute('DELETE FROM conversation_published WHERE conversation_id = ?', [convId]);
+
+      // Generate a random publish token
+      let publishToken = '';
+      let inserted = false;
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        publishToken = generateSecureToken(32);
+        try {
+          await pool
+            .promise()
+            .execute(
+              `INSERT INTO conversation_published (conversation_id, publish_token, access_level, published_by, created_at)
+               VALUES (?, ?, 'read_only', ?, NOW())`,
+              [convId, publishToken, this.userData.id]
+            );
+          inserted = true;
+          break;
+        } catch (err) {
+          if (err && err.code === 'ER_DUP_ENTRY') {
+            continue;
+          }
+          throw err;
+        }
+      }
+      if (!inserted) {
+        return { error: true, message: 'Unable to publish conversation. Please try again.' };
+      }
 
       // Mark conversation as published
       await pool
@@ -5317,7 +5600,7 @@ app.post(
       }
       const processedFilenames = [];
       for (const file of files) {
-        processedFilenames.push(await processUploadedImage(file.filename));
+        processedFilenames.push(await processUploadedImage(file.filename, req.userData.id, file.originalname));
       }
       res.json({ success: true, filenames: processedFilenames, filename: processedFilenames[0] });
     } catch (error) {
@@ -5356,7 +5639,7 @@ app.post(
       }
       const documents = [];
       for (const file of files) {
-        documents.push(await processUploadedDocument(file));
+        documents.push(await processUploadedDocument(file, req.userData.id));
       }
       res.json({ success: true, documents, document: documents[0] });
     } catch (error) {
@@ -5377,6 +5660,28 @@ app.post('/upload-document/delete', authenticateRequest, (req, res) => {
     if (!list.length) {
       return res.status(400).json({ error: true, message: 'Document id required' });
     }
+
+    const unauthorized = [];
+    for (const entry of list) {
+      const meta = readDocumentMeta(entry.id);
+      const metaOwner = meta?.user_id ? Number(meta.user_id) : null;
+      if (!metaOwner || metaOwner !== Number(req.userData.id)) {
+        unauthorized.push(entry.id);
+        continue;
+      }
+      if (entry.filename && meta?.filename && path.basename(String(entry.filename)) !== path.basename(String(meta.filename))) {
+        unauthorized.push(entry.id);
+      }
+    }
+
+    if (unauthorized.length) {
+      return res.status(403).json({
+        error: true,
+        message: 'You do not have permission to delete one or more documents.',
+        unauthorized,
+      });
+    }
+
     const deleted = [];
     list.forEach((entry) => {
       const meta = readDocumentMeta(entry.id) || {};
@@ -5397,20 +5702,40 @@ app.post('/upload-document/delete', authenticateRequest, (req, res) => {
 });
 
 app.post('/upload/delete', authenticateRequest, (req, res) => {
-  try {
-    const filenames = normalizeAttachmentList(req.body?.filenames || req.body?.filename);
-    if (!filenames.length) {
-      return res.status(400).json({ error: 'Filename required' });
+  (async () => {
+    try {
+      const filenames = normalizeAttachmentList(req.body?.filenames || req.body?.filename);
+      if (!filenames.length) {
+        return res.status(400).json({ error: 'Filename required' });
+      }
+
+      const unauthorized = [];
+      for (const name of filenames) {
+        const ownedByMeta = isImageOwnedByUser(name, req.userData.id);
+        const ownedByMessages = ownedByMeta ? true : await userHasAttachment(req.userData.id, name);
+        if (!ownedByMessages) {
+          unauthorized.push(name);
+        }
+      }
+
+      if (unauthorized.length) {
+        return res.status(403).json({
+          error: true,
+          message: 'You do not have permission to delete one or more files.',
+          unauthorized,
+        });
+      }
+
+      const deleted = [];
+      filenames.forEach((name) => {
+        if (safeUnlinkUserUpload(name)) deleted.push(name);
+      });
+      return res.json({ success: true, deleted });
+    } catch (error) {
+      console.error('Upload delete error:', error);
+      return res.status(500).json({ error: 'Delete failed: ' + error.message });
     }
-    const deleted = [];
-    filenames.forEach((name) => {
-      if (safeUnlinkUserUpload(name)) deleted.push(name);
-    });
-    res.json({ success: true, deleted });
-  } catch (error) {
-    console.error('Upload delete error:', error);
-    res.status(500).json({ error: 'Delete failed: ' + error.message });
-  }
+  })();
 });
 
 app.get('/health', (req, res) => {
@@ -5502,6 +5827,10 @@ app.post('/api/conversations/:id/share', authenticateRequest, async (req, res) =
 
   try {
     const cm = new ChatManager(req.userData);
+    const isOwner = await cm.isConversationOwner(conversationId);
+    if (!isOwner) {
+      return res.status(403).json({ error: true, message: 'Only the conversation owner can share this chat' });
+    }
     const hasAccess = await cm.conversationExists(conversationId);
     if (!hasAccess) return res.status(403).json({ error: true, message: 'Conversation not found or no access' });
 
@@ -5824,6 +6153,9 @@ server.listen(PORT, '127.0.0.1', async () => {
       err.message
     );
   }
+
+  // Initialize trial usage table for 12-hour windows
+  await initializeTrialUsageTable();
 
   // Initialize trial abuse tracking table
   await initializeTrialAbuseTable();
