@@ -374,11 +374,11 @@ const COOKIE_USER_ID = 'APILAGE_AI_LK_USER_ID';
 const COOKIE_USER_TOKEN = 'APILAGE_AI_LK_TOKEN';
 
 // ====== CORS / Preflight ======
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.APP_URL || 'http://localhost:8888')
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.APP_URL || 'https://apilageai.lk')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
-const APP_BASE_URL = (process.env.APP_URL || process.env.PUBLIC_BASE_URL || allowedOrigins[0] || 'http://localhost:8888').replace(/\/$/, '');
+const APP_BASE_URL = (process.env.APP_URL || process.env.PUBLIC_BASE_URL || allowedOrigins[0] || 'https://apilageai.lk').replace(/\/$/, '');
 const TRUST_PROXY = (process.env.TRUST_PROXY || '').toLowerCase() === 'true'
   || process.env.NODE_ENV === 'production';
 app.set('trust proxy', TRUST_PROXY);
@@ -6140,7 +6140,8 @@ server.listen(PORT, '127.0.0.1', async () => {
   console.log('='.repeat(60));
   console.log(`  Port: ${PORT} (localhost only)`);
   console.log(`  Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`  Health check: http://127.0.0.1:${PORT}/health`);
+  const publicHealthUrl = (process.env.APP_URL || 'https://apilageai.lk').replace(/\/$/, '') + '/health';
+  console.log(`  Health check: ${publicHealthUrl}`);
   console.log('='.repeat(60));
 
   // Initialize Redis for rate limiting

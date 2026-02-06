@@ -81,7 +81,7 @@ $_smarty_tpl->renderSubTemplate("file:components/header.tpl", $_smarty_tpl->cach
                 </div>
                 <div class="flip-card-back p-6">
                   <video class="w-full h-full object-cover rounded-lg" muted loop playsinline preload="metadata">
-                    <source src="http://localhost:8888/assets/videos/Mind%20map.mp4" type="video/mp4">
+                    <source src="https://apilageai.lk/assets/videos/Mind%20map.mp4" type="video/mp4">
                   </video>
                 </div>
               </div>
@@ -108,7 +108,7 @@ $_smarty_tpl->renderSubTemplate("file:components/header.tpl", $_smarty_tpl->cach
                 </div>
                 <div class="flip-card-back p-6">
                   <video class="w-full h-full object-cover rounded-lg" muted loop playsinline preload="metadata">
-                    <source src="http://localhost:8888/assets/videos/Flowchart.mp4" type="video/mp4">
+                    <source src="https://apilageai.lk/assets/videos/Flowchart.mp4" type="video/mp4">
                   </video>
                 </div>
               </div>
@@ -130,7 +130,7 @@ $_smarty_tpl->renderSubTemplate("file:components/header.tpl", $_smarty_tpl->cach
                 </div>
                 <div class="flip-card-back p-6">
                   <video class="w-full h-full object-cover rounded-lg" muted loop playsinline preload="metadata">
-                    <source src="http://localhost:8888/assets/videos/1009%20(1).mp4" type="video/mp4">
+                    <source src="https://apilageai.lk/assets/videos/1009%20(1).mp4" type="video/mp4">
                   </video>
                 </div>
               </div>
@@ -151,7 +151,7 @@ $_smarty_tpl->renderSubTemplate("file:components/header.tpl", $_smarty_tpl->cach
                 </div>
                 <div class="flip-card-back p-6">
                   <video class="w-full h-full object-cover rounded-lg" muted loop playsinline preload="metadata">
-                    <source src="http://localhost:8888/assets/videos/image%20process.mp4" type="video/mp4">
+                    <source src="https://apilageai.lk/assets/videos/image%20process.mp4" type="video/mp4">
                   </video>
                 </div>
               </div>
@@ -178,7 +178,7 @@ $_smarty_tpl->renderSubTemplate("file:components/header.tpl", $_smarty_tpl->cach
                 Soon it can generate educational explanatory videos.
             </div>
             <div class="flex-1">
-              <img src="http://localhost:8888/assets/images/super.png" alt="Master Model Screenshot" class="w-full rounded-lg shadow-hard border-2 border-brand-dark">
+              <img src="https://apilageai.lk/assets/images/super.png" alt="Master Model Screenshot" class="w-full rounded-lg shadow-hard border-2 border-brand-dark">
             </div>
           </div>
         </div>
@@ -234,7 +234,7 @@ $_smarty_tpl->renderSubTemplate("file:components/header.tpl", $_smarty_tpl->cach
                       Valid for 60 days
                     </li>
                  </ul>
-                 <a href="http://localhost:8888/pay/200" class="btn-secondary w-full">Top Up</a>
+                 <a href="https://apilageai.lk/pay/200" class="btn-secondary w-full">Top Up</a>
               </div>
 
               <div class="bg-brand-red p-8 rounded-2xl border-2 border-brand-dark shadow-hard-lg relative transform md:-translate-y-4">
@@ -279,7 +279,7 @@ $_smarty_tpl->renderSubTemplate("file:components/header.tpl", $_smarty_tpl->cach
                       Valid for 60 days
                     </li>
                  </ul>
-                 <a href="http://localhost:8888/pay/500" class="btn-secondary w-full border-none !shadow-hard">Top Up Now</a>
+                 <a href="https://apilageai.lk/pay/500" class="btn-secondary w-full border-none !shadow-hard">Top Up Now</a>
               </div>
 
               <div class="bg-white p-8 rounded-2xl border-2 border-brand-dark shadow-hard hover:shadow-hard-lg transition-all">
@@ -317,7 +317,7 @@ $_smarty_tpl->renderSubTemplate("file:components/header.tpl", $_smarty_tpl->cach
                       Access to video generation model (Coming soon)
                     </li>
                  </ul>
-                 <a href="http://localhost:8888/pay/1000" class="btn-secondary w-full">Top Up</a>
+                 <a href="https://apilageai.lk/pay/1000" class="btn-secondary w-full">Top Up</a>
               </div>
            </div>
 

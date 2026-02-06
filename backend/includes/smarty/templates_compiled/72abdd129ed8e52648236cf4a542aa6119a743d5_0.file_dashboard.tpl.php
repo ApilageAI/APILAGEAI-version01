@@ -39,7 +39,7 @@ $_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_
         </button>
       </div>
       <nav class="sidebar-nav">
-         <a href="http://localhost:8888/app" class="nav-link">
+         <a href="https://apilageai.lk/app" class="nav-link">
          <i class="fas fa-comments"></i> <span>AI Chat</span>
         </a>
         <a href="#" class="nav-link active" data-tab="explore">
@@ -70,12 +70,12 @@ $_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_
                 <i id="theme-icon" class="fas fa-sun"></i>
               </button>
               <img
-                src="<?php if (!( !true || empty($_smarty_tpl->getValue('user')->_data['image']))) {?>http://localhost:8888/uploads/<?php echo $_smarty_tpl->getValue('user')->_data['image'];
-} else { ?>http://localhost:8888/assets/images/user.png<?php }?>"
+                src="<?php if (!( !true || empty($_smarty_tpl->getValue('user')->_data['image']))) {?>https://apilageai.lk/uploads/<?php echo $_smarty_tpl->getValue('user')->_data['image'];
+} else { ?>https://apilageai.lk/assets/images/user.png<?php }?>"
                 alt="<?php echo $_smarty_tpl->getValue('user')->_data['first_name'];?>
  Avatar"
                 class="profile-pic"
-                onerror="this.onerror=null;this.src='http://localhost:8888/assets/images/user.png';"
+                onerror="this.onerror=null;this.src='https://apilageai.lk/assets/images/user.png';"
               />
             </div>
           </div>
@@ -95,14 +95,14 @@ $_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_
       <a href="#" class="bottom-nav-link" data-tab="friends">
        <i class="fas fa-compass"></i> <span>Explore</span>
       </a>
-      <a href="http://localhost:8888/app/" class="bottom-nav-link">
+      <a href="https://apilageai.lk/app/" class="bottom-nav-link">
         <i class="fas fa-comments"></i> <span>AI Chat</span>
       </a>
     </nav>
   </div>
 
      <?php echo '<script'; ?>
- src="http://localhost:8888/assets/scripts/dashboard.min.js?V=04.22.10.2025"><?php echo '</script'; ?>
+ src="https://apilageai.lk/assets/scripts/dashboard.min.js?V=04.22.10.2025"><?php echo '</script'; ?>
 >
 </body>
 </html><?php }

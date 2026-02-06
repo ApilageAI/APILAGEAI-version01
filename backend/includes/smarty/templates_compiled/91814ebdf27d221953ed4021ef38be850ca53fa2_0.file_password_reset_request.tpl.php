@@ -29,7 +29,7 @@ $_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_
 <div class="auth-layout">
     <!-- Left Image -->
     <div class="auth-image">
-        <img src="http://localhost:8888/assets/images/reset.png" alt="Reset Password Background" />
+        <img src="https://apilageai.lk/assets/images/reset.png" alt="Reset Password Background" />
     </div>
 
     <!-- Right Form -->

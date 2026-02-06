@@ -31,8 +31,8 @@ $_smarty_current_dir = '/home/apilageai/domains/apilageai.lk/backend/includes/sm
 </title>
 
     <!-- Favicon / Site Icon -->
-    <link rel="icon" type="image/png" href="http://localhost:8888/assets/images/icon.png">
-    <link rel="shortcut icon" type="image/png" href="http://localhost:8888/assets/images/icon.png">
+    <link rel="icon" type="image/png" href="https://apilageai.lk/assets/images/icon.png">
+    <link rel="shortcut icon" type="image/png" href="https://apilageai.lk/assets/images/icon.png">
     
 <!--SEO-->
 <meta name="description" content="<?php echo $_smarty_tpl->getValue('page_description');?>
@@ -41,13 +41,13 @@ $_smarty_current_dir = '/home/apilageai/domains/apilageai.lk/backend/includes/sm
   <meta name="author" content="Apilageai (PVT) LTD" />
   <meta property="og:title" content="Apilage AI - Sri Lankan's AI assistant" />
   <meta property="og:description" content="Sri Lankan AI agent for day today tasks and education" />
-  <meta property="og:image" content="http://localhost:8888/assets/images/welcome.jpg" />
-  <meta property="og:url" content="http://localhost:8888" />
+  <meta property="og:image" content="https://apilageai.lk/assets/images/welcome.jpg" />
+  <meta property="og:url" content="https://apilageai.lk" />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Apilage AI - Sri Lankan's AI assistant" />
   <meta name="twitter:description" content="Sri Lankan AI agent for day today tasks and education" />
-  <meta name="twitter:image" content="http://localhost:8888/assets/images/welcome.jpg" />
+  <meta name="twitter:image" content="https://apilageai.lk/assets/images/welcome.jpg" />
   <meta name="twitter:site" content="@ApilageAI" />
 <!-- Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -151,15 +151,15 @@ window.MathJax = {
  src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"><?php echo '</script'; ?>
 >
 <!-- cssadded -->
- <link rel="stylesheet" type="text/css" href="http://localhost:8888/assets/styles/normalize.css?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_number')();?>
+ <link rel="stylesheet" type="text/css" href="https://apilageai.lk/assets/styles/normalize.css?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_number')();?>
 ">
- <link rel="stylesheet" type="text/css" href="http://localhost:8888/assets/styles/mp.min.css?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_number')();?>
+ <link rel="stylesheet" type="text/css" href="https://apilageai.lk/assets/styles/mp.min.css?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_number')();?>
 ">
- <link rel="stylesheet" type="text/css" href="http://localhost:8888/assets/styles/gm.min.css?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_number')();?>
+ <link rel="stylesheet" type="text/css" href="https://apilageai.lk/assets/styles/gm.min.css?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_number')();?>
 ">
- <link rel="stylesheet" type="text/css" href="http://localhost:8888/assets/styles/ob.css?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_number')();?>
+ <link rel="stylesheet" type="text/css" href="https://apilageai.lk/assets/styles/ob.css?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_number')();?>
 ">
-  <link rel="stylesheet" type="text/css" href="http://localhost:8888/assets/styles/canvo.min.css?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_number')();?>
+  <link rel="stylesheet" type="text/css" href="https://apilageai.lk/assets/styles/canvo.min.css?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_number')();?>
 ">
 <!-- Prism.js for syntax highlighting -->
 <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css" rel="stylesheet" />
@@ -174,20 +174,20 @@ window.MathJax = {
 >
 
 
-            <link rel="stylesheet" type="text/css" href="http://localhost:8888/assets/styles/app.min.css?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_number')();?>
+            <link rel="stylesheet" type="text/css" href="https://apilageai.lk/assets/styles/app.min.css?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_number')();?>
 ">
         <?php } elseif ($_smarty_tpl->getValue('page') == "dashboard") {?>
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-            <link rel="stylesheet" href="http://localhost:8888/assets/styles/dashboard.min.css?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_number')();?>
+            <link rel="stylesheet" href="https://apilageai.lk/assets/styles/dashboard.min.css?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_number')();?>
 " />
         <?php } elseif ($_smarty_tpl->getSmarty()->getModifierCallback('in_array')($_smarty_tpl->getValue('page'),array("login","register","password_reset"))) {?>
-            <link rel="stylesheet" type="text/css" href="http://localhost:8888/assets/styles/auth.min.css?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_number')();?>
+            <link rel="stylesheet" type="text/css" href="https://apilageai.lk/assets/styles/auth.min.css?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_number')();?>
 ">
         <?php } else { ?>
-            <link rel="stylesheet" type="text/css" href="http://localhost:8888/assets/styles/main.min.css?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_number')();?>
+            <link rel="stylesheet" type="text/css" href="https://apilageai.lk/assets/styles/main.min.css?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_number')();?>
 ">
         <?php }?>
  

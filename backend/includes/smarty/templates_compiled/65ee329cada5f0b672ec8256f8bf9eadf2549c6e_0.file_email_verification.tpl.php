@@ -47,7 +47,7 @@ $_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_
                             </button>
                         <?php }?>
                         
-                        <a href="http://localhost:8888/auth/login" class="back-link">
+                        <a href="https://apilageai.lk/auth/login" class="back-link">
                             <i class="fa-solid fa-arrow-left"></i> Back to Login
                         </a>
                     </div>
@@ -66,7 +66,7 @@ $_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_
                             <p class="info-text">Welcome to Apilage AI! You can now access all features.</p>
                         <?php }?>
                         
-                        <a href="http://localhost:8888/auth/login?verified=success" class="auth-submit-button" style="margin-top: 20px;">
+                        <a href="https://apilageai.lk/auth/login?verified=success" class="auth-submit-button" style="margin-top: 20px;">
                             Go to Login <i class="fa-solid fa-arrow-right"></i>
                         </a>
                     </div>
@@ -341,7 +341,7 @@ function requestNewLink() {
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
 
-    fetch('http://localhost:8888/auth/resend-verification', {
+    fetch('https://apilageai.lk/auth/resend-verification', {
         method: 'POST',
         headers: { 
             'Content-Type': 'application/x-www-form-urlencoded' 
@@ -358,7 +358,7 @@ function requestNewLink() {
         } else {
             alert('Success! ' + data.m + '\n\nPlease check your email inbox.');
             setTimeout(() => {
-                window.location.href = 'http://localhost:8888/auth/login';
+                window.location.href = 'https://apilageai.lk/auth/login';
             }, 2000);
         }
     })
@@ -373,7 +373,7 @@ function requestNewLink() {
 // Auto-redirect after successful verification
 <?php if (!$_smarty_tpl->getValue('result')['e'] && !(true && (true && null !== ($_smarty_tpl->getValue('result')['already_verified'] ?? null)))) {?>
     setTimeout(function() {
-        window.location.href = 'http://localhost:8888/auth/login?verified=success';
+        window.location.href = 'https://apilageai.lk/auth/login?verified=success';
     }, 5000);
 <?php }
 echo '</script'; ?>

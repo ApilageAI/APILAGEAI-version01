@@ -29,7 +29,7 @@ $_smarty_current_dir = '/home/apilageai/domains/apilageai.lk/backend/includes/sm
             <div class="col-span-2 md:col-span-1">
               <div class="flex items-center gap-3 mb-6">
                 <img
-                  src="http://localhost:8888/assets/images/icon.png"
+                  src="https://apilageai.lk/assets/images/icon.png"
                   alt="ApilageAI Logo"
                   class="w-10 h-10 object-contain"
                 />
@@ -59,8 +59,8 @@ $_smarty_current_dir = '/home/apilageai/domains/apilageai.lk/backend/includes/sm
             <div>
               <h4 class="font-bold text-brand-dark mb-6 uppercase tracking-wider font-display border-b-2 border-brand-dark inline-block">Legal</h4>
               <ul class="space-y-4 text-sm font-bold text-brand-dark/60">
-                <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="http://localhost:8888/privacypolicy/">Privacy Policy</a></li>
-                <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="http://localhost:8888/termsconditions/">Terms of Service</a></li>
+                <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="https://apilageai.lk/privacypolicy/">Privacy Policy</a></li>
+                <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="https://apilageai.lk/termsconditions/">Terms of Service</a></li>
               </ul>
             </div>
 
@@ -107,7 +107,7 @@ $_smarty_current_dir = '/home/apilageai/domains/apilageai.lk/backend/includes/sm
  src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"><?php echo '</script'; ?>
 >
 <?php echo '<script'; ?>
- src="http://localhost:8888/assets/scripts/main.js?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
+ src="https://apilageai.lk/assets/scripts/main.js?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
 "><?php echo '</script'; ?>
 >
 

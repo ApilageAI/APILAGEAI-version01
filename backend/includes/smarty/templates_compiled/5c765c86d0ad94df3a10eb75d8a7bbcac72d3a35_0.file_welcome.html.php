@@ -35,7 +35,7 @@ $_smarty_current_dir = '/home/apilageai/domains/apilageai.lk/backend/includes/sm
     <div style="max-width: 600px; margin: 40px auto; padding: 0; border-radius: 15px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.1);">
         <!-- Header -->
         <div style="background-color: #e63946; color: #ffffff; text-align: center; padding: 40px 30px;">
-            <img src="http://localhost:8888/assets/images/icon.png" alt="ApilageAI" style="width: 100px; margin-bottom: 15px;">
+            <img src="https://apilageai.lk/assets/images/icon.png" alt="ApilageAI" style="width: 100px; margin-bottom: 15px;">
             <h1 style="margin: 0; font-size: 32px; font-weight: bold;">Welcome to Apilage AI! ?</h1>
         </div>
 
@@ -58,7 +58,7 @@ $_smarty_current_dir = '/home/apilageai/domains/apilageai.lk/backend/includes/sm
 
             <!-- CTA Button -->
             <div style="text-align: center; margin: 30px 0;">
-                <a href="http://localhost:8888/app" 
+                <a href="https://apilageai.lk/app" 
                    style="background-color: #e63946; color: #ffffff; text-decoration: none; padding: 15px 50px; border-radius: 50px; font-weight: bold; display: inline-block; font-size: 16px;">Get Started Now</a>
             </div>
 
@@ -78,7 +78,7 @@ $_smarty_current_dir = '/home/apilageai/domains/apilageai.lk/backend/includes/sm
         <!-- Footer -->
         <div style="text-align: center; background-color: #f9f9f9; padding: 20px; font-size: 12px; color: #999999;">
             <p style="margin: 5px 0;">
-                <a href="http://localhost:8888" style="color: #e63946; text-decoration: none; margin: 0 10px;">Support</a>
+                <a href="https://apilageai.lk" style="color: #e63946; text-decoration: none; margin: 0 10px;">Support</a>
             </p>
             <p style="margin: 15px 0 5px 0;">&copy; 2025 ApilageAI. All rights reserved.</p>
         </div>

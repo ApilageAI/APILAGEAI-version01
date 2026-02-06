@@ -35,7 +35,7 @@ echo '<script'; ?>
     <div class="auth-wrapper">
         <!-- Left Image Section -->
         <div class="auth-image">
-            <img src="http://localhost:8888/assets/images/login.jpg" alt="Login illustration" />
+            <img src="https://apilageai.lk/assets/images/login.jpg" alt="Login illustration" />
         </div>
 
         <!-- Right Form Section -->
@@ -46,7 +46,7 @@ echo '<script'; ?>
             </div>
 
             <div class="toggle-message animate-fade-in">
-                <p>Are you a new member?? <a href="http://localhost:8888/auth/register" id="signupLink">Sign up</a></p>
+                <p>Are you a new member?? <a href="https://apilageai.lk/auth/register" id="signupLink">Sign up</a></p>
             </div>
 
                         <?php if ((true && (true && null !== ($_GET['verified'] ?? null))) && $_GET['verified'] == 'success') {?>
@@ -94,7 +94,7 @@ echo '<script'; ?>
                     <a href="https://globbook.com/api/oauth?app_id=56532326578385" class="social-button animate-slide-up" style="animation-delay: 0.1s">
                         <i class="fa-solid fa-earth-asia"></i> <span>Globbook</span>
                     </a>
-                    <a href="http://localhost:8888/auth/google" class="social-button animate-slide-up" style="animation-delay: 0.15s">
+                    <a href="https://apilageai.lk/auth/google" class="social-button animate-slide-up" style="animation-delay: 0.15s">
                         <i class="fa-brands fa-google"></i> <span>Google</span>
                     </a>
                 </div>
@@ -132,7 +132,7 @@ echo '<script'; ?>
                         </center>
 
                         <div class="forgot-password animate-fade-in" style="animation-delay: 0.2s">
-                            <a href="http://localhost:8888/auth/reset-request" id="forgotPasswordLink">Forgot password?</a>
+                            <a href="https://apilageai.lk/auth/reset-request" id="forgotPasswordLink">Forgot password?</a>
                         </div>
 
                         <button type="submit" class="auth-submit-button animate-slide-up" style="animation-delay: 0.25s">
@@ -156,10 +156,10 @@ document.getElementById("showEmailLoginBtn").addEventListener("click", function(
 <?php echo '</script'; ?>
 >
 	<?php echo '<script'; ?>
- src="http://localhost:8888/assets/scripts/libs/dialog-js/main.min.js?V=01.03.04.2025"><?php echo '</script'; ?>
+ src="https://apilageai.lk/assets/scripts/libs/dialog-js/main.min.js?V=01.03.04.2025"><?php echo '</script'; ?>
 >
 	<?php echo '<script'; ?>
- src="http://localhost:8888/assets/scripts/auth-login.min.js?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
+ src="https://apilageai.lk/assets/scripts/auth-login.min.js?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
 "><?php echo '</script'; ?>
 >
 </body>

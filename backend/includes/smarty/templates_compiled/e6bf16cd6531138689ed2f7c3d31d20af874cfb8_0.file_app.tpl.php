@@ -42,7 +42,7 @@ echo '<script'; ?>
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header" style="display: flex; align-items: center; justify-content: center; position: relative;">
-            <img class="sidebar-logo" src="http://localhost:8888/assets/images/icon.png" alt="Apilageai logo" style="width: 44px; height: 44px; object-fit: contain;" />
+            <img class="sidebar-logo" src="https://apilageai.lk/assets/images/icon.png" alt="Apilageai logo" style="width: 44px; height: 44px; object-fit: contain;" />
             <button id="sidebarback" class="sidebar-backn" aria-label="Open sidebar" style="position: absolute; right: 0;">
                 <i class="fa fa-chevron-left" aria-hidden="true"></i>
             </button>
@@ -78,7 +78,7 @@ echo '<script'; ?>
             <span class="sidebar-but-icon"><i class="fas fa-gamepad"></i></span>
             <span class="sidebar-but-text">MCQ game</span>
         </button>
-         <button class="sidebar-but" type="button" onclick="window.open('http://localhost:8888/dashboard', '_self');" title="Image Gallery">
+         <button class="sidebar-but" type="button" onclick="window.open('https://apilageai.lk/dashboard', '_self');" title="Image Gallery">
             <span class="sidebar-but-icon"><i class="fa fa-image"></i></span>
             <span class="sidebar-but-text">Image Gallery</span>
         </button>
@@ -93,11 +93,11 @@ echo '<script'; ?>
   <div class="sidebar-footer-userinfo" id="sidebarUserInfo" title="Open settings">
     <div class="user-avatar">
       <img
-        src="<?php if (!( !true || empty($_smarty_tpl->getValue('user')->_data['image']))) {?>http://localhost:8888<?php echo $_smarty_tpl->getValue('user')->_data['image'];
-} else { ?>http://localhost:8888/assets/images/user.png<?php }?>"
+        src="<?php if (!( !true || empty($_smarty_tpl->getValue('user')->_data['image']))) {?>https://apilageai.lk<?php echo $_smarty_tpl->getValue('user')->_data['image'];
+} else { ?>https://apilageai.lk/assets/images/user.png<?php }?>"
         alt="<?php echo $_smarty_tpl->getValue('user')->_data['first_name'];?>
  Avatar"
-        onerror="this.onerror=null;this.src='http://localhost:8888/assets/images/user.png';"
+        onerror="this.onerror=null;this.src='https://apilageai.lk/assets/images/user.png';"
       />
     </div>
     <div class="user-details">
@@ -427,11 +427,11 @@ echo '<script'; ?>
                         <div class="profile-photo-section">
                             <img
                               id="profilePhoto"
-                              src="<?php if (!( !true || empty($_smarty_tpl->getValue('user')->_data['image']))) {?>http://localhost:8888<?php echo $_smarty_tpl->getValue('user')->_data['image'];
-} else { ?>http://localhost:8888/assets/images/user.png<?php }?>"
+                              src="<?php if (!( !true || empty($_smarty_tpl->getValue('user')->_data['image']))) {?>https://apilageai.lk<?php echo $_smarty_tpl->getValue('user')->_data['image'];
+} else { ?>https://apilageai.lk/assets/images/user.png<?php }?>"
                               alt="<?php echo $_smarty_tpl->getValue('user')->_data['first_name'];?>
  Avatar"
-                              onerror="this.onerror=null;this.src='http://localhost:8888/assets/images/user.png';"
+                              onerror="this.onerror=null;this.src='https://apilageai.lk/assets/images/user.png';"
                             />
                             <div>
                                 <input type="file" id="profilePhotoInput" accept="image/*" style="display:none;">
@@ -586,7 +586,7 @@ echo '<script'; ?>
                         </div>
                          <div class="setting-item">
                             <span>Account</span>
-                            <a href="http://localhost:8888/auth/signout" class="btn btn-secondary"><i class="fa fa-sign-out-alt"></i> Log Out</a>
+                            <a href="https://apilageai.lk/auth/signout" class="btn btn-secondary"><i class="fa fa-sign-out-alt"></i> Log Out</a>
                         </div>
                     </div>
                     <div class="danger-zone">
@@ -1046,33 +1046,33 @@ echo '<script'; ?>
  src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"><?php echo '</script'; ?>
 >
 <?php echo '<script'; ?>
- src="http://localhost:8888/assets/scripts/libs/dialog-js/main.min.js?V=01.03.04.2025"><?php echo '</script'; ?>
+ src="https://apilageai.lk/assets/scripts/libs/dialog-js/main.min.js?V=01.03.04.2025"><?php echo '</script'; ?>
 >
 <?php echo '<script'; ?>
- src="http://localhost:8888/assets/scripts/mp.min.js?V=01.22.22.2025"><?php echo '</script'; ?>
+ src="https://apilageai.lk/assets/scripts/mp.min.js?V=01.22.22.2025"><?php echo '</script'; ?>
 >
 <?php echo '<script'; ?>
- src="http://localhost:8888/assets/scripts/app.min.js?V=1.30.01.2026<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
+ src="https://apilageai.lk/assets/scripts/app.min.js?V=1.30.01.2026<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
 "><?php echo '</script'; ?>
 >
 <?php echo '<script'; ?>
- src="http://localhost:8888/assets/scripts/prefrence.min.js?V=1.25.1.2026"><?php echo '</script'; ?>
+ src="https://apilageai.lk/assets/scripts/prefrence.min.js?V=1.25.1.2026"><?php echo '</script'; ?>
 >
 <?php echo '<script'; ?>
- src="http://localhost:8888/assets/scripts/notifications.js?V=03.01.10.2025"><?php echo '</script'; ?>
+ src="https://apilageai.lk/assets/scripts/notifications.js?V=03.01.10.2025"><?php echo '</script'; ?>
 >
 <?php echo '<script'; ?>
- type="module" src="http://localhost:8888/assets/scripts/gm.min.js?V=12.20.10.2025"><?php echo '</script'; ?>
+ type="module" src="https://apilageai.lk/assets/scripts/gm.min.js?V=12.20.10.2025"><?php echo '</script'; ?>
 >
 <?php echo '<script'; ?>
- src="http://localhost:8888/assets/scripts/ob.js?V=10.26.09.2025"><?php echo '</script'; ?>
+ src="https://apilageai.lk/assets/scripts/ob.js?V=10.26.09.2025"><?php echo '</script'; ?>
 >
 <?php echo '<script'; ?>
- src="http://localhost:8888/assets/scripts/report-data.js?V=1.25.01.2026<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
+ src="https://apilageai.lk/assets/scripts/report-data.js?V=1.25.01.2026<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
 "><?php echo '</script'; ?>
 >
 <?php echo '<script'; ?>
- src="http://localhost:8888/assets/scripts/canvo.min.js?V=1.25.01.2026<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
+ src="https://apilageai.lk/assets/scripts/canvo.min.js?V=1.25.01.2026<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
 "><?php echo '</script'; ?>
 >
 

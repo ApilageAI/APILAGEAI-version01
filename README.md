@@ -3,9 +3,9 @@
 ApilageAI is a PHP web app with a Node.js backend for realtime/AI features. The PHP app serves the web UI, handles auth, and connects to MySQL. The Node service provides APIs and Socket.IO.
 
 **Quick Links (Local)**
-- Web: `http://localhost:8888/`
-- App: `http://localhost:8888/app`
-- Node API: `http://localhost:5001/health`
+- Web: `https://apilageai.lk/`
+- App: `https://apilageai.lk/app`
+- Node API: `https://apilageai.lk/health`
 
 **How The App Works**
 1. **Apache + PHP** serve the main site and UI pages from the project root.
@@ -50,8 +50,8 @@ DB_PORT=8889
 DB_USER=root
 DB_PASSWORD=root
 DB_NAME=apilageai_main_db
-APP_URL=http://localhost:8888
-NODE_API_BASE=http://localhost:5001
+APP_URL=https://apilageai.lk
+NODE_API_BASE=https://apilageai.lk
 NODE_ENV=development
 APP_DEBUG=true
 ```
@@ -62,8 +62,8 @@ npm install
 npm run dev
 ```
 7. **Open**:
-- `http://localhost:8888/`
-- `http://localhost:8888/app`
+- `https://apilageai.lk/`
+- `https://apilageai.lk/app`
 
 ## Local Setup (Windows with XAMPP/WAMP)
 1. **Move the project** to your Apache root, for example:
@@ -88,8 +88,8 @@ DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=your_password
 DB_NAME=apilageai_main_db
-APP_URL=http://localhost:8888
-NODE_API_BASE=http://localhost:5001
+APP_URL=https://apilageai.lk
+NODE_API_BASE=https://apilageai.lk
 NODE_ENV=development
 APP_DEBUG=true
 ```
@@ -100,8 +100,8 @@ npm install
 npm run dev
 ```
 6. **Open**:
-- `http://localhost:8888/`
-- `http://localhost:8888/app`
+- `https://apilageai.lk/`
+- `https://apilageai.lk/app`
 
 ## Uploads and Permissions
 - Uploads are stored in `uploads/userimg` and `uploads/genimg`.
@@ -139,7 +139,7 @@ npm run dev
 ## Server Deployment (Nginx)
 1. **Serve PHP** with PHP-FPM.
 2. **Add rewrites** to map `/app`, `/auth`, `/images`, `/pay` to PHP files.
-3. **Proxy Node** to `127.0.0.1:5001`.
+3. **Proxy Node** to `apilageai.lk`.
 4. **Ensure uploads are writable** by the PHP-FPM user.
 
 ## Debugging

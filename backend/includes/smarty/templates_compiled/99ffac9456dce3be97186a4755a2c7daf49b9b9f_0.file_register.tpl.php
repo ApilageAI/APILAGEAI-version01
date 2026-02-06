@@ -35,7 +35,7 @@ echo '<script'; ?>
     <div class="auth-wrapper">
         <!-- Left Image Section -->
         <div class="auth-image">
-            <img src="http://localhost:8888/assets/images/signup.jpg" alt="Signup illustration" />
+            <img src="https://apilageai.lk/assets/images/signup.jpg" alt="Signup illustration" />
         </div>
 
         <!-- Right Form Section -->
@@ -54,7 +54,7 @@ echo '<script'; ?>
             <!-- Social Login Section moved above auth-card -->
             <div class="social-login">
                 <div class="social-buttons">
-                  <a href="http://localhost:8888/auth/google" class="social-button animate-slide-up" style="animation-delay: 0.55s">
+                  <a href="https://apilageai.lk/auth/google" class="social-button animate-slide-up" style="animation-delay: 0.55s">
                         <i class="fa-brands fa-google"></i> <span>Google</span>
                     </a>
                     <a href="https://globbook.com/api/oauth?app_id=56532326578385" class="social-button animate-slide-up" style="animation-delay: 0.5s">
@@ -146,13 +146,13 @@ echo '<script'; ?>
                 </div>
                 <!-- Login Redirect -->
                 <div class="signup-link animate-fade-in" style="animation-delay: 0.6s">
-                    Already have an account? <a href="http://localhost:8888/auth/login" id="loginLink">Sign in</a>
+                    Already have an account? <a href="https://apilageai.lk/auth/login" id="loginLink">Sign in</a>
                 </div>
 
                 <center>
                     <span style="font-family: Arial, sans-serif; font-size: 14px; color: #555;">
                         By continuing, you agree to our
-                        <a href="http://localhost:8888/termsconditions/" style="color: #007bff; text-decoration: none;">Terms & Conditions</a>.
+                        <a href="https://apilageai.lk/termsconditions/" style="color: #007bff; text-decoration: none;">Terms & Conditions</a>.
                     </span>
                 </center>
             </div>
@@ -487,10 +487,10 @@ echo '<script'; ?>
 </style>
 
 <?php echo '<script'; ?>
- src="http://localhost:8888/assets/scripts/libs/dialog-js/main.min.js?V=01.03.04.2025"><?php echo '</script'; ?>
+ src="https://apilageai.lk/assets/scripts/libs/dialog-js/main.min.js?V=01.03.04.2025"><?php echo '</script'; ?>
 >
 <?php echo '<script'; ?>
- src="http://localhost:8888/assets/scripts/auth-register.min.js?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
+ src="https://apilageai.lk/assets/scripts/auth-register.min.js?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
 "><?php echo '</script'; ?>
 >
 <?php echo '<script'; ?>

@@ -27,7 +27,7 @@ $_smarty_current_dir = '/home/apilageai/domains/apilageai.lk/backend/includes/sm
       <div class="container mx-auto px-6 flex items-center justify-between">
         <div class="flex items-center gap-3">
           <img
-            src="http://localhost:8888/assets/images/icon.png"
+            src="https://apilageai.lk/assets/images/icon.png"
             alt="ApilageAI Logo"
             class="w-10 h-10 object-contain hover:rotate-6 transition-transform duration-300"
           />
@@ -40,11 +40,11 @@ $_smarty_current_dir = '/home/apilageai/domains/apilageai.lk/backend/includes/sm
           <a href="#features" class="hover:text-brand-red hover:underline decoration-2 underline-offset-4 transition-all">Features</a>
           <a href="#pricing" class="hover:text-brand-red hover:underline decoration-2 underline-offset-4 transition-all">Pricing</a>
           <a href="#developers" class="hover:text-brand-red hover:underline decoration-2 underline-offset-4 transition-all">Developers</a>
-          <a href="http://localhost:8888/blog" class="hover:text-brand-red hover:underline decoration-2 underline-offset-4 transition-all">Blog</a>
+          <a href="https://apilageai.lk/blog" class="hover:text-brand-red hover:underline decoration-2 underline-offset-4 transition-all">Blog</a>
         </div>
 
         <div class="flex items-center gap-4">
-          <a href="http://localhost:8888/app" class="btn-primary !py-2 !px-5 !text-sm">Start Chat</a>
+          <a href="https://apilageai.lk/app" class="btn-primary !py-2 !px-5 !text-sm">Start Chat</a>
         </div>
       </div>
     </nav>
@@ -83,7 +83,7 @@ $_smarty_current_dir = '/home/apilageai/domains/apilageai.lk/backend/includes/sm
               </p>
 
               <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
-                <a href="http://localhost:8888/app" class="btn-primary w-full sm:w-auto text-lg">
+                <a href="https://apilageai.lk/app" class="btn-primary w-full sm:w-auto text-lg">
                   Start Learning Free
                   <svg class="w-5 h-5 inline ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>

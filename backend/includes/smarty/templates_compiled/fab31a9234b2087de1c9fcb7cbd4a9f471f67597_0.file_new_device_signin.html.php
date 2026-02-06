@@ -35,7 +35,7 @@ $_smarty_current_dir = '/home/apilageai/domains/apilageai.lk/backend/includes/sm
     <div style="max-width: 600px; margin: 40px auto; padding: 0; border-radius: 15px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.1);">
         <!-- Header -->
         <div style="background-color: #e60000; color: #ffffff; text-align: center; padding: 30px;">
-            <img src="http://localhost:8888/assets/images/icon.png" alt="ApilageAI" style="width: 100px; margin-bottom: 15px;">
+            <img src="https://apilageai.lk/assets/images/icon.png" alt="ApilageAI" style="width: 100px; margin-bottom: 15px;">
             <h1 style="margin: 0; font-size: 28px; font-weight: bold;">New Device Sign-in</h1>
         </div>
 
@@ -58,7 +58,7 @@ $_smarty_current_dir = '/home/apilageai/domains/apilageai.lk/backend/includes/sm
 
             <!-- Button -->
             <div style="text-align: center; margin-top: 30px;">
-                <a href="http://localhost:8888/account/security" 
+                <a href="https://apilageai.lk/account/security" 
                    style="background-color: #e60000; color: #ffffff; text-decoration: none; padding: 12px 25px; border-radius: 50px; font-weight: bold; display: inline-block;">Secure Your Account</a>
             </div>
         </div>
