@@ -69,22 +69,28 @@ async function extractDocumentText(filePath, mimeType, originalName = '') {
   let text = '';
   if (isPdf) {
     const pdfBuffer = fs.readFileSync(filePath);
-
-    // pdf-parse v2 API (class-based)
-    if (PDFParseClass) {
-      const parser = new PDFParseClass({ data: pdfBuffer });
-      try {
-        const result = await parser.getText();
-        text = result?.text || '';
-      } finally {
-        try { await parser.destroy(); } catch (_) { }
+    try {
+      // pdf-parse v2 API (class-based)
+      if (PDFParseClass) {
+        const parser = new PDFParseClass({ data: pdfBuffer });
+        try {
+          const result = await parser.getText();
+          text = result?.text || '';
+        } finally {
+          try { await parser.destroy(); } catch (_) { }
+        }
+      } else if (pdfParseFunction) {
+        // Backward compatibility for pdf-parse v1 API (function-based)
+        const data = await pdfParseFunction(pdfBuffer);
+        text = data?.text || '';
+      } else {
+        // Keep upload working even if parser is unavailable.
+        text = '';
       }
-    } else if (pdfParseFunction) {
-      // Backward compatibility for pdf-parse v1 API (function-based)
-      const data = await pdfParseFunction(pdfBuffer);
-      text = data?.text || '';
-    } else {
-      throw new Error('PDF parser not available');
+    } catch (error) {
+      // Parsing can fail for some PDFs; we still keep the binary file for Gemini.
+      console.warn('PDF text extraction warning:', error?.message || error);
+      text = '';
     }
   } else {
     text = fs.readFileSync(filePath, 'utf8');
@@ -899,7 +905,6 @@ Rules
 • Never expose memory mechanics to the user
 
 USER PROFILE
-School: ${userData.school || 'Not provided'}
 Interests: ${userData.interests || 'Not provided'}
 Preferences: ${userData.preference || 'Not provided'}
 
@@ -2053,21 +2058,33 @@ ${newMessage || ''}`;
       }
 
       // If provided, include uploaded documents so Gemini can read them.
-      const documentEntries = normalizeDocumentList(documentList);
-      const useDocumentReference =
+      const documentEntries = normalizeDocumentList(documentList).slice(0, MAX_DOC_UPLOADS_PER_MESSAGE);
+      const requestedDocumentReference =
         documentReferenceEnabled === true ||
         documentReferenceEnabled === 'true' ||
         documentReferenceEnabled === 1 ||
         documentReferenceEnabled === '1';
+      const useDocumentReference = requestedDocumentReference && documentEntries.length > 0;
+      const referenceDocumentNames = [];
+      const messageDocuments = [];
       if (documentEntries.length) {
         let totalChars = 0;
         const docBlocks = [];
         const docInlineParts = [];
-        for (const entry of documentEntries.slice(0, MAX_DOC_UPLOADS_PER_MESSAGE)) {
+        for (const entry of documentEntries) {
           const meta = readDocumentMeta(entry.id) || {};
           const entryFilename = path.basename(String(entry.filename || meta.filename || '').trim());
           const entryMime = String(entry.mimeType || meta.mimeType || guessDocMimeType(entryFilename)).trim();
           const entryName = entry.name || meta.name || entryFilename || `Document ${docBlocks.length + 1}`;
+          messageDocuments.push({
+            id: entry.id,
+            name: entryName,
+            filename: entryFilename,
+            mimeType: entryMime,
+          });
+          if (entryName && !referenceDocumentNames.includes(entryName)) {
+            referenceDocumentNames.push(entryName);
+          }
 
           if (entryFilename) {
             const filePath = path.join(userDocsDir, entryFilename);
@@ -2095,9 +2112,12 @@ ${newMessage || ''}`;
         }
 
         if (useDocumentReference) {
-          userParts.push(toGeminiTextPart('Reference documents are attached and should be used for this and future replies while reference mode remains enabled.'));
+          const namesLabel = referenceDocumentNames.length ? referenceDocumentNames.join(', ') : 'the uploaded PDF(s)';
+          userParts.push(toGeminiTextPart(
+            `Strict reference mode is enabled. Use only the attached document(s) (${namesLabel}) for facts. If the answer is not in the document(s), say that clearly. Do not use outside knowledge. Start your final answer with: Referenced from PDF ${namesLabel}.`
+          ));
         } else {
-          userParts.push(toGeminiTextPart('Attached documents are for this single reply only.'));
+          userParts.push(toGeminiTextPart('Uploaded documents are available context for this and future replies in this chat. Use them when relevant.'));
         }
 
         if (docInlineParts.length) {
@@ -2108,6 +2128,21 @@ ${newMessage || ''}`;
           userParts.push(toGeminiTextPart(`Document text fallback:\n${docBlocks.join('\n\n')}`));
         }
       }
+
+      const referenceLabel = (useDocumentReference && referenceDocumentNames.length)
+        ? `Referenced from PDF ${referenceDocumentNames.join(', ')}`
+        : '';
+      const withReferenceLabel = (content) => {
+        if (!referenceLabel) return String(content || '');
+        const body = String(content || '').trim();
+        if (!body) return referenceLabel;
+        const lowerBody = body.toLowerCase();
+        const lowerLabel = referenceLabel.toLowerCase();
+        if (lowerBody.startsWith(lowerLabel)) {
+          return body;
+        }
+        return `${referenceLabel}\n\n${body}`;
+      };
 
       // If provided, include the current canvas snapshot so Gemini can read it.
       const canvasInline = dataUrlToInlineData(canvasImageDataUrl);
@@ -2132,6 +2167,8 @@ ${newMessage || ''}`;
         message_id: userMessageId,
         text,
         attachment: attachmentNames,
+        documents: messageDocuments,
+        document_reference_enabled: useDocumentReference,
         type: 1,
         is_new: isNew,
         sender_user_id: userId,
@@ -2191,14 +2228,16 @@ ${newMessage || ''}`;
         });
       }
 
-      // Enable web search (Google Search) for ALL models
-      generateConfig.tools = [{ googleSearch: {} }];
-      emit('stream_searching', {
-        conversation_id: finalConversationId,
-        message_id: aiMessageId,
-        message: 'Searching the web...',
-        sender_user_id: userId,
-      });
+      // Enable web search for normal chats, but disable it in strict document reference mode.
+      if (!useDocumentReference) {
+        generateConfig.tools = [{ googleSearch: {} }];
+        emit('stream_searching', {
+          conversation_id: finalConversationId,
+          message_id: aiMessageId,
+          message: 'Searching the web...',
+          sender_user_id: userId,
+        });
+      }
 
       // Full conversation content = history + new user input
       const contents = [...history, { role: 'user', parts: userParts }];
@@ -2362,6 +2401,7 @@ ${newMessage || ''}`;
 
       // === IMAGE GENERATION TRIGGER BASED ON AI RESPONSE ===
       if (wasCanceled) {
+        cleanedContent = withReferenceLabel(cleanedContent);
         await this.updateMessage(aiMessageId, cleanedContent, chosenToken);
         emit('stream_complete', {
           conversation_id: finalConversationId,
@@ -2402,6 +2442,12 @@ ${newMessage || ''}`;
         textAfterImage = cleanedContent.substring(createIdx + createImageMarker.length).trim();
       }
 
+      if (useDocumentReference && imageRequested) {
+        // In strict document mode, keep response text-only from referenced docs.
+        cleanedContent = (textBeforeImage ? textBeforeImage : '') + (textAfterImage ? `\n\n${textAfterImage}` : '');
+        imageRequested = false;
+      }
+
       if (imageRequested) {
         // 1. Send placeholder
         const placeholderMsg = 'Processing image...';
@@ -2419,12 +2465,13 @@ ${newMessage || ''}`;
         const imageGenTrialCheck = await this.canUseImages(currentBalance, userId, 'image_generations');
         if (!imageGenTrialCheck.allowed) {
           const msg = imageGenTrialCheck.message || 'Image generation requires a positive credit balance or trial limit. Please top up to use this feature.';
-          await this.updateMessage(aiMessageId, (textBeforeImage ? textBeforeImage + '\n\n' : '') + msg + (textAfterImage ? '\n\n' + textAfterImage : ''));
+          const blockedHtml = withReferenceLabel((textBeforeImage ? textBeforeImage + '\n\n' : '') + msg + (textAfterImage ? '\n\n' + textAfterImage : ''));
+          await this.updateMessage(aiMessageId, blockedHtml);
           emit('stream_complete', {
             conversation_id: finalConversationId,
             message_id: aiMessageId,
             user_message_id: userMessageId,
-            final_content: (textBeforeImage ? textBeforeImage + '\n\n' : '') + msg + (textAfterImage ? '\n\n' + textAfterImage : ''),
+            final_content: blockedHtml,
             cost: 0,
             balance_before: currentBalance,
             balance_after: currentBalance,
@@ -2561,10 +2608,11 @@ ${newMessage || ''}`;
             console.error('Error saving generated image to DB:', dbErr);
           }
           // Always combine textBeforeImage, image, and textAfterImage
-          const finalHtml =
+          const finalHtml = withReferenceLabel(
             (textBeforeImage ? textBeforeImage + '\n\n' : '') +
             `<img src="${imageUrl}" alt="Generated image" style="max-width:100%;height:auto;"/>` +
-            (textAfterImage ? '\n\n' + textAfterImage : '');
+            (textAfterImage ? '\n\n' + textAfterImage : '')
+          );
           await this.updateMessage(aiMessageId, finalHtml);
           emit('stream_complete', {
             conversation_id: finalConversationId,
@@ -2589,7 +2637,7 @@ ${newMessage || ''}`;
           });
         } else {
           // On failure, include both the text and the error message (plus after-image text if present)
-          const failHtml = (textBeforeImage ? textBeforeImage + '\n\n' : '') + errorMsg + (textAfterImage ? '\n\n' + textAfterImage : '');
+          const failHtml = withReferenceLabel((textBeforeImage ? textBeforeImage + '\n\n' : '') + errorMsg + (textAfterImage ? '\n\n' + textAfterImage : ''));
           await this.updateMessage(aiMessageId, failHtml);
           emit('stream_complete', {
             conversation_id: finalConversationId,
@@ -2631,10 +2679,12 @@ ${newMessage || ''}`;
       }
 
       // YouTube / image helpers (unchanged)
-      if (/\b(video|show.*video|suggest.*video|watch|youtube)\b/i.test(text)) {
+      if (!useDocumentReference && /\b(video|show.*video|suggest.*video|watch|youtube)\b/i.test(text)) {
         const youtubeURL = await this.searchYouTube(text);
         if (youtubeURL) cleanedContent += `\n\nRecommended video: ${youtubeURL}`;
       }
+
+      cleanedContent = withReferenceLabel(cleanedContent);
 
       // Store current content in DB immediately with the model used
       const allowThinkingStorage = currentBalance > 0 && this.isDeepThinkAllowed();

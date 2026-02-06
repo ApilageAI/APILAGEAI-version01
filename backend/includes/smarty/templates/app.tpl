@@ -910,7 +910,7 @@
                             <div id="document-preview-wrapper" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
                             <label id="document-reference-container" style="display:none; align-items:center; gap:6px; margin-top:6px; font-size:12px; color:#555;">
                                 <input type="checkbox" id="documentReferenceToggle" />
-                                Take as reference
+                                Always, use PDF
                             </label>
                         </div>
                         <div class="preview-wrapper">
@@ -929,7 +929,7 @@
                             <button id="enebleThink" class="dropup-menu-item" type="button"><i class="fas fa-flask"></i>DeepThink</button>
                             <button id="toggleGraphBtn" class="dropup-menu-item" type="button"><i class="fas fa-chart-line"></i> Graph</button>
                              <button id="toggleCanvasBtn" class="dropup-menu-item" type="button"><i class="fa-solid fa-pen-to-square"></i> Canvas</button>
-                             <button id="uploadDocumentBtn" class="dropup-menu-item" type="button"><i class="fa-solid fa-file-lines"></i> Upload document</button>
+                             <button id="uploadDocumentBtn" class="dropup-menu-item" type="button"><i class="fa-solid fa-file-lines"></i>PDF assistant</button>
                              
                           </div>
                         </div>

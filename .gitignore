@@ -178,3 +178,5 @@ id_rsa.pub
 # User uploads / generated assets
 uploads/
 upload/
+uploads/userdocs/
+uploads/**/*.pdf
