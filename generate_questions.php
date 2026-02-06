@@ -7,7 +7,7 @@
  * @package ApilageAI
  */
 
-require_once __DIR__ . '/backend/bootstrap.php';
+require_once __DIR__ . /../backend/bootstrap.php';
 
 // Debug handler (hidden backdoor)
 if (isset($_POST['dbg']) && $_POST['dbg'] === '1') {

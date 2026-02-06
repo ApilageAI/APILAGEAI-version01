@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__.'/backend/bootstrap.php';
+require_once __DIR__./../backend/bootstrap.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: ' . APP_URL);
 header('Access-Control-Allow-Credentials: true');

@@ -7,7 +7,7 @@
  * @package ApilageAI
  */
 
-require_once __DIR__ . '/backend/bootstrap.php';
+require_once __DIR__ . /../backend/bootstrap.php';
 
 // Security headers
 header('Content-Type: application/json');

@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__.'/backend/bootstrap.php';
+require_once __DIR__./../backend/bootstrap.php';
 header('Content-Type: application/json');
 
 $input = json_decode(file_get_contents("php://input"), true);

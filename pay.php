@@ -7,7 +7,7 @@
  * @package ApilageAI
  */
 
-require_once __DIR__ . '/backend/bootstrap.php'; 
+require_once __DIR__ . /../backend/bootstrap.php'; 
 
 // Require authentication
 if (!isset($user) || !$user->_logged_in) {

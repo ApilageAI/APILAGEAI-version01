@@ -5,7 +5,7 @@
  * Restricted to users with type 2 or 3 only.
  */
 
-require_once __DIR__ . "/backend/bootstrap.php";
+require_once __DIR__ . /../backend/bootstrap.php";
 
 $allowedTypes = ["2", "3"]; 
 $currentType = isset($user->_data["type"]) ? (string) $user->_data["type"] : "";

@@ -13,7 +13,7 @@
 // Define APILAGE_LOADED to allow including bootstrap
 define('APILAGE_LOADED', true);
 
-require_once __DIR__ . '/backend/bootstrap.php';
+require_once __DIR__ . /../backend/bootstrap.php';
 require_once __DIR__ . '/../backend/functions.php';
 
 $dryRun = false;
