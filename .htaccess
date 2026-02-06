@@ -15,9 +15,11 @@
   RewriteRule ^app/([^/]+)/?$ app.php?view=$1 [L,QSA]
   RewriteRule ^app/([^/]+)/([^/]+)/?$ app.php?view=$1&sub_view=$2 [L,QSA]
 
-  # Dashboard routes
-  RewriteRule ^dashboard/?$ dashboard.php [L,QSA]
-  RewriteRule ^dashboard/([^/]+)/?$ dashboard.php?view=$1 [L,QSA]
+  # Images routes (renamed from /dashboard)
+  RewriteRule ^dashboard/?$ /images [R=301,L]
+  RewriteRule ^dashboard/([^/]+)/?$ /images/$1 [R=301,L]
+  RewriteRule ^images/?$ dashboard.php [L,QSA]
+  RewriteRule ^images/([^/]+)/?$ dashboard.php?view=$1 [L,QSA]
 
   # Auth routes
   RewriteRule ^auth/?$ auth.php?do=log [L,QSA]

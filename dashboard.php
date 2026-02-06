@@ -1,8 +1,8 @@
 <?php
 /**
- * ApilageAI Dashboard
+ * ApilageAI Images
  * 
- * User dashboard with usage stats and profile
+ * Images gallery with usage stats and profile
  * 
  * @package ApilageAI
  */
@@ -21,7 +21,7 @@ $user_id = (int)$user->_data['id'];
 
 switch ($view) {
     case "":
-        $title = " | My Gallery AI Generated Images";
+        $title = " | Images";
         break;
         
     case "usage":
@@ -46,11 +46,11 @@ switch ($view) {
         $smarty->assign('messages_count', $val['messages_count'] ?? 0);
         $smarty->assign('conversations_count', $val['conversations_count'] ?? 0);
 
-        $title = " | Dashboard - Usage";
+        $title = " | Images - Usage";
         break;
         
     case "profile":
-        $title = " | Dashboard - Profile";
+        $title = " | Images - Profile";
         break;
         
     default:

@@ -9,7 +9,7 @@ ApilageAI is a PHP web app with a Node.js backend for realtime/AI features. The 
 
 **How The App Works**
 1. **Apache + PHP** serve the main site and UI pages from the project root.
-2. **Friendly URLs** are routed by `.htaccess` to `app.php`, `auth.php`, `dashboard.php`, `pay.php`.
+2. **Friendly URLs** are routed by `.htaccess` to `app.php`, `auth.php`, `dashboard.php`, `pay.php` (images page).
 3. **PHP** reads config from `.env` and `backend/config.php`.
 4. **MySQL** stores users, sessions, conversations, messages, transactions, and app data.
 5. **Node** handles realtime and AI endpoints used by the UI.
@@ -22,8 +22,8 @@ ApilageAI is a PHP web app with a Node.js backend for realtime/AI features. The 
 - `/auth/login` -> login
 - `/auth/register` -> register
 - `/auth/logout` and `/auth/signout` -> logout
-- `/dashboard` -> `dashboard.php`
-- `/dashboard/usage` -> `dashboard.php?view=usage`
+- `/images` -> `dashboard.php`
+- `/images/usage` -> `dashboard.php?view=usage`
 - `/pay/{amount}` -> `pay.php`
 
 ## Requirements
@@ -138,7 +138,7 @@ npm run dev
 
 ## Server Deployment (Nginx)
 1. **Serve PHP** with PHP-FPM.
-2. **Add rewrites** to map `/app`, `/auth`, `/dashboard`, `/pay` to PHP files.
+2. **Add rewrites** to map `/app`, `/auth`, `/images`, `/pay` to PHP files.
 3. **Proxy Node** to `127.0.0.1:5001`.
 4. **Ensure uploads are writable** by the PHP-FPM user.
 

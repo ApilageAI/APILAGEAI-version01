@@ -1,8 +1,6 @@
 <?php
 require_once __DIR__.'/backend/bootstrap.php';
 header('Content-Type: application/json; charset=utf-8');
-define('APILAGE_LOADED', true);
-require_once __DIR__ . '/backend/config.php';
 header('Access-Control-Allow-Origin: ' . APP_URL);
 header('Access-Control-Allow-Credentials: true');
 

@@ -6,6 +6,6 @@
     <p class="subtitle">Your intelligent AI chat assistant</p>
     <div class="button-group">
         <a href="{$smarty.const.APP_URL}/app" class="button primary-button">Start Chatting</a>
-        <a href="{$smarty.const.APP_URL}/dashboard/profile" class="button outline-button">View Profile</a>
+        <a href="{$smarty.const.APP_URL}/images/profile" class="button outline-button">View Profile</a>
     </div>
 </div>

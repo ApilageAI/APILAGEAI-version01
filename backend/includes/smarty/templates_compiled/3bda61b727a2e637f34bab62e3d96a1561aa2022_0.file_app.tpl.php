@@ -1,18 +1,18 @@
 <?php
-/* Smarty version 5.7.0, created on 2026-02-06 16:08:10
+/* Smarty version 5.7.0, created on 2026-02-06 20:29:16
   from 'file:app.tpl' */
 
 /* @var \Smarty\Template $_smarty_tpl */
 if ($_smarty_tpl->getCompiled()->isFresh($_smarty_tpl, array (
   'version' => '5.7.0',
-  'unifunc' => 'content_6985c4921c8107_37104828',
+  'unifunc' => 'content_698601c46b6385_04914094',
   'has_nocache_code' => false,
   'file_dependency' => 
   array (
     '3bda61b727a2e637f34bab62e3d96a1561aa2022' => 
     array (
       0 => 'app.tpl',
-      1 => 1770374238,
+      1 => 1770389891,
       2 => 'file',
     ),
   ),
@@ -21,7 +21,7 @@ if ($_smarty_tpl->getCompiled()->isFresh($_smarty_tpl, array (
     'file:components/head.tpl' => 1,
   ),
 ))) {
-function content_6985c4921c8107_37104828 (\Smarty\Template $_smarty_tpl) {
+function content_698601c46b6385_04914094 (\Smarty\Template $_smarty_tpl) {
 $_smarty_current_dir = '/Users/dinethgunawardana/Documents/GitHub/apilageai-personal/backend/includes/smarty/templates';
 $_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_id, $_smarty_tpl->compile_id, 0, $_smarty_tpl->cache_lifetime, array(), (int) 0, $_smarty_current_dir);
 echo '<script'; ?>
@@ -80,7 +80,7 @@ echo '<script'; ?>
             <span class="sidebar-but-text">MCQ game</span>
         </button>
         <button class="sidebar-but" type="button" onclick="window.open('<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
-/dashboard', '_self');" title="Image Gallery">
+/images', '_self');" title="Image Gallery">
             <span class="sidebar-but-icon"><i class="fa fa-image"></i></span>
             <span class="sidebar-but-text">Image Gallery</span>
         </button>
@@ -613,13 +613,13 @@ echo (defined('APP_URL') ? constant('APP_URL') : null);?>
         </div>
     </div>
 
-    <div id="deleteAccountModal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10000000000; align-items: center; justify-content: center;">
-        <div style="background: #fff; border-radius: 12px; max-width: 520px; width: 90%; padding: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-            <h3 style="margin-top: 0;">Delete Account</h3>
-            <p style="margin-bottom: 16px; color: #333;">
+    <div id="deleteAccountModal" class="delete-account-modal">
+        <div class="delete-account-dialog">
+            <h3 class="delete-account-title">Delete Account</h3>
+            <p class="delete-account-message">
                 When deleting your account, your data and all chats, plus your remaining credit balance, will be deleted and can’t be undone, recovered, or have any payments returned.
             </p>
-            <div style="display:flex; gap: 10px; justify-content: flex-end;">
+            <div class="delete-account-actions">
                 <button class="btn btn-secondary" id="cancelDeleteAccountBtn">Cancel</button>
                 <button class="btn btn-danger" id="confirmDeleteAccountBtn">Yes, Delete</button>
             </div>

@@ -49,7 +49,7 @@
             <span class="sidebar-but-icon"><i class="fas fa-gamepad"></i></span>
             <span class="sidebar-but-text">MCQ game</span>
         </button>
-        <button class="sidebar-but" type="button" onclick="window.open('{$smarty.const.APP_URL}/dashboard', '_self');" title="Image Gallery">
+        <button class="sidebar-but" type="button" onclick="window.open('{$smarty.const.APP_URL}/images', '_self');" title="Image Gallery">
             <span class="sidebar-but-icon"><i class="fa fa-image"></i></span>
             <span class="sidebar-but-text">Image Gallery</span>
         </button>
@@ -562,13 +562,13 @@
         </div>
     </div>
 
-    <div id="deleteAccountModal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10000000000; align-items: center; justify-content: center;">
-        <div style="background: #fff; border-radius: 12px; max-width: 520px; width: 90%; padding: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-            <h3 style="margin-top: 0;">Delete Account</h3>
-            <p style="margin-bottom: 16px; color: #333;">
+    <div id="deleteAccountModal" class="delete-account-modal">
+        <div class="delete-account-dialog">
+            <h3 class="delete-account-title">Delete Account</h3>
+            <p class="delete-account-message">
                 When deleting your account, your data and all chats, plus your remaining credit balance, will be deleted and can’t be undone, recovered, or have any payments returned.
             </p>
-            <div style="display:flex; gap: 10px; justify-content: flex-end;">
+            <div class="delete-account-actions">
                 <button class="btn btn-secondary" id="cancelDeleteAccountBtn">Cancel</button>
                 <button class="btn btn-danger" id="confirmDeleteAccountBtn">Yes, Delete</button>
             </div>

@@ -1,78 +1,69 @@
 {include file="components/head.tpl"}
 <body>
-  <div class="main-container">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <div class="logo">
-          <h1 class="logo-title">Apilage AI</h1>
-          <span class="logo-badge">Gallery</span>
-        </div>
-        <button id="sidebar-toggle" class="sidebar-toggle">
-          <i class="fas fa-chevron-left"></i>
-        </button>
+  <div class="main-container images-shell">
+    <aside class="rail">
+      <div class="rail-brand" aria-label="Apilage AI">
+        <img src="{$smarty.const.APP_URL}/assets/images/icon.png" alt="Apilage AI logo" class="brand-logo" />
       </div>
-      <nav class="sidebar-nav">
-         <a href="{$smarty.const.APP_URL}/app" class="nav-link">
-         <i class="fas fa-comments"></i> <span>AI Chat</span>
+
+      <nav class="rail-nav" aria-label="Primary">
+        <a href="{$smarty.const.APP_URL}/app" class="rail-link" title="AI Chat" aria-label="AI Chat">
+          <i class="fa-regular fa-comments"></i>
         </a>
-        <a href="#" class="nav-link active" data-tab="explore">
-         <i class="fa fa-user"></i> <span>My Images</span>
+        <a href="#" class="rail-link active" data-tab="explore" title="My Images" aria-label="My Images">
+          <i class="fa-regular fa-image"></i>
         </a>
-        <a href="#" class="nav-link" data-tab="friends">
-          <i class="fas fa-user-friends"></i> <span>Explore</span>
+        <a href="#" class="rail-link" data-tab="friends" title="Explore" aria-label="Explore">
+          <i class="fa-regular fa-compass"></i>
         </a>
       </nav>
+
+      <div class="rail-footer">
+        <img
+          src="{if !empty($user->_data.image)}{$smarty.const.APP_URL}/uploads/{$user->_data.image}{else}{$smarty.const.APP_URL}/assets/images/user.png{/if}"
+          alt="{$user->_data.first_name} Avatar"
+          class="profile-pic"
+          onerror="this.onerror=null;this.src='{$smarty.const.APP_URL}/assets/images/user.png';"
+        />
+      </div>
     </aside>
 
-    <!-- Main Content -->
     <main class="main-content">
-      <header class="header">
-        <div class="container">
-          <div class="header-content">
-            <div class="search-container">
-              <i class="fas fa-search search-icon"></i>
-              <input
-                type="text"
-                id="search-input"
-                placeholder="Search your images..."
-                class="search-input"
-              />
-            </div>
-            <div class="header-actions">
-              <button id="theme-toggle" class="theme-toggle">
-                <i id="theme-icon" class="fas fa-sun"></i>
-              </button>
-              <img
-                src="{if !empty($user->_data.image)}{$smarty.const.APP_URL}/uploads/{$user->_data.image}{else}{$smarty.const.APP_URL}/assets/images/user.png{/if}"
-                alt="{$user->_data.first_name} Avatar"
-                class="profile-pic"
-                onerror="this.onerror=null;this.src='{$smarty.const.APP_URL}/assets/images/user.png';"
-              />
-            </div>
+      <section class="hero">
+        <div class="container hero-inner">
+          <div class="hero-top">
+            <h1 class="hero-title">Images</h1>
+            <div class="hero-meta">Create, remix, and explore visual ideas</div>
+          </div>
+          <div class="prompt-bar">
+            <span class="prompt-icon" aria-hidden="true">
+              <i class="fa-regular fa-image"></i>
+            </span>
+            <input
+              type="text"
+              id="search-input"
+              placeholder="Describe a new image"
+              class="prompt-input"
+            />
+            <button class="prompt-btn send" type="button" aria-label="Search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
           </div>
         </div>
-      </header>
+      </section>
 
-      <div id="image-gallery" class="container">
-        <div class="image-grid"></div>
-      </div>
+      <section class="section styles">
+        <div class="container section-head">
+          <h2>Try a style on an image</h2>
+        </div>
+        <div id="image-gallery" class="container">
+          <div class="image-grid style-row"></div>
+        </div>
+      </section>
+
     </main>
-
-    <!-- Bottom Navigation -->
-    <nav class="bottom-nav">
-      <a href="#" class="bottom-nav-link active" data-tab="explore">
-       <i class="fa fa-user"></i> <span>My Images</span>
-      </a>
-      <a href="#" class="bottom-nav-link" data-tab="friends">
-       <i class="fas fa-compass"></i> <span>Explore</span>
-      </a>
-      <a href="{$smarty.const.APP_URL}/app/" class="bottom-nav-link">
-        <i class="fas fa-comments"></i> <span>AI Chat</span>
-      </a>
-    </nav>
   </div>
 
-     <script src="{$smarty.const.APP_URL}/assets/scripts/dashboard.min.js?V=04.22.10.2025"></script>
+  <script src="{$smarty.const.APP_URL}/assets/scripts/dashboard.min.js?V=04.22.10.2025"></script>
 </body>
 </html>

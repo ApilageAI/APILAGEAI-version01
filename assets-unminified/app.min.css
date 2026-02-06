@@ -2953,6 +2953,45 @@ td {
     color: var(--text-secondary);
 }
 
+.delete-account-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 10000000000;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.delete-account-dialog {
+    background: var(--card-bg);
+    color: var(--text-primary);
+    border-radius: 12px;
+    max-width: 520px;
+    width: 100%;
+    padding: 20px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.delete-account-title {
+    margin-top: 0;
+    color: var(--text-primary);
+}
+
+.delete-account-message {
+    margin-bottom: 16px;
+    color: var(--text-secondary);
+}
+
+.delete-account-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
 .btn-danger {
     background-color: var(--primary-red);
     color: #ffffff;
