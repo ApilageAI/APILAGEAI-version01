@@ -931,7 +931,7 @@
 
                         <button type="button" id="fileAttach" class="btn-icon" aria-label="Attach image">
                           <i class="fas fa-images"></i>
-                          <input class="d-none" id="fileInput" type="file" name="f" accept="image/png, image/jpeg" aria-label="Attach image" />
+                          <input class="d-none" id="fileInput" type="file" name="f" accept="image/png, image/jpeg, image/webp, image/gif" multiple aria-label="Attach image" />
                         </button>
                       </div>
                       <div class="chat-input-right" style="display: flex; gap: 8px;">

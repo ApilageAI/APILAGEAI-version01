@@ -22,6 +22,33 @@
 // ===== LOAD ENVIRONMENT VARIABLES FIRST =====
 require('dotenv').config();
 
+function formatErrorMessage(defaultMessage, error) {
+  if (!error) return defaultMessage;
+  const errText = error?.message || String(error);
+  return errText || defaultMessage;
+}
+
+async function processUploadedImage(filename) {
+  try {
+    const uniquePrefix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    const imageName = `${uniquePrefix}.jpg`;
+    const outputPath = path.join(userUploadsDir, imageName);
+
+    await sharp(path.join(userUploadsDir, filename))
+      .resize(800, 600, { fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 80 })
+      .toFile(outputPath);
+
+    if (fs.existsSync(path.join(userUploadsDir, filename))) {
+      fs.unlinkSync(path.join(userUploadsDir, filename));
+    }
+    return imageName;
+  } catch (error) {
+    console.error('Image processing error:', error);
+    throw error;
+  }
+}
+
 // ===== Core Dependencies =====
 const express = require('express');
 const http = require('http');
@@ -414,6 +441,22 @@ const upload = multer({
     file.mimetype.startsWith('image/') ? cb(null, true) : cb(new Error('Only image files are allowed')),
 });
 
+function safeUnlinkUserUpload(filename) {
+  const safeName = path.basename(String(filename || '')).trim();
+  if (!safeName) return false;
+  const filePath = path.join(userUploadsDir, safeName);
+  if (!filePath.startsWith(userUploadsDir)) return false;
+  try {
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      return true;
+    }
+  } catch (error) {
+    console.error('Failed to delete upload:', error);
+  }
+  return false;
+}
+
 // ====== Helpers for Gemini ======
 function toGeminiTextPart(text) {
   return { text: text || '' };
@@ -444,6 +487,63 @@ function dataUrlToInlineData(dataUrl) {
   } catch (_) {
     return null;
   }
+}
+
+function normalizeAttachmentList(input) {
+  if (!input) return [];
+
+  if (Array.isArray(input)) {
+    return input
+      .map((item) => {
+        if (!item) return '';
+        if (typeof item === 'object') return item.name || item.filename || '';
+        return String(item);
+      })
+      .map((item) => String(item).trim())
+      .filter(Boolean);
+  }
+
+  if (typeof input === 'object') {
+    const name = input?.name || input?.filename;
+    return name ? [String(name).trim()] : [];
+  }
+
+  const str = String(input).trim();
+  if (!str) return [];
+
+  if (str.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(str);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map((item) => {
+            if (!item) return '';
+            if (typeof item === 'object') return item.name || item.filename || '';
+            return String(item);
+          })
+          .map((item) => String(item).trim())
+          .filter(Boolean);
+      }
+    } catch (_) {
+      // fall through to comma/single parsing
+    }
+  }
+
+  if (str.includes(',')) {
+    return str
+      .split(',')
+      .map((item) => String(item).trim())
+      .filter(Boolean);
+  }
+
+  return [str];
+}
+
+function serializeAttachments(input) {
+  const list = normalizeAttachmentList(input);
+  if (!list.length) return '';
+  if (list.length === 1) return list[0];
+  return JSON.stringify(list);
 }
 
 function buildSystemInstruction(userData, chatSummary) {
@@ -710,7 +810,8 @@ const FREE_USER_MODELS = ['free'];  // Models available for users with balance <
 
 // ====== Cost Constants ======
 const IMAGE_GENERATION_COST = 5;  // Cost for generating one image
-const IMAGE_UPLOAD_COST = 5;      // Cost for uploading one image
+const IMAGE_UPLOAD_COST = 5;      // Cost per image-upload batch (up to MAX_IMAGE_UPLOADS_PER_MESSAGE)
+const MAX_IMAGE_UPLOADS_PER_MESSAGE = 5;
 
 // ====== Daily Trial Limits for Free Users ======
 const DAILY_TRIAL_LIMITS = {
@@ -1196,8 +1297,9 @@ class ChatManager {
 
       for (const r of rows.reverse()) {
         const role = r.t === 1 ? 'user' : 'assistant';
-        const entry = { role, text: r.txt || '', attach: r.a || '' };
-        if (r.a) hasImages = true;
+        const attachments = normalizeAttachmentList(r.a);
+        const entry = { role, text: r.txt || '', attach: attachments };
+        if (attachments.length) hasImages = true;
         messages.push(entry);
       }
       return { messages, hasImages };
@@ -1209,29 +1311,13 @@ class ChatManager {
 
 
   async processImage(file) {
-    try {
-      const uniquePrefix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-      const imageName = `${uniquePrefix}.jpg`;
-      const outputPath = path.join(userUploadsDir, imageName);
-
-      await sharp(userUploadsDir + '/' + file)
-        .resize(800, 600, { fit: 'inside', withoutEnlargement: true })
-        .jpeg({ quality: 80 })
-        .toFile(outputPath);
-
-      if (fs.existsSync(userUploadsDir + '/' + file)) {
-        fs.unlinkSync(userUploadsDir + '/' + file);
-      }
-      return imageName;
-    } catch (error) {
-      console.error('Image processing error:', error);
-      throw error;
-    }
+    return processUploadedImage(file);
   }
 
   async addMessage(conversationId, text, attachment = '', type = 1, usedModel = 'APILAGEAI', userId = null) {
     try {
       const authorId = userId || this.userData.id;
+      const serializedAttachment = serializeAttachments(attachment);
       let result;
 
       if (await messagesHasUserIdColumn()) {
@@ -1239,7 +1325,7 @@ class ChatManager {
           .promise()
           .execute(
             'INSERT INTO messages (conversation_id, user_id, type, created_at, text, attach, used_model) VALUES (?, ?, ?, NOW(), ?, ?, ?)',
-            [conversationId, authorId, type, text || '', attachment || '', usedModel || 'APILAGEAI']
+            [conversationId, authorId, type, text || '', serializedAttachment || '', usedModel || 'APILAGEAI']
           );
         result = r;
       } else {
@@ -1247,7 +1333,7 @@ class ChatManager {
           .promise()
           .execute(
             'INSERT INTO messages (conversation_id, type, created_at, text, attach, used_model) VALUES (?, ?, NOW(), ?, ?, ?)',
-            [conversationId, type, text || '', attachment || '', usedModel || 'APILAGEAI']
+            [conversationId, type, text || '', serializedAttachment || '', usedModel || 'APILAGEAI']
           );
         result = r;
       }
@@ -1355,9 +1441,10 @@ ${newMessage || ''}`;
   }
 
   // Helper: emit error to socket and also save an assistant message in DB
-  async emitAndSaveError(socket, conversationId, aiMessageId, message, emitToConversation = null) {
+  async emitAndSaveError(socket, conversationId, aiMessageId, message, emitToConversation = null, error = null) {
     try {
       const emit = typeof emitToConversation === 'function' ? emitToConversation : socket.emit.bind(socket);
+      const finalMessage = formatErrorMessage(message, error);
       let convId = conversationId;
       if (!convId || !Number.isInteger(Number(convId))) {
         convId = await this.createConversation('Error Notice');
@@ -1368,19 +1455,19 @@ ${newMessage || ''}`;
 
       let aiMsgId = aiMessageId;
       if (!aiMsgId) {
-        aiMsgId = await this.addMessage(convId, message, '', 2);
+        aiMsgId = await this.addMessage(convId, finalMessage, '', 2);
       } else {
         try {
-          await this.updateMessage(aiMsgId, message);
+          await this.updateMessage(aiMsgId, finalMessage);
         } catch (e) {
-          aiMsgId = await this.addMessage(convId, message, '', 2);
+          aiMsgId = await this.addMessage(convId, finalMessage, '', 2);
         }
       }
       emit('stream_error', {
         conversation_id: convId,
         message_id: aiMsgId,
         error: true,
-        message,
+        message: finalMessage,
       });
     } catch (err) {
       console.error('emitAndSaveError failed:', err);
@@ -1436,6 +1523,7 @@ ${newMessage || ''}`;
     text,
     title = '',
     attachment = null,
+    attachmentsProcessed = false,
     conversationId = '',
     modelChoice = '',
     socket,
@@ -1467,6 +1555,11 @@ ${newMessage || ''}`;
       // Check image capabilities with trial support
       const imageUploadCheck = await this.canUseImages(currentBalance, userId, 'image_uploads');
       const imageGenCheck = await this.canUseImages(currentBalance, userId, 'image_generations');
+      const attachmentList = normalizeAttachmentList(attachment);
+      if (attachmentList.length > MAX_IMAGE_UPLOADS_PER_MESSAGE) {
+        await this.emitAndSaveError(socket, conversationId, null, `You can upload up to ${MAX_IMAGE_UPLOADS_PER_MESSAGE} images at a time.`);
+        return;
+      }
 
       // Check if user has message trial remaining (for non-free models)
       const hasMessageTrial = modelInfo.hasMessageTrial || false;
@@ -1491,7 +1584,7 @@ ${newMessage || ''}`;
       let chosenToken = (currentBalance > 0 || hasMessageTrial) ? 'auto' : 'free';
 
       // Check if user has an image attachment
-      if (attachment) {
+      if (attachmentList.length) {
         if (!imageUploadCheck.allowed) {
           await this.emitAndSaveError(socket, conversationId, null, imageUploadCheck.message || "Image uploads require a positive credit balance or trial limit. Please top up to use this feature.");
           return;
@@ -1583,9 +1676,9 @@ ${newMessage || ''}`;
 
       // Attachment processing (if present)
       let cost = 0;
-      let attachmentName = '';
+      let attachmentNames = [];
       let isTrialImageUpload = false;
-      if (attachment) {
+      if (attachmentList.length) {
         // Already checked above, but double-check
         if (!imageUploadCheck.allowed) {
           await this.emitAndSaveError(socket, conversationId, null, imageUploadCheck.message || "Image uploads not available.");
@@ -1596,10 +1689,17 @@ ${newMessage || ''}`;
         isTrialImageUpload = imageUploadCheck.isTrial;
 
         try {
-          attachmentName = await this.processImage(attachment);
+          if (attachmentsProcessed) {
+            attachmentNames = attachmentList.slice();
+          } else {
+            attachmentNames = [];
+            for (const file of attachmentList) {
+              attachmentNames.push(await this.processImage(file));
+            }
+          }
 
           if (isTrialImageUpload) {
-            // Update trial usage for image upload
+            // Update trial usage for image upload (once per batch)
             await this.updateDailyUsage(userId, 'image_uploads');
 
             // Record trial usage for abuse prevention (only on first upload)
@@ -1615,10 +1715,10 @@ ${newMessage || ''}`;
 
             cost = 0; // No cost for trial uploads
           } else {
-            cost += IMAGE_UPLOAD_COST; // Image upload costs 5 credits
+            cost += IMAGE_UPLOAD_COST; // Charge once per batch (up to MAX_IMAGE_UPLOADS_PER_MESSAGE)
           }
         } catch (err) {
-          await this.emitAndSaveError(socket, finalConversationId, null, "Server is busy right now. Please try again shortly.");
+          await this.emitAndSaveError(socket, finalConversationId, null, "Server is busy right now. Please try again shortly.", null, err);
           return;
         }
       }
@@ -1636,12 +1736,15 @@ ${newMessage || ''}`;
       const history = [];
       for (const m of recent) {
         const parts = [toGeminiTextPart(m.text || '')];
-        if (m.attach) {
-          const filePath = path.join(userUploadsDir, m.attach);
-          if (fs.existsSync(filePath)) {
-            parts.push(fileToInlineData(filePath));
-          } else {
-            parts.push(toGeminiTextPart(`(Attached image was: ${APP_BASE_URL}/uploads/userimg/${m.attach})`));
+        const attachments = normalizeAttachmentList(m.attach);
+        if (attachments.length) {
+          for (const name of attachments) {
+            const filePath = path.join(userUploadsDir, name);
+            if (fs.existsSync(filePath)) {
+              parts.push(fileToInlineData(filePath));
+            } else {
+              parts.push(toGeminiTextPart(`(Attached image was: ${APP_BASE_URL}/uploads/userimg/${name})`));
+            }
           }
         }
         history.push({ role: m.role === 'assistant' ? 'model' : 'user', parts });
@@ -1661,22 +1764,24 @@ ${newMessage || ''}`;
       if (canvasInline) {
         userParts.push(canvasInline);
       }
-      if (attachmentName) {
-        const filePath = path.join(userUploadsDir, attachmentName);
-        if (fs.existsSync(filePath)) {
-          userParts.push(fileToInlineData(filePath));
-        } else {
-          userParts.push(toGeminiTextPart(`(Attached image: ${APP_BASE_URL}/uploads/userimg/${attachmentName})`));
+      if (attachmentNames.length) {
+        for (const name of attachmentNames) {
+          const filePath = path.join(userUploadsDir, name);
+          if (fs.existsSync(filePath)) {
+            userParts.push(fileToInlineData(filePath));
+          } else {
+            userParts.push(toGeminiTextPart(`(Attached image: ${APP_BASE_URL}/uploads/userimg/${name})`));
+          }
         }
       }
 
       // Save user message immediately
-      const userMessageId = await this.addMessage(finalConversationId, text, attachmentName);
+      const userMessageId = await this.addMessage(finalConversationId, text, attachmentNames);
       emit('user_message_saved', {
         conversation_id: finalConversationId,
         message_id: userMessageId,
         text,
-        attachment: attachmentName,
+        attachment: attachmentNames,
         type: 1,
         is_new: isNew,
         sender_user_id: userId,
@@ -1870,7 +1975,7 @@ ${newMessage || ''}`;
               }
             } catch (e) {
               // Standardize error message
-              await this.emitAndSaveError(socket, finalConversationId, aiMessageId, "Server is busy right now. Please try again shortly.", emitToConversation);
+              await this.emitAndSaveError(socket, finalConversationId, aiMessageId, "Server is busy right now. Please try again shortly.", emitToConversation, e);
               break;
             }
           }
@@ -1892,7 +1997,7 @@ ${newMessage || ''}`;
         }
       } catch (streamError) {
         // Standardized error for timeout or any other error
-        await this.emitAndSaveError(socket, finalConversationId, aiMessageId, "Server is busy right now. Please try again shortly.", emitToConversation);
+        await this.emitAndSaveError(socket, finalConversationId, aiMessageId, "Server is busy right now. Please try again shortly.", emitToConversation, streamError);
         return;
       }
 
@@ -1988,16 +2093,18 @@ ${newMessage || ''}`;
         // Use the prompt for image generation: try to extract the prompt after the marker, fallback to original text
         let imagePrompt = textAfterImage || text || 'Generate an image';
         contents.push({ text: imagePrompt });
-        if (attachmentName) {
-          const filePath = path.join(userUploadsDir, attachmentName);
-          if (fs.existsSync(filePath)) {
-            const data = fs.readFileSync(filePath);
-            contents.push({
-              inlineData: {
-                mimeType: 'image/jpeg',
-                data: data.toString('base64'),
-              },
-            });
+        if (attachmentNames.length) {
+          for (const name of attachmentNames) {
+            const filePath = path.join(userUploadsDir, name);
+            if (fs.existsSync(filePath)) {
+              const data = fs.readFileSync(filePath);
+              contents.push({
+                inlineData: {
+                  mimeType: 'image/jpeg',
+                  data: data.toString('base64'),
+                },
+              });
+            }
           }
         }
 
@@ -2330,7 +2437,7 @@ ${newMessage || ''}`;
       })();
     } catch (error) {
       // Standardized error for outer try/catch
-      await this.emitAndSaveError(socket, null, null, "Server is busy right now. Please try again shortly.", emitToConversation);
+      await this.emitAndSaveError(socket, null, null, "Server is busy right now. Please try again shortly.", emitToConversation, error);
     } finally {
       if (typeof aiMessageId !== 'undefined') {
         this.clearActiveStream(aiMessageId);
@@ -2470,12 +2577,15 @@ ${newMessage || ''}`;
       const history = [];
       for (const m of recent) {
         const parts = [toGeminiTextPart(m.text || '')];
-        if (m.attach) {
-          const filePath = path.join(userUploadsDir, m.attach);
-          if (fs.existsSync(filePath)) {
-            parts.push(fileToInlineData(filePath));
-          } else {
-            parts.push(toGeminiTextPart(`(Attached image was: ${APP_BASE_URL}/uploads/userimg/${m.attach})`));
+        const attachments = normalizeAttachmentList(m.attach);
+        if (attachments.length) {
+          for (const name of attachments) {
+            const filePath = path.join(userUploadsDir, name);
+            if (fs.existsSync(filePath)) {
+              parts.push(fileToInlineData(filePath));
+            } else {
+              parts.push(toGeminiTextPart(`(Attached image was: ${APP_BASE_URL}/uploads/userimg/${name})`));
+            }
           }
         }
         history.push({ role: m.role === 'assistant' ? 'model' : 'user', parts });
@@ -2483,12 +2593,15 @@ ${newMessage || ''}`;
 
       // Build user message (with optional existing attachment)
       const userParts = [toGeminiTextPart(text || '')];
-      if (attachment && attachment.name) {
-        const filePath = path.join(userUploadsDir, attachment.name);
-        if (fs.existsSync(filePath)) {
-          userParts.push(fileToInlineData(filePath));
-        } else {
-          userParts.push(toGeminiTextPart(`(Attached image: ${APP_BASE_URL}/uploads/userimg/${attachment.name})`));
+      const attachmentNames = normalizeAttachmentList(attachment);
+      if (attachmentNames.length) {
+        for (const name of attachmentNames) {
+          const filePath = path.join(userUploadsDir, name);
+          if (fs.existsSync(filePath)) {
+            userParts.push(fileToInlineData(filePath));
+          } else {
+            userParts.push(toGeminiTextPart(`(Attached image: ${APP_BASE_URL}/uploads/userimg/${name})`));
+          }
         }
       }
 
@@ -2603,7 +2716,7 @@ ${newMessage || ''}`;
                 });
               }
             } catch (e) {
-              await this.emitAndSaveError(socket, conversationId, aiMessageId, "Server is busy right now. Please try again shortly.", emitToConversation);
+              await this.emitAndSaveError(socket, conversationId, aiMessageId, "Server is busy right now. Please try again shortly.", emitToConversation, e);
               break;
             }
           }
@@ -2623,7 +2736,7 @@ ${newMessage || ''}`;
           timeoutTimer = null;
         }
       } catch (streamError) {
-        await this.emitAndSaveError(socket, conversationId, aiMessageId, "Server is busy right now. Please try again shortly.", emitToConversation);
+        await this.emitAndSaveError(socket, conversationId, aiMessageId, "Server is busy right now. Please try again shortly.", emitToConversation, streamError);
         return;
       }
 
@@ -2755,7 +2868,7 @@ ${newMessage || ''}`;
         }
       })();
     } catch (error) {
-      await this.emitAndSaveError(socket, conversationId, null, "Server is busy right now. Please try again shortly.", emitToConversation);
+      await this.emitAndSaveError(socket, conversationId, null, "Server is busy right now. Please try again shortly.", emitToConversation, error);
     } finally {
       if (typeof aiMessageId !== 'undefined') {
         this.clearActiveStream(aiMessageId);
@@ -2923,7 +3036,10 @@ ${newMessage || ''}`;
 
         const [messageRows] = await pool.promise().execute(selectSql, [conversationId]);
 
-        messages = messageRows;
+        messages = messageRows.map((row) => ({
+          ...row,
+          a: normalizeAttachmentList(row.a),
+        }));
         if (messageIds) {
           const excludeIds = messageIds
             .split(',')
@@ -2950,9 +3066,10 @@ ${newMessage || ''}`;
         );
 
       for (const item of attachments) {
-        if (item.a) {
+        const files = normalizeAttachmentList(item.a);
+        for (const name of files) {
           try {
-            const filePath = path.join(userUploadsDir, item.a);
+            const filePath = path.join(userUploadsDir, name);
             if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
           } catch (err) {
             console.error('Error deleting file:', err);
@@ -3631,6 +3748,7 @@ io.on('connection', (socket) => {
         data.text || '',
         data.title || '',
         data.attachment || null,
+        data.attachments_processed || false,
         data.conversation_id || '',
         data.model || '',
         socket,
@@ -3692,7 +3810,7 @@ io.on('connection', (socket) => {
 
       const originalMessage = messageRows[0];
       const text = originalMessage.text || '';
-      const attachment = originalMessage.attach ? { name: originalMessage.attach, existing: true } : null;
+      const attachment = normalizeAttachmentList(originalMessage.attach);
 
       // Call regenerateMessage with the original message text and attachment
       // The attachment is marked as 'existing' so it won't be re-uploaded or charged
@@ -3818,9 +3936,9 @@ io.on('connection', (socket) => {
     try {
       const conversationId = Number(data?.conversation_id);
       const text = String(data?.text || '');
-      const attachment = data?.attachment ? String(data.attachment) : '';
+      const attachments = normalizeAttachmentList(data?.attachment);
       if (!conversationId) return;
-      if (!text.trim() && !attachment) return;
+      if (!text.trim() && !attachments.length) return;
 
       // BUG FIX #5: Check if user has edit permission before allowing message submission
       const accessInfo = await socket.chatManager.canAccessConversation(conversationId);
@@ -3832,12 +3950,12 @@ io.on('connection', (socket) => {
       const room = getConversationRoom(conversationId);
       socket.join(room);
 
-      const userMessageId = await socket.chatManager.addMessage(conversationId, text, attachment, 1, 'APILAGEAI', socket.userData.id);
+      const userMessageId = await socket.chatManager.addMessage(conversationId, text, attachments, 1, 'APILAGEAI', socket.userData.id);
       io.to(room).emit('user_message_saved', {
         conversation_id: conversationId,
         message_id: userMessageId,
         text,
-        attachment,
+        attachment: attachments,
         type: 1,
         is_new: false,
         sender_user_id: socket.userData.id,
@@ -4339,13 +4457,49 @@ app.get('/', (req, res) => {
   res.json({ message: 'Apilage AI Server Running (Gemini)', timestamp: new Date().toISOString() });
 });
 
-app.post('/upload', authenticateRequest, upload.single('image'), (req, res) => {
+app.post(
+  '/upload',
+  authenticateRequest,
+  upload.fields([
+    { name: 'images', maxCount: MAX_IMAGE_UPLOADS_PER_MESSAGE },
+    { name: 'image', maxCount: 1 },
+  ]),
+  async (req, res) => {
+    try {
+      const files = [
+        ...(req.files?.images || []),
+        ...(req.files?.image || []),
+      ];
+      if (!files.length) return res.status(400).json({ error: 'No file uploaded' });
+      if (files.length > MAX_IMAGE_UPLOADS_PER_MESSAGE) {
+        return res.status(400).json({ error: `You can upload up to ${MAX_IMAGE_UPLOADS_PER_MESSAGE} images at a time.` });
+      }
+      const processedFilenames = [];
+      for (const file of files) {
+        processedFilenames.push(await processUploadedImage(file.filename));
+      }
+      res.json({ success: true, filenames: processedFilenames, filename: processedFilenames[0] });
+    } catch (error) {
+      console.error('Upload error:', error);
+      res.status(500).json({ error: 'Upload failed: ' + error.message });
+    }
+  }
+);
+
+app.post('/upload/delete', authenticateRequest, (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-    res.json({ success: true, filename: req.file.filename });
+    const filenames = normalizeAttachmentList(req.body?.filenames || req.body?.filename);
+    if (!filenames.length) {
+      return res.status(400).json({ error: 'Filename required' });
+    }
+    const deleted = [];
+    filenames.forEach((name) => {
+      if (safeUnlinkUserUpload(name)) deleted.push(name);
+    });
+    res.json({ success: true, deleted });
   } catch (error) {
-    console.error('Upload error:', error);
-    res.status(500).json({ error: 'Upload failed: ' + error.message });
+    console.error('Upload delete error:', error);
+    res.status(500).json({ error: 'Delete failed: ' + error.message });
   }
 });
 
@@ -4669,7 +4823,11 @@ app.get('/api/conversations/published/:token/messages', async (req, res) => {
         [conversationId]
       );
 
-    res.json({ error: false, messages });
+    const normalizedMessages = messages.map((msg) => ({
+      ...msg,
+      attach: normalizeAttachmentList(msg.attach),
+    }));
+    res.json({ error: false, messages: normalizedMessages });
   } catch (error) {
     console.error('Get published messages error:', error);
     res.status(500).json({ error: true, message: 'Failed to retrieve messages' });

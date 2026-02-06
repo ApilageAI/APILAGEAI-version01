@@ -1,18 +1,18 @@
 <?php
-/* Smarty version 5.7.0, created on 2026-02-05 20:05:46
+/* Smarty version 5.7.0, created on 2026-02-06 09:18:38
   from 'file:app.tpl' */
 
 /* @var \Smarty\Template $_smarty_tpl */
 if ($_smarty_tpl->getCompiled()->isFresh($_smarty_tpl, array (
   'version' => '5.7.0',
-  'unifunc' => 'content_6984aac2414ae7_15505766',
+  'unifunc' => 'content_69856496eb31a8_16449759',
   'has_nocache_code' => false,
   'file_dependency' => 
   array (
     '3bda61b727a2e637f34bab62e3d96a1561aa2022' => 
     array (
       0 => 'app.tpl',
-      1 => 1770265163,
+      1 => 1770349228,
       2 => 'file',
     ),
   ),
@@ -21,7 +21,7 @@ if ($_smarty_tpl->getCompiled()->isFresh($_smarty_tpl, array (
     'file:components/head.tpl' => 1,
   ),
 ))) {
-function content_6984aac2414ae7_15505766 (\Smarty\Template $_smarty_tpl) {
+function content_69856496eb31a8_16449759 (\Smarty\Template $_smarty_tpl) {
 $_smarty_current_dir = '/Users/dinethgunawardana/Documents/GitHub/apilageai-personal/backend/includes/smarty/templates';
 $_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_id, $_smarty_tpl->compile_id, 0, $_smarty_tpl->cache_lifetime, array(), (int) 0, $_smarty_current_dir);
 echo '<script'; ?>
@@ -984,7 +984,7 @@ echo (defined('APP_URL') ? constant('APP_URL') : null);?>
 
                         <button type="button" id="fileAttach" class="btn-icon" aria-label="Attach image">
                           <i class="fas fa-images"></i>
-                          <input class="d-none" id="fileInput" type="file" name="f" accept="image/png, image/jpeg" aria-label="Attach image" />
+                          <input class="d-none" id="fileInput" type="file" name="f" accept="image/png, image/jpeg, image/webp, image/gif" multiple aria-label="Attach image" />
                         </button>
                       </div>
                       <div class="chat-input-right" style="display: flex; gap: 8px;">
