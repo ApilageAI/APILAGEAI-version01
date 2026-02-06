@@ -906,6 +906,13 @@
                     </div>
                     <!-- Attachment image preview (if any) -->
                     <div id="attachment-container" style="align-self: flex-end;">
+                        <div id="document-attachment-container" style="display:none; margin-bottom: 8px;">
+                            <div id="document-preview-wrapper" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+                            <label id="document-reference-container" style="display:none; align-items:center; gap:6px; margin-top:6px; font-size:12px; color:#555;">
+                                <input type="checkbox" id="documentReferenceToggle" />
+                                Take as reference
+                            </label>
+                        </div>
                         <div class="preview-wrapper">
                             <img class="preview-image" id="imagePreview" src="#" alt="Preview">
                             <button class="remove-btn" id="removeImage">×</button>
@@ -922,7 +929,8 @@
                             <button id="enebleThink" class="dropup-menu-item" type="button"><i class="fas fa-flask"></i>DeepThink</button>
                             <button id="toggleGraphBtn" class="dropup-menu-item" type="button"><i class="fas fa-chart-line"></i> Graph</button>
                              <button id="toggleCanvasBtn" class="dropup-menu-item" type="button"><i class="fa-solid fa-pen-to-square"></i> Canvas</button>
-                            
+                             <button id="uploadDocumentBtn" class="dropup-menu-item" type="button"><i class="fa-solid fa-file-lines"></i> Upload document</button>
+                             
                           </div>
                         </div>
                         
@@ -933,6 +941,7 @@
                           <i class="fas fa-images"></i>
                           <input class="d-none" id="fileInput" type="file" name="f" accept="image/png, image/jpeg, image/webp, image/gif" multiple aria-label="Attach image" />
                         </button>
+                        <input class="d-none" id="documentInput" type="file" name="documents" accept="application/pdf,text/plain,text/markdown,.pdf,.txt,.md" multiple aria-label="Attach document" />
                       </div>
                       <div class="chat-input-right" style="display: flex; gap: 8px;">
                                                 <div id="collab-speaking-indicator" class="collab-speaking-indicator" style="display:none;"></div>

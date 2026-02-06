@@ -1,18 +1,18 @@
 <?php
-/* Smarty version 5.7.0, created on 2026-02-06 09:18:38
+/* Smarty version 5.7.0, created on 2026-02-06 10:17:53
   from 'file:app.tpl' */
 
 /* @var \Smarty\Template $_smarty_tpl */
 if ($_smarty_tpl->getCompiled()->isFresh($_smarty_tpl, array (
   'version' => '5.7.0',
-  'unifunc' => 'content_69856496eb31a8_16449759',
+  'unifunc' => 'content_69857279a79c53_89104340',
   'has_nocache_code' => false,
   'file_dependency' => 
   array (
     '3bda61b727a2e637f34bab62e3d96a1561aa2022' => 
     array (
       0 => 'app.tpl',
-      1 => 1770349228,
+      1 => 1770353158,
       2 => 'file',
     ),
   ),
@@ -21,7 +21,7 @@ if ($_smarty_tpl->getCompiled()->isFresh($_smarty_tpl, array (
     'file:components/head.tpl' => 1,
   ),
 ))) {
-function content_69856496eb31a8_16449759 (\Smarty\Template $_smarty_tpl) {
+function content_69857279a79c53_89104340 (\Smarty\Template $_smarty_tpl) {
 $_smarty_current_dir = '/Users/dinethgunawardana/Documents/GitHub/apilageai-personal/backend/includes/smarty/templates';
 $_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_id, $_smarty_tpl->compile_id, 0, $_smarty_tpl->cache_lifetime, array(), (int) 0, $_smarty_current_dir);
 echo '<script'; ?>
@@ -959,6 +959,13 @@ echo (defined('APP_URL') ? constant('APP_URL') : null);?>
                     </div>
                     <!-- Attachment image preview (if any) -->
                     <div id="attachment-container" style="align-self: flex-end;">
+                        <div id="document-attachment-container" style="display:none; margin-bottom: 8px;">
+                            <div id="document-preview-wrapper" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+                            <label id="document-reference-container" style="display:none; align-items:center; gap:6px; margin-top:6px; font-size:12px; color:#555;">
+                                <input type="checkbox" id="documentReferenceToggle" />
+                                Take as reference
+                            </label>
+                        </div>
                         <div class="preview-wrapper">
                             <img class="preview-image" id="imagePreview" src="#" alt="Preview">
                             <button class="remove-btn" id="removeImage">×</button>
@@ -975,7 +982,8 @@ echo (defined('APP_URL') ? constant('APP_URL') : null);?>
                             <button id="enebleThink" class="dropup-menu-item" type="button"><i class="fas fa-flask"></i>DeepThink</button>
                             <button id="toggleGraphBtn" class="dropup-menu-item" type="button"><i class="fas fa-chart-line"></i> Graph</button>
                              <button id="toggleCanvasBtn" class="dropup-menu-item" type="button"><i class="fa-solid fa-pen-to-square"></i> Canvas</button>
-                            
+                             <button id="uploadDocumentBtn" class="dropup-menu-item" type="button"><i class="fa-solid fa-file-lines"></i> Upload document</button>
+                             
                           </div>
                         </div>
                         
@@ -986,6 +994,7 @@ echo (defined('APP_URL') ? constant('APP_URL') : null);?>
                           <i class="fas fa-images"></i>
                           <input class="d-none" id="fileInput" type="file" name="f" accept="image/png, image/jpeg, image/webp, image/gif" multiple aria-label="Attach image" />
                         </button>
+                        <input class="d-none" id="documentInput" type="file" name="documents" accept="application/pdf,text/plain,text/markdown,.pdf,.txt,.md" multiple aria-label="Attach document" />
                       </div>
                       <div class="chat-input-right" style="display: flex; gap: 8px;">
                                                 <div id="collab-speaking-indicator" class="collab-speaking-indicator" style="display:none;"></div>

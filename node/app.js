@@ -49,6 +49,88 @@ async function processUploadedImage(filename) {
   }
 }
 
+function readDocumentText(docId) {
+  const safeId = sanitizeDocId(docId);
+  if (!safeId) return '';
+  const filePath = path.join(userDocsTextDir, `${safeId}.txt`);
+  if (!filePath.startsWith(userDocsTextDir)) return '';
+  try {
+    if (!fs.existsSync(filePath)) return '';
+    return fs.readFileSync(filePath, 'utf8');
+  } catch (error) {
+    console.error('Document read error:', error);
+    return '';
+  }
+}
+
+async function extractDocumentText(filePath, mimeType, originalName = '') {
+  const ext = path.extname(originalName || filePath || '').toLowerCase();
+  const isPdf = mimeType === 'application/pdf' || ext === '.pdf';
+  let text = '';
+  if (isPdf) {
+    const pdfBuffer = fs.readFileSync(filePath);
+
+    // pdf-parse v2 API (class-based)
+    if (PDFParseClass) {
+      const parser = new PDFParseClass({ data: pdfBuffer });
+      try {
+        const result = await parser.getText();
+        text = result?.text || '';
+      } finally {
+        try { await parser.destroy(); } catch (_) { }
+      }
+    } else if (pdfParseFunction) {
+      // Backward compatibility for pdf-parse v1 API (function-based)
+      const data = await pdfParseFunction(pdfBuffer);
+      text = data?.text || '';
+    } else {
+      throw new Error('PDF parser not available');
+    }
+  } else {
+    text = fs.readFileSync(filePath, 'utf8');
+  }
+  text = String(text || '').replace(/\0/g, '').replace(/\r\n/g, '\n').trim();
+  if (!text && !isPdf) {
+    throw new Error('Document has no extractable text');
+  }
+  if (text.length > MAX_DOC_TEXT_CHARS) {
+    text = text.slice(0, MAX_DOC_TEXT_CHARS);
+  }
+  return text;
+}
+
+async function processUploadedDocument(file) {
+  const docId = sanitizeDocId(`${Date.now()}-${Math.round(Math.random() * 1e9)}`);
+  const sourcePath = path.join(userDocsDir, file.filename);
+  const originalName = path.basename(String(file.originalname || '')).trim() || 'document';
+  const mimeType = String(file.mimetype || '').trim() || guessDocMimeType(file.filename);
+  try {
+    const text = await extractDocumentText(sourcePath, file.mimetype, originalName);
+    const outputPath = path.join(userDocsTextDir, `${docId}.txt`);
+    fs.writeFileSync(outputPath, text, 'utf8');
+    writeDocumentMeta(docId, {
+      id: docId,
+      filename: path.basename(String(file.filename || '').trim()),
+      name: originalName,
+      mimeType,
+      size: Number(file.size || 0),
+      createdAt: Date.now(),
+    });
+    return {
+      id: docId,
+      name: originalName,
+      filename: path.basename(String(file.filename || '').trim()),
+      mimeType,
+      textLength: text.length,
+    };
+  } catch (error) {
+    safeUnlinkDocUpload(file.filename);
+    safeUnlinkDocText(docId);
+    safeUnlinkDocMeta(docId);
+    throw error;
+  }
+}
+
 // ===== Core Dependencies =====
 const express = require('express');
 const http = require('http');
@@ -58,6 +140,13 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const sharp = require('sharp');
+const pdfParseModule = require('pdf-parse');
+const PDFParseClass = (typeof pdfParseModule?.PDFParse === 'function')
+  ? pdfParseModule.PDFParse
+  : null;
+const pdfParseFunction = (typeof pdfParseModule === 'function')
+  ? pdfParseModule
+  : (typeof pdfParseModule?.default === 'function' ? pdfParseModule.default : null);
 const axios = require('axios');
 const crypto = require('crypto');
 const cookieParser = require('cookie-parser');
@@ -324,12 +413,28 @@ app.use('/uploads', express.static(path.join(__dirname, '/../uploads')));
 const baseUploadsDir = path.join(__dirname, '/../uploads');
 const userUploadsDir = path.join(baseUploadsDir, 'userimg');
 const genimgUploadsDir = path.join(baseUploadsDir, 'genimg');
+const userDocsDir = path.join(baseUploadsDir, 'userdocs');
+const userDocsTextDir = path.join(__dirname, '/../doc_text');
 if (!fs.existsSync(userUploadsDir)) {
   fs.mkdirSync(userUploadsDir, { recursive: true });
 }
 if (!fs.existsSync(genimgUploadsDir)) {
   fs.mkdirSync(genimgUploadsDir, { recursive: true });
 }
+if (!fs.existsSync(userDocsDir)) {
+  fs.mkdirSync(userDocsDir, { recursive: true });
+}
+if (!fs.existsSync(userDocsTextDir)) {
+  fs.mkdirSync(userDocsTextDir, { recursive: true });
+}
+
+// ====== Upload Limits ======
+const MAX_IMAGE_UPLOADS_PER_MESSAGE = 5;
+const MAX_DOC_UPLOADS_PER_MESSAGE = 5;
+const MAX_DOC_FILE_SIZE = 50 * 1024 * 1024;
+const MAX_DOC_TEXT_CHARS = 20000;
+const MAX_TOTAL_DOC_TEXT_CHARS = 40000;
+const MAX_INLINE_DOC_BYTES = 15 * 1024 * 1024;
 
 // ====== Auth Middlewares ======
 const authenticateSocket = async (socket, next) => {
@@ -441,6 +546,33 @@ const upload = multer({
     file.mimetype.startsWith('image/') ? cb(null, true) : cb(new Error('Only image files are allowed')),
 });
 
+// ====== Multer (documents) ======
+const documentStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, userDocsDir),
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + path.extname(file.originalname || '').toLowerCase());
+  },
+});
+const documentUpload = multer({
+  storage: documentStorage,
+  limits: { fileSize: MAX_DOC_FILE_SIZE },
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    const allowedMime = new Set([
+      'application/pdf',
+      'text/plain',
+      'text/markdown',
+      'text/x-markdown',
+    ]);
+    const allowedExt = new Set(['.pdf', '.txt', '.md', '.markdown']);
+    if (allowedMime.has(file.mimetype) || allowedExt.has(ext)) {
+      return cb(null, true);
+    }
+    return cb(new Error('Only PDF or text documents are allowed'));
+  },
+});
+
 function safeUnlinkUserUpload(filename) {
   const safeName = path.basename(String(filename || '')).trim();
   if (!safeName) return false;
@@ -457,6 +589,99 @@ function safeUnlinkUserUpload(filename) {
   return false;
 }
 
+function sanitizeDocId(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  const cleaned = raw.replace(/[^a-zA-Z0-9_-]/g, '');
+  return cleaned;
+}
+
+function safeUnlinkDocUpload(filename) {
+  const safeName = path.basename(String(filename || '')).trim();
+  if (!safeName) return false;
+  const filePath = path.join(userDocsDir, safeName);
+  if (!filePath.startsWith(userDocsDir)) return false;
+  try {
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      return true;
+    }
+  } catch (error) {
+    console.error('Failed to delete document upload:', error);
+  }
+  return false;
+}
+
+function safeUnlinkDocText(docId) {
+  const safeId = sanitizeDocId(docId);
+  if (!safeId) return false;
+  const filePath = path.join(userDocsTextDir, `${safeId}.txt`);
+  if (!filePath.startsWith(userDocsTextDir)) return false;
+  try {
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      return true;
+    }
+  } catch (error) {
+    console.error('Failed to delete document text:', error);
+  }
+  return false;
+}
+
+function getDocMetaPath(docId) {
+  const safeId = sanitizeDocId(docId);
+  if (!safeId) return '';
+  const filePath = path.join(userDocsTextDir, `${safeId}.json`);
+  if (!filePath.startsWith(userDocsTextDir)) return '';
+  return filePath;
+}
+
+function writeDocumentMeta(docId, meta) {
+  const filePath = getDocMetaPath(docId);
+  if (!filePath) return false;
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(meta || {}, null, 2), 'utf8');
+    return true;
+  } catch (error) {
+    console.error('Failed to write document meta:', error);
+    return false;
+  }
+}
+
+function readDocumentMeta(docId) {
+  const filePath = getDocMetaPath(docId);
+  if (!filePath) return null;
+  try {
+    if (!fs.existsSync(filePath)) return null;
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch (error) {
+    console.error('Failed to read document meta:', error);
+    return null;
+  }
+}
+
+function safeUnlinkDocMeta(docId) {
+  const filePath = getDocMetaPath(docId);
+  if (!filePath) return false;
+  try {
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      return true;
+    }
+  } catch (error) {
+    console.error('Failed to delete document meta:', error);
+  }
+  return false;
+}
+
+function guessDocMimeType(filename, fallback = 'application/octet-stream') {
+  const ext = path.extname(String(filename || '')).toLowerCase();
+  if (ext === '.pdf') return 'application/pdf';
+  if (ext === '.txt') return 'text/plain';
+  if (ext === '.md' || ext === '.markdown') return 'text/markdown';
+  return fallback;
+}
+
 // ====== Helpers for Gemini ======
 function toGeminiTextPart(text) {
   return { text: text || '' };
@@ -467,6 +692,16 @@ function fileToInlineData(filePath) {
   return {
     inlineData: {
       mimeType: 'image/jpeg',
+      data: data.toString('base64'),
+    },
+  };
+}
+
+function binaryFileToInlineData(filePath, mimeType = 'application/octet-stream') {
+  const data = fs.readFileSync(filePath);
+  return {
+    inlineData: {
+      mimeType,
       data: data.toString('base64'),
     },
   };
@@ -537,6 +772,60 @@ function normalizeAttachmentList(input) {
   }
 
   return [str];
+}
+
+function normalizeDocumentList(input) {
+  if (!input) return [];
+
+  const normalizeItem = (item) => {
+    if (!item) return null;
+    if (typeof item === 'object') {
+      const id = sanitizeDocId(item.id || item.document_id || item.doc_id || '');
+      if (!id) return null;
+      const name = String(item.name || item.originalName || item.filename || '').trim();
+      const filename = path.basename(String(item.filename || item.stored_filename || item.file || '').trim());
+      const mimeType = String(item.mimeType || item.mime_type || '').trim();
+      return { id, name, filename, mimeType };
+    }
+    const id = sanitizeDocId(item);
+    return id ? { id, name: '', filename: '', mimeType: '' } : null;
+  };
+
+  let list = [];
+  if (Array.isArray(input)) {
+    list = input.map(normalizeItem).filter(Boolean);
+    return list;
+  }
+
+  if (typeof input === 'object') {
+    const single = normalizeItem(input);
+    return single ? [single] : [];
+  }
+
+  const str = String(input).trim();
+  if (!str) return [];
+
+  if (str.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(str);
+      if (Array.isArray(parsed)) {
+        list = parsed.map(normalizeItem).filter(Boolean);
+        return list;
+      }
+    } catch (_) {
+      // fall through
+    }
+  }
+
+  if (str.includes(',')) {
+    return str
+      .split(',')
+      .map((item) => normalizeItem(item))
+      .filter(Boolean);
+  }
+
+  const single = normalizeItem(str);
+  return single ? [single] : [];
 }
 
 function serializeAttachments(input) {
@@ -811,7 +1100,6 @@ const FREE_USER_MODELS = ['free'];  // Models available for users with balance <
 // ====== Cost Constants ======
 const IMAGE_GENERATION_COST = 5;  // Cost for generating one image
 const IMAGE_UPLOAD_COST = 5;      // Cost per uploaded image
-const MAX_IMAGE_UPLOADS_PER_MESSAGE = 5;
 
 // ====== Daily Trial Limits for Free Users ======
 const DAILY_TRIAL_LIMITS = {
@@ -1529,7 +1817,9 @@ ${newMessage || ''}`;
     socket,
     emitToConversation = null,
     canvasImageDataUrl = null,
-    canvasDocText = null
+    canvasDocText = null,
+    documentList = null,
+    documentReferenceEnabled = false
   ) {
     let aiMessageId;
     try {
@@ -1760,6 +2050,63 @@ ${newMessage || ''}`;
       const trimmedDocText = String(canvasDocText || '').trim();
       if (trimmedDocText) {
         userParts.push(toGeminiTextPart(`Canvas document (shared canvas):\n${trimmedDocText}`));
+      }
+
+      // If provided, include uploaded documents so Gemini can read them.
+      const documentEntries = normalizeDocumentList(documentList);
+      const useDocumentReference =
+        documentReferenceEnabled === true ||
+        documentReferenceEnabled === 'true' ||
+        documentReferenceEnabled === 1 ||
+        documentReferenceEnabled === '1';
+      if (documentEntries.length) {
+        let totalChars = 0;
+        const docBlocks = [];
+        const docInlineParts = [];
+        for (const entry of documentEntries.slice(0, MAX_DOC_UPLOADS_PER_MESSAGE)) {
+          const meta = readDocumentMeta(entry.id) || {};
+          const entryFilename = path.basename(String(entry.filename || meta.filename || '').trim());
+          const entryMime = String(entry.mimeType || meta.mimeType || guessDocMimeType(entryFilename)).trim();
+          const entryName = entry.name || meta.name || entryFilename || `Document ${docBlocks.length + 1}`;
+
+          if (entryFilename) {
+            const filePath = path.join(userDocsDir, entryFilename);
+            if (filePath.startsWith(userDocsDir) && fs.existsSync(filePath)) {
+              const stat = fs.statSync(filePath);
+              if (stat && stat.size > 0 && stat.size <= MAX_INLINE_DOC_BYTES) {
+                docInlineParts.push(toGeminiTextPart(`Document: ${entryName}`));
+                docInlineParts.push(binaryFileToInlineData(filePath, entryMime || 'application/octet-stream'));
+              }
+            }
+          }
+
+          const rawText = readDocumentText(entry.id);
+          if (!rawText) continue;
+          let docText = String(rawText || '').trim();
+          if (!docText) continue;
+          const remaining = MAX_TOTAL_DOC_TEXT_CHARS - totalChars;
+          if (remaining <= 0) break;
+          if (docText.length > remaining) {
+            docText = docText.slice(0, remaining);
+          }
+          totalChars += docText.length;
+          const label = entryName ? `Document: ${entryName}` : `Document ${docBlocks.length + 1}`;
+          docBlocks.push(`${label}\n${docText}`);
+        }
+
+        if (useDocumentReference) {
+          userParts.push(toGeminiTextPart('Reference documents are attached and should be used for this and future replies while reference mode remains enabled.'));
+        } else {
+          userParts.push(toGeminiTextPart('Attached documents are for this single reply only.'));
+        }
+
+        if (docInlineParts.length) {
+          userParts.push(...docInlineParts);
+        }
+
+        if (docBlocks.length) {
+          userParts.push(toGeminiTextPart(`Document text fallback:\n${docBlocks.join('\n\n')}`));
+        }
       }
 
       // If provided, include the current canvas snapshot so Gemini can read it.
@@ -3523,6 +3870,7 @@ io.on('connection', (socket) => {
         aiText,
         '',
         null,
+        false,
         data.conversation_id || '',
         data.model || '',
         socket
@@ -3757,7 +4105,9 @@ io.on('connection', (socket) => {
         socket,
         emitToConversation,
         data.canvas_image || null,
-        data.canvas_doc_text || null
+        data.canvas_doc_text || null,
+        data.document_ids || data.documents || null,
+        data.document_reference_enabled || false
       );
     } catch (error) {
       console.error('Socket new_message_stream error:', error);
@@ -4460,22 +4810,32 @@ app.get('/', (req, res) => {
   res.json({ message: 'Apilage AI Server Running (Gemini)', timestamp: new Date().toISOString() });
 });
 
+const imageUploadFields = upload.fields([
+  { name: 'images', maxCount: MAX_IMAGE_UPLOADS_PER_MESSAGE },
+  { name: 'image', maxCount: 1 },
+]);
+
 app.post(
   '/upload',
   authenticateRequest,
-  upload.fields([
-    { name: 'images', maxCount: MAX_IMAGE_UPLOADS_PER_MESSAGE },
-    { name: 'image', maxCount: 1 },
-  ]),
+  (req, res, next) => {
+    imageUploadFields(req, res, (err) => {
+      if (err) {
+        console.error('Upload middleware error:', err);
+        return res.status(400).json({ error: true, message: err.message || 'Upload failed' });
+      }
+      next();
+    });
+  },
   async (req, res) => {
     try {
       const files = [
         ...(req.files?.images || []),
         ...(req.files?.image || []),
       ];
-      if (!files.length) return res.status(400).json({ error: 'No file uploaded' });
+      if (!files.length) return res.status(400).json({ error: true, message: 'No file uploaded' });
       if (files.length > MAX_IMAGE_UPLOADS_PER_MESSAGE) {
-        return res.status(400).json({ error: `You can upload up to ${MAX_IMAGE_UPLOADS_PER_MESSAGE} images at a time.` });
+        return res.status(400).json({ error: true, message: `You can upload up to ${MAX_IMAGE_UPLOADS_PER_MESSAGE} images at a time.` });
       }
       const processedFilenames = [];
       for (const file of files) {
@@ -4484,10 +4844,79 @@ app.post(
       res.json({ success: true, filenames: processedFilenames, filename: processedFilenames[0] });
     } catch (error) {
       console.error('Upload error:', error);
-      res.status(500).json({ error: 'Upload failed: ' + error.message });
+      res.status(500).json({ error: true, message: 'Upload failed: ' + error.message });
     }
   }
 );
+
+const documentUploadFields = documentUpload.fields([
+  { name: 'documents', maxCount: MAX_DOC_UPLOADS_PER_MESSAGE },
+  { name: 'document', maxCount: 1 },
+]);
+
+app.post(
+  '/upload-document',
+  authenticateRequest,
+  (req, res, next) => {
+    documentUploadFields(req, res, (err) => {
+      if (err) {
+        console.error('Document upload middleware error:', err);
+        return res.status(400).json({ error: true, message: err.message || 'Document upload failed' });
+      }
+      next();
+    });
+  },
+  async (req, res) => {
+    try {
+      const files = [
+        ...(req.files?.documents || []),
+        ...(req.files?.document || []),
+      ];
+      if (!files.length) return res.status(400).json({ error: true, message: 'No document uploaded' });
+      if (files.length > MAX_DOC_UPLOADS_PER_MESSAGE) {
+        return res.status(400).json({ error: true, message: `You can upload up to ${MAX_DOC_UPLOADS_PER_MESSAGE} documents at a time.` });
+      }
+      const documents = [];
+      for (const file of files) {
+        documents.push(await processUploadedDocument(file));
+      }
+      res.json({ success: true, documents, document: documents[0] });
+    } catch (error) {
+      console.error('Document upload error:', error);
+      res.status(500).json({ error: true, message: 'Document upload failed: ' + error.message });
+    }
+  }
+);
+
+app.post('/upload-document/delete', authenticateRequest, (req, res) => {
+  try {
+    const rawList =
+      req.body?.document_ids ||
+      req.body?.ids ||
+      (req.body?.document_id ? [{ id: req.body.document_id, filename: req.body.filename, mimeType: req.body.mimeType || req.body.mime_type }] : null) ||
+      (req.body?.id ? [{ id: req.body.id, filename: req.body.filename, mimeType: req.body.mimeType || req.body.mime_type }] : null);
+    const list = normalizeDocumentList(rawList);
+    if (!list.length) {
+      return res.status(400).json({ error: true, message: 'Document id required' });
+    }
+    const deleted = [];
+    list.forEach((entry) => {
+      const meta = readDocumentMeta(entry.id) || {};
+      const filename = path.basename(String(entry.filename || meta.filename || '').trim());
+      let removedAny = false;
+      if (filename) {
+        removedAny = safeUnlinkDocUpload(filename) || removedAny;
+      }
+      removedAny = safeUnlinkDocText(entry.id) || removedAny;
+      removedAny = safeUnlinkDocMeta(entry.id) || removedAny;
+      if (removedAny) deleted.push(entry.id);
+    });
+    res.json({ success: true, deleted });
+  } catch (error) {
+    console.error('Document delete error:', error);
+    res.status(500).json({ error: true, message: 'Delete failed: ' + error.message });
+  }
+});
 
 app.post('/upload/delete', authenticateRequest, (req, res) => {
   try {
