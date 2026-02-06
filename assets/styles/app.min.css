@@ -513,7 +513,8 @@ td {
 }
 
 .chat-area-wrapper.empty-state {
-    transform: translateY(-6vh);
+    transform: none;
+    padding-bottom: 6vh;
 }
 
 .chat-area-wrapper.empty-state .chat-start-container {
