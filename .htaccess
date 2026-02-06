@@ -15,6 +15,9 @@
   RewriteRule ^app/([^/]+)/?$ app.php?view=$1 [L,QSA]
   RewriteRule ^app/([^/]+)/([^/]+)/?$ app.php?view=$1&sub_view=$2 [L,QSA]
 
+  # Admin route (hidden, access-controlled in admin.php)
+  RewriteRule ^apilage-admin/?$ admin.php [L,QSA]
+
   # Images routes (renamed from /dashboard)
   RewriteRule ^dashboard/?$ /images [R=301,L]
   RewriteRule ^dashboard/([^/]+)/?$ /images/$1 [R=301,L]

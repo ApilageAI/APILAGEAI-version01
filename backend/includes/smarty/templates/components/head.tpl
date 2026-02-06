@@ -22,6 +22,10 @@
   <meta name="twitter:title" content="Apilage AI - Sri Lankan's AI assistant" />
   <meta name="twitter:description" content="Sri Lankan AI agent for day today tasks and education" />
   <meta name="twitter:image" content="{$smarty.const.APP_URL}/assets/images/welcome.jpg" />
+  {if !empty($noindex)}
+  <meta name="robots" content="noindex,nofollow,noarchive" />
+  <meta name="googlebot" content="noindex,nofollow,noarchive" />
+  {/if}
 
   <script>
     window.APP_BASE_URL = '{$smarty.const.APP_URL}';

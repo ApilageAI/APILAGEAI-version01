@@ -1,18 +1,18 @@
 <?php
-/* Smarty version 5.7.0, created on 2026-02-05 20:03:00
+/* Smarty version 5.7.0, created on 2026-02-06 22:49:12
   from 'file:components/head.tpl' */
 
 /* @var \Smarty\Template $_smarty_tpl */
 if ($_smarty_tpl->getCompiled()->isFresh($_smarty_tpl, array (
   'version' => '5.7.0',
-  'unifunc' => 'content_6984aa1c7b8ac4_83701931',
+  'unifunc' => 'content_69862290be5b83_90991165',
   'has_nocache_code' => false,
   'file_dependency' => 
   array (
     'b1c813ef175c71b536c1781f4c24378be5b7bf36' => 
     array (
       0 => 'components/head.tpl',
-      1 => 1770223002,
+      1 => 1770398111,
       2 => 'file',
     ),
   ),
@@ -20,7 +20,7 @@ if ($_smarty_tpl->getCompiled()->isFresh($_smarty_tpl, array (
   array (
   ),
 ))) {
-function content_6984aa1c7b8ac4_83701931 (\Smarty\Template $_smarty_tpl) {
+function content_69862290be5b83_90991165 (\Smarty\Template $_smarty_tpl) {
 $_smarty_current_dir = '/Users/dinethgunawardana/Documents/GitHub/apilageai-personal/backend/includes/smarty/templates/components';
 ?><!DOCTYPE html>
 <html lang="en">
@@ -53,6 +53,10 @@ $_smarty_current_dir = '/Users/dinethgunawardana/Documents/GitHub/apilageai-pers
   <meta name="twitter:description" content="Sri Lankan AI agent for day today tasks and education" />
   <meta name="twitter:image" content="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
 /assets/images/welcome.jpg" />
+  <?php if (!( !$_smarty_tpl->hasVariable('noindex') || empty($_smarty_tpl->getValue('noindex')))) {?>
+  <meta name="robots" content="noindex,nofollow,noarchive" />
+  <meta name="googlebot" content="noindex,nofollow,noarchive" />
+  <?php }?>
 
   <?php echo '<script'; ?>
 >
