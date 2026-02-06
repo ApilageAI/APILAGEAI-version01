@@ -445,8 +445,48 @@ const MAX_INLINE_DOC_BYTES = 15 * 1024 * 1024;
 // ====== Auth Middlewares ======
 const authenticateSocket = async (socket, next) => {
   try {
+    const auth = socket.handshake?.auth || {};
+    const query = socket.handshake?.query || {};
+    const wantsGuest =
+      auth.guest === true ||
+      auth.guest === 'true' ||
+      query.guest === '1' ||
+      query.guest === 'true';
+
+    const attachGuest = () => {
+      const guestId = -Math.max(1, Math.floor(Math.random() * 1e9));
+      socket.isGuest = true;
+      socket.userData = {
+        id: guestId,
+        first_name: 'Guest',
+        last_name: '',
+        email: '',
+        balance: 0,
+        subscription_type: 'free',
+        memory: '',
+        is_guest: true,
+      };
+      socket.clientIp = getClientIp(socket);
+      socket.deviceFingerprint = auth.device_fingerprint || 'guest';
+    };
+
+    const origin = String(socket.handshake?.headers?.origin || '').trim();
+    const referer = String(socket.handshake?.headers?.referer || '').trim();
+    const sameOrigin = (origin && origin.startsWith(APP_BASE_URL)) || (referer && referer.startsWith(APP_BASE_URL));
+
+    if (wantsGuest) {
+      attachGuest();
+      return next();
+    }
+
     const cookies = socket.handshake.headers.cookie;
-    if (!cookies) return next(new Error('No cookies provided'));
+    if (!cookies) {
+      if (sameOrigin) {
+        attachGuest();
+        return next();
+      }
+      return next(new Error('No cookies provided'));
+    }
 
     const parsedCookies = {};
     cookies.split(';').forEach((cookie) => {
@@ -456,7 +496,13 @@ const authenticateSocket = async (socket, next) => {
 
     const userId = parsedCookies[COOKIE_USER_ID];
     const userToken = parsedCookies[COOKIE_USER_TOKEN];
-    if (!userId || !userToken) return next(new Error('Authentication cookies missing'));
+    if (!userId || !userToken) {
+      if (sameOrigin) {
+        attachGuest();
+        return next();
+      }
+      return next(new Error('Authentication cookies missing'));
+    }
 
     // Try session cache first
     const sessionCacheKey = `session:${userId}:${userToken}`;
@@ -3790,12 +3836,394 @@ ${newMessage || ''}`;
   }
 }
 
+// ====== Guest Chat Manager (no DB persistence) ======
+class GuestChatManager {
+  constructor(userData) {
+    this.userData = userData || {};
+    this.activeStreams = new Map();
+    this.nextMessageId = 1;
+    this.conversationId = Number(Date.now()) || 1;
+    this.history = [];
+  }
+
+  resetConversation() {
+    this.history = [];
+    this.conversationId = Number(Date.now()) || 1;
+    this.nextMessageId = 1;
+  }
+
+  registerActiveStream(messageId, control) {
+    if (!messageId) return;
+    this.activeStreams.set(Number(messageId), control);
+  }
+
+  requestStopStream(messageId) {
+    const key = Number(messageId);
+    if (!key) return false;
+    const control = this.activeStreams.get(key);
+    if (!control) return false;
+    control.canceled = true;
+    control.stopRequestedAt = Date.now();
+    try {
+      control.iterator?.return?.();
+    } catch (_) { }
+    return true;
+  }
+
+  clearActiveStream(messageId) {
+    const key = Number(messageId);
+    if (!key) return;
+    this.activeStreams.delete(key);
+  }
+
+  async getUserBalance() {
+    return 0;
+  }
+
+  async getAvailableModels() {
+    return { models: FREE_USER_MODELS, isTrial: false, hasMessageTrial: false };
+  }
+
+  async canUseImages() {
+    return { allowed: false, isTrial: false, message: 'Image uploads are disabled for guest sessions.' };
+  }
+
+  async checkTrialAbuseEligibility() {
+    return { eligible: true };
+  }
+
+  async getDailyUsage() {
+    return { messages_used: 0, image_uploads_used: 0, image_generations_used: 0 };
+  }
+
+  addInlineCitations(text, groundingMetadata) {
+    if (!groundingMetadata || !text) return text;
+
+    const supports = groundingMetadata.groundingSupports || [];
+    const chunks = groundingMetadata.groundingChunks || [];
+
+    if (!supports.length || !chunks.length) return text;
+
+    const usedSourceIndices = new Set();
+    supports.forEach(support => {
+      if (support.groundingChunkIndices) {
+        support.groundingChunkIndices.forEach(i => usedSourceIndices.add(i));
+      }
+    });
+
+    const citationLinks = Array.from(usedSourceIndices)
+      .sort((a, b) => a - b)
+      .map(i => {
+        const chunk = chunks[i];
+        const uri = chunk?.web?.uri;
+        if (uri) {
+          return `<a href="${uri}" target="_blank" rel="noopener noreferrer" class="inline-citation">[${i + 1}]</a>`;
+        }
+        return null;
+      })
+      .filter(Boolean);
+
+    if (citationLinks.length > 0) {
+      const citationString = ` <sup class="citation-group">${citationLinks.join(' ')}</sup>`;
+      text = text.trimEnd() + citationString;
+    }
+
+    return text;
+  }
+
+  async emitAndSaveError(socket, conversationId, aiMessageId, message, emitToConversation = null, error = null) {
+    const emit = typeof emitToConversation === 'function' ? emitToConversation : socket.emit.bind(socket);
+    const finalMessage = formatErrorMessage(message, error);
+    emit('stream_error', { error: true, message: finalMessage });
+  }
+
+  async newMessageStream(
+    text,
+    title = '',
+    attachment = null,
+    attachmentsProcessed = false,
+    conversationId = '',
+    modelChoice = '',
+    socket,
+    emitToConversation = null,
+    canvasImageDataUrl = null,
+    canvasDocText = null,
+    documentList = null,
+    documentReferenceEnabled = false
+  ) {
+    const emit = typeof emitToConversation === 'function' ? emitToConversation : socket.emit.bind(socket);
+    const userId = this.userData.id;
+    const attachmentList = normalizeAttachmentList(attachment);
+    const docList = normalizeDocumentList(documentList);
+
+    if (attachmentList.length) {
+      await this.emitAndSaveError(socket, conversationId, null, 'Image uploads are disabled for guest sessions. Log in to apilageai to explore more.');
+      return;
+    }
+    if (docList.length) {
+      await this.emitAndSaveError(socket, conversationId, null, 'Document uploads are disabled for guest sessions. Log in to apilageai to explore more.');
+      return;
+    }
+    if (canvasImageDataUrl || (canvasDocText && String(canvasDocText).trim())) {
+      await this.emitAndSaveError(socket, conversationId, null, 'Canvas is disabled for guest sessions. Log in to apilageai to explore more.');
+      return;
+    }
+
+    const MAX_TOKENS = 20000;
+    const tokenEstimate = (text || '').split(/\s+/).length;
+    if (tokenEstimate > MAX_TOKENS) {
+      await this.emitAndSaveError(socket, conversationId, null, "The message you submitted is too long and can't process.");
+      return;
+    }
+
+    let finalConversationId = Number(conversationId);
+    const isNew = !finalConversationId;
+    if (!finalConversationId) {
+      finalConversationId = this.conversationId;
+    }
+    this.conversationId = finalConversationId;
+
+    const userMessageId = this.nextMessageId++;
+    emit('user_message_saved', {
+      conversation_id: finalConversationId,
+      message_id: userMessageId,
+      text,
+      attachment: [],
+      documents: [],
+      document_reference_enabled: false,
+      type: 1,
+      is_new: isNew,
+      sender_user_id: userId,
+    });
+
+    const aiMessageId = this.nextMessageId++;
+    const streamControl = { canceled: false, iterator: null, stopRequestedAt: null };
+    this.registerActiveStream(aiMessageId, streamControl);
+
+    emit('stream_start', {
+      conversation_id: finalConversationId,
+      message_id: aiMessageId,
+      user_message_id: userMessageId,
+      is_new: isNew,
+      sender_user_id: userId,
+    });
+
+    const history = this.history.slice(-6).map(m => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [toGeminiTextPart(m.text || '')],
+    }));
+
+    const systemInstruction = buildSystemInstruction({ ...this.userData, memory: '' }, '');
+    const userParts = [toGeminiTextPart(text || '')];
+    const contents = [...history, { role: 'user', parts: userParts }];
+
+    const generateConfig = { tools: [{ googleSearch: {} }] };
+    emit('stream_searching', {
+      conversation_id: finalConversationId,
+      message_id: aiMessageId,
+      message: 'Searching the web...',
+      sender_user_id: userId,
+    });
+
+    let fullResponse = '';
+    let groundingMetadata = null;
+    try {
+      const responseStream = await genAI.models.generateContentStream({
+        model: MODEL_TOKEN_MAP['free'],
+        contents,
+        config: {
+          ...generateConfig,
+          systemInstruction,
+        },
+      });
+      streamControl.iterator = responseStream;
+
+      for await (const event of responseStream) {
+        if (streamControl.canceled) break;
+        const parts = event?.candidates?.[0]?.content?.parts || [];
+        for (const part of parts) {
+          if (part.thought) continue;
+          const contentChunk = part.text || '';
+          if (contentChunk) {
+            fullResponse += contentChunk;
+            emit('stream_chunk', {
+              conversation_id: finalConversationId,
+              message_id: aiMessageId,
+              chunk: contentChunk,
+              full_content: fullResponse,
+              sender_user_id: userId,
+            });
+          }
+        }
+
+        if (event?.candidates?.[0]?.groundingMetadata) {
+          groundingMetadata = event.candidates[0].groundingMetadata;
+          const searchEntryPoint = groundingMetadata.searchEntryPoint;
+          const groundingChunks = groundingMetadata.groundingChunks || [];
+          const groundingSupports = groundingMetadata.groundingSupports || [];
+          const webSearchQueries = groundingMetadata.webSearchQueries || [];
+
+          emit('stream_grounding', {
+            conversation_id: finalConversationId,
+            message_id: aiMessageId,
+            grounding: {
+              searchEntryPoint,
+              chunks: groundingChunks,
+              supports: groundingSupports,
+              queries: webSearchQueries
+            },
+            sender_user_id: userId,
+          });
+        }
+      }
+
+      let finalContent = fullResponse;
+      if (groundingMetadata) {
+        finalContent = this.addInlineCitations(finalContent, groundingMetadata);
+      }
+
+      emit('stream_complete', {
+        conversation_id: finalConversationId,
+        message_id: aiMessageId,
+        user_message_id: userMessageId,
+        final_content: finalContent,
+        model_used: 'free',
+        sender_user_id: userId,
+      });
+
+      this.history.push({ role: 'user', text });
+      this.history.push({ role: 'assistant', text: fullResponse });
+      if (this.history.length > 12) {
+        this.history = this.history.slice(this.history.length - 12);
+      }
+    } catch (error) {
+      await this.emitAndSaveError(socket, finalConversationId, aiMessageId, 'Something went wrong. Please try again.', null, error);
+    } finally {
+      this.clearActiveStream(aiMessageId);
+    }
+  }
+}
+
 // ====== Socket.IO with auth and rate limiting ======
 io.use(authenticateSocket);
 io.use(security.socketRateLimiter());
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id, 'User ID:', socket.userData.id);
+
+  const isGuest = !!socket.isGuest;
+  if (isGuest) {
+    if (!socket.chatManager) {
+      socket.chatManager = new GuestChatManager(socket.userData);
+    }
+
+    socket.emit('authenticated', {
+      success: true,
+      user: {
+        id: socket.userData.id,
+        first_name: socket.userData.first_name || 'Guest',
+        last_name: socket.userData.last_name || '',
+        email: socket.userData.email || '',
+        balance: 0,
+      },
+      available_models: FREE_USER_MODELS,
+      can_use_images: false,
+      has_message_trial: false,
+      is_trial: false,
+      trial_remaining: { messages: 0, image_uploads: 0, image_generations: 0 },
+      trial_limits: DAILY_TRIAL_LIMITS,
+      is_guest: true,
+    });
+
+    socket.on('get_available_models', async () => {
+      socket.emit('available_models', {
+        models: FREE_USER_MODELS,
+        balance: 0,
+        can_use_images: false,
+        has_message_trial: false,
+        is_trial: false,
+        trial_remaining: { messages: 0, image_uploads: 0, image_generations: 0 },
+        trial_limits: DAILY_TRIAL_LIMITS,
+      });
+    });
+
+    socket.on('stop_stream', async (data) => {
+      try {
+        const messageId = Number(data?.message_id || 0);
+        if (!messageId) return;
+        socket.chatManager.requestStopStream(messageId);
+      } catch (error) {
+        console.error('guest stop_stream error:', error);
+      }
+    });
+
+    socket.on('new_message_stream', async (data) => {
+      const userId = socket.userData.id;
+      // Rate limiting: Check message cooldown
+      const cooldownCheck = await security.checkMessageCooldown(userId);
+      if (!cooldownCheck.allowed) {
+        socket.emit('rate_limit_exceeded', {
+          message: `Please wait ${Math.ceil(cooldownCheck.waitMs / 1000)} seconds before sending another message`,
+          code: 'MESSAGE_COOLDOWN',
+          waitMs: cooldownCheck.waitMs,
+        });
+        return;
+      }
+
+      // Rate limiting: Check AI request limit
+      const aiLimitCheck = await security.checkAIRateLimit(userId);
+      if (!aiLimitCheck.allowed) {
+        socket.emit('rate_limit_exceeded', {
+          message: 'Too many AI requests. Please slow down.',
+          code: 'AI_RATE_LIMIT',
+          remaining: aiLimitCheck.remaining,
+        });
+        return;
+      }
+
+      try {
+        await socket.chatManager.newMessageStream(
+          data.text || '',
+          data.title || '',
+          data.attachment || null,
+          data.attachments_processed || false,
+          data.conversation_id || '',
+          'free',
+          socket,
+          null,
+          data.canvas_image || null,
+          data.canvas_doc_text || null,
+          data.document_ids || data.documents || null,
+          data.document_reference_enabled || false
+        );
+      } catch (error) {
+        console.error('guest new_message_stream error:', error);
+        await socket.chatManager.emitAndSaveError(socket, data.conversation_id || null, null, error.message || 'Unknown error');
+      }
+    });
+
+    socket.on('get_conversations', () => {
+      socket.emit('conversations_list', []);
+    });
+
+    socket.on('get_conversation', () => {
+      socket.emit('conversation_data', { error: true, message: 'Guest sessions do not store conversations.' });
+    });
+
+    socket.on('guest_new_chat', () => {
+      try {
+        socket.chatManager.resetConversation();
+      } catch (error) {
+        console.error('guest_new_chat error:', error);
+      }
+    });
+
+    socket.on('disconnect', () => {
+      console.log('Guest disconnected:', socket.id);
+    });
+
+    return;
+  }
 
   // Check trial abuse eligibility (IP + Device tracking)
   (async () => {

@@ -63,6 +63,7 @@
           <a class="auth-social-btn auth-social-wide" id="loginGoogle" href="{$smarty.const.APP_URL}/auth/google"><i class="fab fa-google"></i> Login with Google</a>
           <a class="auth-social-btn auth-social-wide" id="loginGlobbook" href="https://globbook.com/api/oauth?app_id=56532326578385"><i class="fa fa-earth-asia"></i> Login with Globbook</a>
           <a class="auth-social-btn auth-social-wide" id="loginFacebook" href="#"><i class="fab fa-facebook"></i> Login with Facebook</a>
+          <a class="auth-social-btn auth-social-wide auth-guest-btn" id="loginGuest" href="{$smarty.const.APP_URL}/auth/guest"><i class="fa fa-user"></i> Continue without account</a>
 
           <div class="auth-footnote">
             <span>Forget password</span>
@@ -358,6 +359,11 @@ body {
   gap: 8px;
   background: #fff;
   transition: all 0.2s ease;
+}
+.auth-guest-btn {
+  border-style: dashed;
+  background: #f9fafb;
+  color: #1f2937;
 }
 .auth-social-btn:hover {
   border-color: #111827;

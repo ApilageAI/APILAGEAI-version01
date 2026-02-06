@@ -57,6 +57,20 @@ elseif ($do === "reset-password") {
     $title = "Reset Password";
     $page = "password_reset_form";
 }
+// Continue without account (guest mode)
+elseif ($do === "guest") {
+    if ($user->_logged_in) {
+        $user->sign_out();
+        // sign_out destroys the session; start a new one for guest mode
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            session_start();
+        }
+    }
+    $_SESSION['guest_mode'] = true;
+    $_SESSION['guest_id'] = bin2hex(random_bytes(8));
+    header("Location: " . APP_URL . "/app");
+    exit;
+}
 // Magic login link
 elseif ($do === "magic-login") {
     $token = $_GET['token'] ?? '';

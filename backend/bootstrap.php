@@ -172,6 +172,11 @@ $gcons = [
 // ================================================================
 require __DIR__ . "/user.php";
 $user = new User();
+$isGuest = !empty($_SESSION['guest_mode']);
+if ($user->_logged_in && $isGuest) {
+    unset($_SESSION['guest_mode'], $_SESSION['guest_id']);
+    $isGuest = false;
+}
 $smarty->assign('user', $user);
 $smarty->assign('gcons', $gcons);
 

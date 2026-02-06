@@ -9,8 +9,9 @@
 
 require_once __DIR__ . "/backend/bootstrap.php";
 
-// Require authentication
-if (!$user->_logged_in) {
+// Require authentication (allow guest mode)
+$is_guest = (!$user->_logged_in && !empty($_SESSION['guest_mode']));
+if (!$user->_logged_in && !$is_guest) {
     header("Location: " . APP_URL . "/auth/login");
     exit();
 }
@@ -50,7 +51,8 @@ switch ($view) {
 
 $smarty->assign("view", $view);
 $smarty->assign("sub_view", $sub_view);
-$smarty->assign("conversations", $user->get_conversations());
+$smarty->assign("is_guest", $is_guest);
+$smarty->assign("conversations", $is_guest ? [] : $user->get_conversations());
 
 page_header("Apilage AI $title");
 page_footer("app");

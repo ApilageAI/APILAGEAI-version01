@@ -1,18 +1,18 @@
 <?php
-/* Smarty version 5.7.0, created on 2026-02-06 14:59:15
+/* Smarty version 5.7.0, created on 2026-02-06 16:08:10
   from 'file:app.tpl' */
 
 /* @var \Smarty\Template $_smarty_tpl */
 if ($_smarty_tpl->getCompiled()->isFresh($_smarty_tpl, array (
   'version' => '5.7.0',
-  'unifunc' => 'content_6985b46b421167_33814527',
+  'unifunc' => 'content_6985c4921c8107_37104828',
   'has_nocache_code' => false,
   'file_dependency' => 
   array (
     '3bda61b727a2e637f34bab62e3d96a1561aa2022' => 
     array (
       0 => 'app.tpl',
-      1 => 1770370107,
+      1 => 1770374238,
       2 => 'file',
     ),
   ),
@@ -21,7 +21,7 @@ if ($_smarty_tpl->getCompiled()->isFresh($_smarty_tpl, array (
     'file:components/head.tpl' => 1,
   ),
 ))) {
-function content_6985b46b421167_33814527 (\Smarty\Template $_smarty_tpl) {
+function content_6985c4921c8107_37104828 (\Smarty\Template $_smarty_tpl) {
 $_smarty_current_dir = '/Users/dinethgunawardana/Documents/GitHub/apilageai-personal/backend/includes/smarty/templates';
 $_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_id, $_smarty_tpl->compile_id, 0, $_smarty_tpl->cache_lifetime, array(), (int) 0, $_smarty_current_dir);
 echo '<script'; ?>
@@ -101,14 +101,14 @@ echo $_smarty_tpl->getValue('user')->_data['image'];
 } else {
 echo (defined('APP_URL') ? constant('APP_URL') : null);?>
 /assets/images/user.png<?php }?>"
-        alt="<?php echo $_smarty_tpl->getValue('user')->_data['first_name'];?>
+        alt="<?php echo (($tmp = $_smarty_tpl->getValue('user')->_data['first_name'] ?? null)===null||$tmp==='' ? 'Guest' ?? null : $tmp);?>
  Avatar"
         onerror="this.onerror=null;this.src='<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
 /assets/images/user.png';"
       />
     </div>
     <div class="user-details">
-      <div class="user-name" id="sidebar-user-name"><?php echo $_smarty_tpl->getValue('user')->_data['first_name'];?>
+      <div class="user-name" id="sidebar-user-name"><?php echo (($tmp = $_smarty_tpl->getValue('user')->_data['first_name'] ?? null)===null||$tmp==='' ? 'Guest' ?? null : $tmp);?>
 </div>
       <div class="user-credit-text" id="sidebar-credit-text">Credit: Loading...</div>
       <div class="credit-bar-container">
@@ -440,7 +440,7 @@ echo $_smarty_tpl->getValue('user')->_data['image'];
 } else {
 echo (defined('APP_URL') ? constant('APP_URL') : null);?>
 /assets/images/user.png<?php }?>"
-                              alt="<?php echo $_smarty_tpl->getValue('user')->_data['first_name'];?>
+                              alt="<?php echo (($tmp = $_smarty_tpl->getValue('user')->_data['first_name'] ?? null)===null||$tmp==='' ? 'Guest' ?? null : $tmp);?>
  Avatar"
                               onerror="this.onerror=null;this.src='<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
 /assets/images/user.png';"
@@ -457,7 +457,7 @@ echo (defined('APP_URL') ? constant('APP_URL') : null);?>
                         <div class="form-grid">
                             <div class="form-group">
                                 <label for="firstName">First Name</label>
-                                <input type="text" id="firstName" value="<?php echo $_smarty_tpl->getValue('user')->_data['first_name'];?>
+                                <input type="text" id="firstName" value="<?php echo (($tmp = $_smarty_tpl->getValue('user')->_data['first_name'] ?? null)===null||$tmp==='' ? 'Guest' ?? null : $tmp);?>
 ">
                             </div>
                             <div class="form-group">
@@ -848,6 +848,18 @@ echo (defined('APP_URL') ? constant('APP_URL') : null);?>
 <nav class="navbar">
     <!-- Left side: Sidebar toggle button -->
     <div class="navbar-left">
+        <?php if ($_smarty_tpl->getValue('is_guest')) {?>
+        <div class="guest-nav-stack">
+            <button id="guest-new-chat" class="guest-new-chat-btn new-chat-btn" type="button" title="New chat">
+                <i class="fa fa-plus" aria-hidden="true"></i>
+                <span>New chat</span>
+            </button>
+            <a id="guest-login-btn" class="guest-login-btn" href="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
+/auth/login">
+                Log in
+            </a>
+        </div>
+        <?php }?>
         <button id="toggleSidebar" class="sidebar-icon-btn" aria-label="Toggle sidebar" style="display: none;">
             <i class="fa fa-chevron-right" aria-hidden="true"></i>
         </button>
@@ -903,7 +915,7 @@ echo (defined('APP_URL') ? constant('APP_URL') : null);?>
             <div class="y-overflow-auto p-4 chat-start-container">
                 <div class="empty-greeting fade-in slide-up">
                     <h1 class="fw-medium text-dark text-center"><span class="greeting-text">ගැම්මක් අල්ලමු </span>
-                        <?php echo $_smarty_tpl->getValue('user')->_data['first_name'];?>
+                        <?php echo (($tmp = $_smarty_tpl->getValue('user')->_data['first_name'] ?? null)===null||$tmp==='' ? 'Guest' ?? null : $tmp);?>
  !
                     </h1>
                 </div>
@@ -1066,7 +1078,7 @@ echo (defined('APP_URL') ? constant('APP_URL') : null);?>
 
 <?php echo '<script'; ?>
 >
-  window.userBalance = <?php echo $_smarty_tpl->getSmarty()->getModifierCallback('intval')($_smarty_tpl->getValue('user')->_data['balance']);?>
+  window.userBalance = <?php echo $_smarty_tpl->getSmarty()->getModifierCallback('intval')((($tmp = $_smarty_tpl->getValue('user')->_data['balance'] ?? null)===null||$tmp==='' ? 0 ?? null : $tmp));?>
 ;
 <?php echo '</script'; ?>
 >
@@ -1083,6 +1095,7 @@ echo (defined('APP_URL') ? constant('APP_URL') : null);?>
 ';
   window.NODE_API_BASE = '<?php echo (defined('NODE_API_BASE') ? constant('NODE_API_BASE') : null);?>
 ';
+  window.IS_GUEST = <?php if ($_smarty_tpl->getValue('is_guest')) {?>true<?php } else { ?>false<?php }?>;
 <?php echo '</script'; ?>
 >
 
@@ -1128,6 +1141,85 @@ echo (defined('APP_URL') ? constant('APP_URL') : null);?>
 /assets/scripts/canvo.min.js?V=1.25.01.2026<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
 "><?php echo '</script'; ?>
 >
+
+<style>
+body.guest-mode .sidebar,
+body.guest-mode #sidebar,
+body.guest-mode #toggleSidebar,
+body.guest-mode .sidebar-footer,
+body.guest-mode #rightsidebar2,
+body.guest-mode .sidebar2,
+body.guest-mode #rightSidebar,
+body.guest-mode .right-sidebar,
+body.guest-mode .notification-wrapper,
+body.guest-mode #modelSwitcher,
+body.guest-mode #button-drop,
+body.guest-mode #fileAttach,
+body.guest-mode #documentInput,
+body.guest-mode #document-attachment-container,
+body.guest-mode #attachment-container,
+body.guest-mode #uploadDocumentBtn,
+body.guest-mode #toggleCanvasBtn,
+body.guest-mode #toggleGraphBtn,
+body.guest-mode #enebleThink,
+body.guest-mode #open-conversation-gallery,
+body.guest-mode #open-share-modal,
+body.guest-mode #mindmap-open-btn,
+body.guest-mode #mcqblust-gameyard-icon,
+body.guest-mode #collab-mic-toggle,
+body.guest-mode #conversation-gallery,
+body.guest-mode #share-modal {
+  display: none !important;
+}
+body.guest-mode .app-container {
+  grid-template-columns: 1fr;
+}
+body.guest-mode .main-content {
+  margin-left: 0 !important;
+}
+.guest-cta {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #777;
+  text-align: center;
+}
+.guest-new-chat-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #111827;
+  font-weight: 600;
+  font-size: 13px;
+}
+.guest-new-chat-btn:hover {
+  border-color: #111827;
+}
+.guest-nav-stack {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.guest-login-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: 1px dashed #e5e7eb;
+  background: #f9fafb;
+  color: #111827;
+  font-weight: 600;
+  font-size: 12px;
+  text-decoration: none;
+}
+.guest-login-btn:hover {
+  border-color: #111827;
+}
+</style>
 
 </body>
 </html>

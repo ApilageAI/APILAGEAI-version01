@@ -1,4 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
+    if (window.IS_GUEST) {
+        const lightbox = document.getElementById('onboarding-lightbox');
+        if (lightbox) lightbox.classList.remove('visible');
+        return;
+    }
     const steps = document.querySelectorAll('.onboard-step');
     const dots = document.querySelectorAll('.onboard-progress-dot');
     const nextBtn = document.getElementById('next-btn');

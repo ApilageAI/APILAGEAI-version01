@@ -1,18 +1,18 @@
 <?php
-/* Smarty version 5.7.0, created on 2026-02-05 20:14:38
+/* Smarty version 5.7.0, created on 2026-02-06 15:57:00
   from 'file:login.tpl' */
 
 /* @var \Smarty\Template $_smarty_tpl */
 if ($_smarty_tpl->getCompiled()->isFresh($_smarty_tpl, array (
   'version' => '5.7.0',
-  'unifunc' => 'content_6984acd62603c0_86391077',
+  'unifunc' => 'content_6985c1f4965761_31840081',
   'has_nocache_code' => false,
   'file_dependency' => 
   array (
     'cde02a3bfd965c8619dbe33b80ed71bf46a21ae2' => 
     array (
       0 => 'login.tpl',
-      1 => 1770300024,
+      1 => 1770372452,
       2 => 'file',
     ),
   ),
@@ -21,7 +21,7 @@ if ($_smarty_tpl->getCompiled()->isFresh($_smarty_tpl, array (
     'file:components/head.tpl' => 1,
   ),
 ))) {
-function content_6984acd62603c0_86391077 (\Smarty\Template $_smarty_tpl) {
+function content_6985c1f4965761_31840081 (\Smarty\Template $_smarty_tpl) {
 $_smarty_current_dir = '/Users/dinethgunawardana/Documents/GitHub/apilageai-personal/backend/includes/smarty/templates';
 $_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_id, $_smarty_tpl->compile_id, 0, $_smarty_tpl->cache_lifetime, array(), (int) 0, $_smarty_current_dir);
 ?>
@@ -90,6 +90,8 @@ $_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_
 /auth/google"><i class="fab fa-google"></i> Login with Google</a>
           <a class="auth-social-btn auth-social-wide" id="loginGlobbook" href="https://globbook.com/api/oauth?app_id=56532326578385"><i class="fa fa-earth-asia"></i> Login with Globbook</a>
           <a class="auth-social-btn auth-social-wide" id="loginFacebook" href="#"><i class="fab fa-facebook"></i> Login with Facebook</a>
+          <a class="auth-social-btn auth-social-wide auth-guest-btn" id="loginGuest" href="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
+/auth/guest"><i class="fa fa-user"></i> Continue without account</a>
 
           <div class="auth-footnote">
             <span>Forget password</span>
@@ -396,6 +398,11 @@ body {
   gap: 8px;
   background: #fff;
   transition: all 0.2s ease;
+}
+.auth-guest-btn {
+  border-style: dashed;
+  background: #f9fafb;
+  color: #1f2937;
 }
 .auth-social-btn:hover {
   border-color: #111827;

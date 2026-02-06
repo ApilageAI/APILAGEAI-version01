@@ -29,6 +29,8 @@
   RewriteRule ^auth/reset-password/?$ auth.php?do=reset-password [L,QSA]
   RewriteRule ^auth/verify-email/?$ auth.php?do=verify-email [L,QSA]
   RewriteRule ^auth/resend-verification/?$ auth.php?do=resend-verification [L,QSA]
+  RewriteRule ^auth/guest/?$ auth.php?do=guest [L,QSA]
+  RewriteRule ^auth/continue/?$ auth.php?do=guest [L,QSA]
   RewriteRule ^auth/google/?$ auth.php?do=google [L,QSA]
   RewriteRule ^auth/google-callback/?$ auth.php?do=google-callback [L,QSA]
 

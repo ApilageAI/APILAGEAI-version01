@@ -65,12 +65,12 @@
     <div class="user-avatar">
       <img
         src="{if !empty($user->_data.image)}{$smarty.const.APP_URL}{$user->_data.image}{else}{$smarty.const.APP_URL}/assets/images/user.png{/if}"
-        alt="{$user->_data.first_name} Avatar"
+        alt="{$user->_data.first_name|default:'Guest'} Avatar"
         onerror="this.onerror=null;this.src='{$smarty.const.APP_URL}/assets/images/user.png';"
       />
     </div>
     <div class="user-details">
-      <div class="user-name" id="sidebar-user-name">{$user->_data['first_name']}</div>
+      <div class="user-name" id="sidebar-user-name">{$user->_data['first_name']|default:'Guest'}</div>
       <div class="user-credit-text" id="sidebar-credit-text">Credit: Loading...</div>
       <div class="credit-bar-container">
         <div class="credit-bar-fill" id="sidebar-credit-bar" style="width: 0%;"></div>
@@ -396,7 +396,7 @@
                             <img
                               id="profilePhoto"
                               src="{if !empty($user->_data.image)}{$smarty.const.APP_URL}{$user->_data.image}{else}{$smarty.const.APP_URL}/assets/images/user.png{/if}"
-                              alt="{$user->_data.first_name} Avatar"
+                              alt="{$user->_data.first_name|default:'Guest'} Avatar"
                               onerror="this.onerror=null;this.src='{$smarty.const.APP_URL}/assets/images/user.png';"
                             />
                             <div>
@@ -411,7 +411,7 @@
                         <div class="form-grid">
                             <div class="form-group">
                                 <label for="firstName">First Name</label>
-                                <input type="text" id="firstName" value="{$user->_data['first_name']}">
+                                <input type="text" id="firstName" value="{$user->_data['first_name']|default:'Guest'}">
                             </div>
                             <div class="form-group">
                                 <label for="lastName">Last Name</label>
@@ -797,6 +797,17 @@
 <nav class="navbar">
     <!-- Left side: Sidebar toggle button -->
     <div class="navbar-left">
+        {if $is_guest}
+        <div class="guest-nav-stack">
+            <button id="guest-new-chat" class="guest-new-chat-btn new-chat-btn" type="button" title="New chat">
+                <i class="fa fa-plus" aria-hidden="true"></i>
+                <span>New chat</span>
+            </button>
+            <a id="guest-login-btn" class="guest-login-btn" href="{$smarty.const.APP_URL}/auth/login">
+                Log in
+            </a>
+        </div>
+        {/if}
         <button id="toggleSidebar" class="sidebar-icon-btn" aria-label="Toggle sidebar" style="display: none;">
             <i class="fa fa-chevron-right" aria-hidden="true"></i>
         </button>
@@ -852,7 +863,7 @@
             <div class="y-overflow-auto p-4 chat-start-container">
                 <div class="empty-greeting fade-in slide-up">
                     <h1 class="fw-medium text-dark text-center"><span class="greeting-text">ගැම්මක් අල්ලමු </span>
-                        {$user->_data['first_name']} !
+                        {$user->_data['first_name']|default:'Guest'} !
                     </h1>
                 </div>
                 <div style="height: 24px;"></div> <!-- Reduced spacer for closer greeting and chat input -->
@@ -1004,7 +1015,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 
 <script>
-  window.userBalance = {$user->_data['balance']|intval};
+  window.userBalance = {$user->_data['balance']|default:0|intval};
 </script>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -1012,6 +1023,7 @@
 <script>
   window.APP_BASE_URL = '{$smarty.const.APP_URL}';
   window.NODE_API_BASE = '{$smarty.const.NODE_API_BASE}';
+  window.IS_GUEST = {if $is_guest}true{else}false{/if};
 </script>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
@@ -1024,6 +1036,85 @@
 <script src="{$smarty.const.APP_URL}/assets/scripts/ob.js?V=10.26.09.2025"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/report-data.js?V=1.25.01.2026{get_hash_token()}"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/canvo.min.js?V=1.25.01.2026{get_hash_token()}"></script>
+
+<style>
+body.guest-mode .sidebar,
+body.guest-mode #sidebar,
+body.guest-mode #toggleSidebar,
+body.guest-mode .sidebar-footer,
+body.guest-mode #rightsidebar2,
+body.guest-mode .sidebar2,
+body.guest-mode #rightSidebar,
+body.guest-mode .right-sidebar,
+body.guest-mode .notification-wrapper,
+body.guest-mode #modelSwitcher,
+body.guest-mode #button-drop,
+body.guest-mode #fileAttach,
+body.guest-mode #documentInput,
+body.guest-mode #document-attachment-container,
+body.guest-mode #attachment-container,
+body.guest-mode #uploadDocumentBtn,
+body.guest-mode #toggleCanvasBtn,
+body.guest-mode #toggleGraphBtn,
+body.guest-mode #enebleThink,
+body.guest-mode #open-conversation-gallery,
+body.guest-mode #open-share-modal,
+body.guest-mode #mindmap-open-btn,
+body.guest-mode #mcqblust-gameyard-icon,
+body.guest-mode #collab-mic-toggle,
+body.guest-mode #conversation-gallery,
+body.guest-mode #share-modal {
+  display: none !important;
+}
+body.guest-mode .app-container {
+  grid-template-columns: 1fr;
+}
+body.guest-mode .main-content {
+  margin-left: 0 !important;
+}
+.guest-cta {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #777;
+  text-align: center;
+}
+.guest-new-chat-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #111827;
+  font-weight: 600;
+  font-size: 13px;
+}
+.guest-new-chat-btn:hover {
+  border-color: #111827;
+}
+.guest-nav-stack {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.guest-login-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: 1px dashed #e5e7eb;
+  background: #f9fafb;
+  color: #111827;
+  font-weight: 600;
+  font-size: 12px;
+  text-decoration: none;
+}
+.guest-login-btn:hover {
+  border-color: #111827;
+}
+</style>
 
 </body>
 </html>
