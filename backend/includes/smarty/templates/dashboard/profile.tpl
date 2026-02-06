@@ -4,7 +4,7 @@
     </div>
     <div class="profile-picture-container">
         <div class="profile-picture-wrapper">
-            <img src="{if is_empty($user->_data['image'])}{$smarty.const.APP_URL}/assets/images/user.png{else}{$smarty.const.APP_URL}/uploads/{$user->_data['image']}{/if}" alt="{$user->_data['first_name']} {$user->_data['last_name']}" class="profile-picture">
+            <img src="{$user->_data['image']|user_image_url}" alt="{$user->_data['first_name']} {$user->_data['last_name']}" class="profile-picture">
             <button class="edit-profile-picture">
                 <i class="fas fa-camera"></i>
             </button>

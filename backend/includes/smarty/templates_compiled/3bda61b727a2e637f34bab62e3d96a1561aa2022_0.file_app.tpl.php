@@ -1,18 +1,18 @@
 <?php
-/* Smarty version 5.7.0, created on 2026-02-06 21:51:22
+/* Smarty version 5.7.0, created on 2026-02-06 22:05:59
   from 'file:app.tpl' */
 
 /* @var \Smarty\Template $_smarty_tpl */
 if ($_smarty_tpl->getCompiled()->isFresh($_smarty_tpl, array (
   'version' => '5.7.0',
-  'unifunc' => 'content_69861502c131b6_51298784',
+  'unifunc' => 'content_6986186f411aa3_30346352',
   'has_nocache_code' => false,
   'file_dependency' => 
   array (
     '3bda61b727a2e637f34bab62e3d96a1561aa2022' => 
     array (
       0 => 'app.tpl',
-      1 => 1770394788,
+      1 => 1770395283,
       2 => 'file',
     ),
   ),
@@ -21,7 +21,7 @@ if ($_smarty_tpl->getCompiled()->isFresh($_smarty_tpl, array (
     'file:components/head.tpl' => 1,
   ),
 ))) {
-function content_69861502c131b6_51298784 (\Smarty\Template $_smarty_tpl) {
+function content_6986186f411aa3_30346352 (\Smarty\Template $_smarty_tpl) {
 $_smarty_current_dir = '/Users/dinethgunawardana/Documents/GitHub/apilageai-personal/backend/includes/smarty/templates';
 $_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_id, $_smarty_tpl->compile_id, 0, $_smarty_tpl->cache_lifetime, array(), (int) 0, $_smarty_current_dir);
 echo '<script'; ?>
@@ -95,12 +95,8 @@ echo '<script'; ?>
   <div class="sidebar-footer-userinfo" id="sidebarUserInfo" title="Open settings">
     <div class="user-avatar">
       <img
-        src="<?php if (!( !true || empty($_smarty_tpl->getValue('user')->_data['image']))) {
-echo (defined('APP_URL') ? constant('APP_URL') : null);
-echo $_smarty_tpl->getValue('user')->_data['image'];
-} else {
-echo (defined('APP_URL') ? constant('APP_URL') : null);?>
-/assets/images/user.png<?php }?>"
+        src="<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('user_image_url')($_smarty_tpl->getValue('user')->_data['image']);?>
+"
         alt="<?php echo (($tmp = $_smarty_tpl->getValue('user')->_data['first_name'] ?? null)===null||$tmp==='' ? 'Guest' ?? null : $tmp);?>
  Avatar"
         onerror="this.onerror=null;this.src='<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
@@ -434,12 +430,8 @@ echo (defined('APP_URL') ? constant('APP_URL') : null);?>
                         <div class="profile-photo-section">
                             <img
                               id="profilePhoto"
-                              src="<?php if (!( !true || empty($_smarty_tpl->getValue('user')->_data['image']))) {
-echo (defined('APP_URL') ? constant('APP_URL') : null);
-echo $_smarty_tpl->getValue('user')->_data['image'];
-} else {
-echo (defined('APP_URL') ? constant('APP_URL') : null);?>
-/assets/images/user.png<?php }?>"
+                              src="<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('user_image_url')($_smarty_tpl->getValue('user')->_data['image']);?>
+"
                               alt="<?php echo (($tmp = $_smarty_tpl->getValue('user')->_data['first_name'] ?? null)===null||$tmp==='' ? 'Guest' ?? null : $tmp);?>
  Avatar"
                               onerror="this.onerror=null;this.src='<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>

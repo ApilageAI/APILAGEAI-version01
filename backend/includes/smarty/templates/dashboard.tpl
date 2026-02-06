@@ -20,7 +20,7 @@
 
       <div class="rail-footer">
         <img
-          src="{if !empty($user->_data.image)}{$smarty.const.APP_URL}/uploads/{$user->_data.image}{else}{$smarty.const.APP_URL}/assets/images/user.png{/if}"
+          src="{$user->_data.image|user_image_url}"
           alt="{$user->_data.first_name} Avatar"
           class="profile-pic"
           onerror="this.onerror=null;this.src='{$smarty.const.APP_URL}/assets/images/user.png';"

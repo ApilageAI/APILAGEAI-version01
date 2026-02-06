@@ -32,6 +32,43 @@ function is_empty(mixed $value): bool {
 }
 
 /**
+ * Build a safe, absolute URL for a user profile image.
+ *
+ * @param mixed $image Stored image value (filename, relative path, or absolute URL).
+ * @param string|null $fallback Optional fallback URL.
+ * @return string
+ */
+function user_image_url(mixed $image, ?string $fallback = null): string {
+    $fallbackUrl = $fallback ?: (APP_URL . '/assets/images/user.png');
+    if (is_empty($image)) {
+        return $fallbackUrl;
+    }
+
+    $image = trim((string) $image);
+    if ($image === '') {
+        return $fallbackUrl;
+    }
+
+    if (preg_match('#^https?://#i', $image)) {
+        return $image;
+    }
+
+    if (strpos($image, '/') === 0) {
+        return APP_URL . $image;
+    }
+
+    if (stripos($image, 'uploads/') === 0) {
+        return APP_URL . '/' . $image;
+    }
+
+    if (stripos($image, 'userimg/') === 0 || stripos($image, 'profile/') === 0) {
+        return APP_URL . '/uploads/' . $image;
+    }
+
+    return APP_URL . '/uploads/userimg/' . $image;
+}
+
+/**
  * get_hash_token
  * 
  * @return string
