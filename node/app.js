@@ -810,7 +810,7 @@ const FREE_USER_MODELS = ['free'];  // Models available for users with balance <
 
 // ====== Cost Constants ======
 const IMAGE_GENERATION_COST = 5;  // Cost for generating one image
-const IMAGE_UPLOAD_COST = 5;      // Cost per image-upload batch (up to MAX_IMAGE_UPLOADS_PER_MESSAGE)
+const IMAGE_UPLOAD_COST = 5;      // Cost per uploaded image
 const MAX_IMAGE_UPLOADS_PER_MESSAGE = 5;
 
 // ====== Daily Trial Limits for Free Users ======
@@ -1699,23 +1699,26 @@ ${newMessage || ''}`;
           }
 
           if (isTrialImageUpload) {
-            // Update trial usage for image upload (once per batch)
-            await this.updateDailyUsage(userId, 'image_uploads');
-
-            // Record trial usage for abuse prevention (only on first upload)
-            const dailyUsage = await this.getDailyUsage(userId);
-            if (dailyUsage && dailyUsage.image_uploads_used === 1) {
-              try {
-                await this.recordTrialUsageData(socket.clientIp, socket.deviceFingerprint);
-                console.log(`📝 First trial image upload recorded for user ${userId} to prevent reuse`);
-              } catch (error) {
-                console.error('Error recording trial usage:', error);
+            // Update trial usage for each uploaded image
+            for (let i = 0; i < attachmentNames.length; i += 1) {
+              await this.updateDailyUsage(userId, 'image_uploads');
+              if (i === 0) {
+                // Record trial usage for abuse prevention (only on first upload)
+                const dailyUsage = await this.getDailyUsage(userId);
+                if (dailyUsage && dailyUsage.image_uploads_used === 1) {
+                  try {
+                    await this.recordTrialUsageData(socket.clientIp, socket.deviceFingerprint);
+                    console.log(`📝 First trial image upload recorded for user ${userId} to prevent reuse`);
+                  } catch (error) {
+                    console.error('Error recording trial usage:', error);
+                  }
+                }
               }
             }
 
             cost = 0; // No cost for trial uploads
           } else {
-            cost += IMAGE_UPLOAD_COST; // Charge once per batch (up to MAX_IMAGE_UPLOADS_PER_MESSAGE)
+            cost += IMAGE_UPLOAD_COST * attachmentNames.length; // Charge per image
           }
         } catch (err) {
           await this.emitAndSaveError(socket, finalConversationId, null, "Server is busy right now. Please try again shortly.", null, err);
