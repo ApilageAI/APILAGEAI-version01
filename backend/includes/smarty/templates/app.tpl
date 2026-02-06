@@ -907,9 +907,8 @@
                     <!-- Chat input box above icons -->
                     <div class="chat-input-center" style="flex: 1 1 auto; min-width: 0;">
                         <div class="max-w-3xl mx-auto px-4" style="padding: 0;">
-                            <div id="suggestions-dropdown" class="chat-suggestion position-absolute" style="display: none;">
-                            </div>
                             <form id="chat-form" class="position-relative">
+                                <div id="suggestions-dropdown" class="chat-suggestion position-absolute" style="display: none;"></div>
                                 <textarea id="message-input" name="message" placeholder="type @ to get suggestions..." class="chat-input"
                                     autocomplete="off" aria-label="Message" style="width: 100%;"></textarea>
                             </form>

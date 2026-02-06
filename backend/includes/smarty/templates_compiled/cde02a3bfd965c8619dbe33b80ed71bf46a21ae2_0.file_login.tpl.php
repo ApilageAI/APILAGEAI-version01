@@ -1,18 +1,18 @@
 <?php
-/* Smarty version 5.7.0, created on 2026-02-06 15:57:00
+/* Smarty version 5.7.0, created on 2026-02-06 21:42:01
   from 'file:login.tpl' */
 
 /* @var \Smarty\Template $_smarty_tpl */
 if ($_smarty_tpl->getCompiled()->isFresh($_smarty_tpl, array (
   'version' => '5.7.0',
-  'unifunc' => 'content_6985c1f4965761_31840081',
+  'unifunc' => 'content_698612d13f64a7_98122493',
   'has_nocache_code' => false,
   'file_dependency' => 
   array (
     'cde02a3bfd965c8619dbe33b80ed71bf46a21ae2' => 
     array (
       0 => 'login.tpl',
-      1 => 1770372452,
+      1 => 1770393833,
       2 => 'file',
     ),
   ),
@@ -21,7 +21,7 @@ if ($_smarty_tpl->getCompiled()->isFresh($_smarty_tpl, array (
     'file:components/head.tpl' => 1,
   ),
 ))) {
-function content_6985c1f4965761_31840081 (\Smarty\Template $_smarty_tpl) {
+function content_698612d13f64a7_98122493 (\Smarty\Template $_smarty_tpl) {
 $_smarty_current_dir = '/Users/dinethgunawardana/Documents/GitHub/apilageai-personal/backend/includes/smarty/templates';
 $_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_id, $_smarty_tpl->compile_id, 0, $_smarty_tpl->cache_lifetime, array(), (int) 0, $_smarty_current_dir);
 ?>
@@ -167,14 +167,14 @@ $_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_
     </div>
   </div>
 
-  <div id="signupSuccessOverlay" class="auth-loading" style="display:none;">
+  <div id="signupSuccessOverlay" class="auth-success-overlay" style="display:none;">
     <div class="auth-success-card">
       <div class="auth-success-icon">
-        <i class="fa fa-check"></i>
+        <i class="fa-solid fa-circle-check"></i>
       </div>
-      <h3>Account Created!</h3>
-      <p>Check your inbox to verify your email and continue to the app.</p>
-      <button type="button" id="successResendBtn" class="auth-submit auth-submit-outline">Resend verification email</button>
+      <h3>Account Created</h3>
+      <p>Your account is created. Check your inbox to continue to the app</p>
+      <button type="button" id="successResendBtn" class="auth-submit auth-submit-outline" data-resend-label="RESEND EMAIL" data-resend-cooldown-prefix="RESEND IN">RESEND EMAIL</button>
     </div>
   </div>
 </div>
@@ -461,6 +461,18 @@ body {
   z-index: 9999;
   backdrop-filter: blur(6px);
 }
+.auth-success-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(34, 197, 94, 0.35), transparent 55%),
+    radial-gradient(circle at 80% 10%, rgba(16, 185, 129, 0.25), transparent 50%),
+    linear-gradient(135deg, #0f9b4f 0%, #047857 100%);
+}
 .auth-loading-card {
   background: #fff;
   padding: 18px 24px;
@@ -470,33 +482,35 @@ body {
   gap: 12px;
 }
 .auth-success-card {
-  background: #fff;
-  padding: 28px 30px;
-  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.97);
+  padding: 36px 34px;
+  border-radius: 24px;
   text-align: center;
-  min-width: min(340px, 90vw);
-  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+  width: min(520px, 92vw);
+  box-shadow: 0 30px 70px rgba(6, 95, 70, 0.35);
 }
 .auth-success-icon {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto 16px;
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 18px;
   border-radius: 999px;
   background: #22c55e;
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-size: 48px;
+  box-shadow: 0 16px 40px rgba(34, 197, 94, 0.35);
 }
 .auth-success-card h3 {
   margin: 0 0 8px;
-  color: #111827;
+  color: #064e3b;
 }
 .auth-success-card p {
-  margin: 0;
-  color: #6b7280;
+  margin: 0 0 18px;
+  color: #14532d;
   font-size: 14px;
+  font-weight: 600;
 }
 @media (max-width: 1060px) {
   .auth-shell {

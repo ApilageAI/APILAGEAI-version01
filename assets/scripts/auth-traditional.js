@@ -24,6 +24,7 @@
 
   const captchaIds = { login: null, signup: null, forgot: null };
 
+  const RESEND_COOLDOWN_SECONDS = 50;
   let resendCooldown = 0;
   let resendTimer = null;
 
@@ -59,30 +60,27 @@
   }
 
   function showSignupSuccess() {
+    startResendCooldown();
     if (signupSuccessOverlay) signupSuccessOverlay.style.display = 'flex';
   }
 
   function updateResendButtons() {
     const btns = [resendBtn, successResendBtn].filter(Boolean);
-    if (resendCooldown > 0) {
-      btns.forEach((btn) => {
+    btns.forEach((btn) => {
+      const label = btn.dataset.resendLabel || 'Resend verification email';
+      const cooldownPrefix = btn.dataset.resendCooldownPrefix || 'Resend in';
+      if (resendCooldown > 0) {
         btn.disabled = true;
-        btn.textContent = `Resend in ${resendCooldown}s`;
-      });
-      return;
-    }
-    if (resendBtn) {
-      resendBtn.disabled = false;
-      resendBtn.textContent = 'Resend verification email';
-    }
-    if (successResendBtn) {
-      successResendBtn.disabled = false;
-      successResendBtn.textContent = 'Resend verification email';
-    }
+        btn.textContent = `${cooldownPrefix} ${resendCooldown}s`;
+        return;
+      }
+      btn.disabled = false;
+      btn.textContent = label;
+    });
   }
 
   function startResendCooldown() {
-    resendCooldown = 60;
+    resendCooldown = RESEND_COOLDOWN_SECONDS;
     updateResendButtons();
     if (resendTimer) clearInterval(resendTimer);
     resendTimer = setInterval(() => {
@@ -100,7 +98,13 @@
     try {
       return { ok: res.ok, data: JSON.parse(text) };
     } catch (err) {
-      return { ok: false, data: null, raw: text, status: res.status };
+      const match = text.match(/\{[\s\S]*\}/);
+      if (match) {
+        try {
+          return { ok: res.ok, data: JSON.parse(match[0]) };
+        } catch (_) {}
+      }
+      return { ok: false, data: null, raw: '', status: res.status };
     }
   }
 
@@ -159,7 +163,7 @@
         showLoading(false);
         if (!parsed.ok && !parsed.data) {
           resetCaptcha(captchaIds.login);
-          showAlert(loginAlert, `Login failed. ${parsed.status ? `(${parsed.status})` : ''} ${parsed.raw || ''}`.trim(), 'error');
+          showAlert(loginAlert, 'Login failed. Please try again.', 'error');
           return;
         }
         if (result.e) {
@@ -218,7 +222,7 @@
         showLoading(false);
         if (!parsed.ok && !parsed.data) {
           resetCaptcha(captchaIds.signup);
-          showAlert(signupAlert, `Registration failed. ${parsed.status ? `(${parsed.status})` : ''} ${parsed.raw || ''}`.trim(), 'error');
+          showAlert(signupAlert, 'Registration failed. Please try again.', 'error');
           return;
         }
         if (result.e) {
@@ -255,7 +259,7 @@
         showLoading(false);
         if (!parsed.ok && !parsed.data) {
           resetCaptcha(captchaIds.forgot);
-          showAlert(forgotAlert, `Failed to send reset link. ${parsed.status ? `(${parsed.status})` : ''} ${parsed.raw || ''}`.trim(), 'error');
+          showAlert(forgotAlert, 'Failed to send reset link. Please try again.', 'error');
           return;
         }
         if (result.e) {

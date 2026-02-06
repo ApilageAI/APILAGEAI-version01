@@ -127,48 +127,25 @@
         </div>
     </div>
 
-    <!-- Registration Success Modal -->
-    <div id="registrationSuccessModal" class="success-modal" style="display: none;">
-        <div class="modal-overlay"></div>
-        <div class="modal-content animate-scale-in">
-            <div class="modal-header">
-                <h2>Registration Successful</h2>
+    <!-- Registration Success Overlay -->
+    <div id="registrationSuccessModal" class="success-overlay" style="display: none;">
+        <div class="success-card animate-scale-in">
+            <div class="success-icon">
+                <i class="fa-solid fa-circle-check"></i>
             </div>
-            
-            <div class="modal-body">
-                <p class="main-message">Thank you for signing up with Apilage AI!</p>
-                
-                <div class="email-info">
-                    <i class="fa-solid fa-paper-plane"></i>
-                    <p>We've sent a verification email to:</p>
-                    <p class="email-address" id="registeredEmail"></p>
-                </div>
-                                
-                <div class="warning-box">
-                    <i class="fa-solid fa-clock"></i>
-                    <p>The verification link will expire in <strong>24 hours</strong></p>
-                </div>
-                
-                <div class="resend-section">
-                    <p>Didn't receive the email?</p>
-                    <button onclick="resendFromSuccessModal()" class="btn-resend" id="resendEmailBtn">
-                        <i class="fa-solid fa-rotate"></i> Resend Verification Email
-                    </button>
-                </div>
-            </div>
-            
-            <div class="modal-footer">
-                <button onclick="closeSuccessModal()" class="btn-primary">
-                    Continue to Login <i class="fa-solid fa-arrow-right"></i>
-                </button>
-            </div>
+            <h2>Account Created</h2>
+            <p class="success-message">Your account is created. Check your inbox to continue to the app</p>
+            <p class="success-email" id="registeredEmail" style="display:none;"></p>
+            <button type="button" onclick="resendFromSuccessModal()" class="btn-resend" id="resendEmailBtn" data-resend-label="RESEND EMAIL" data-resend-cooldown-prefix="RESEND IN">
+                RESEND EMAIL
+            </button>
         </div>
     </div>
 </div>
 
 <style>
-/* Success Modal Styles */
-.success-modal {
+/* Success Overlay Styles */
+.success-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -179,30 +156,24 @@
     justify-content: center;
     z-index: 10000;
     animation: fadeIn 0.3s ease;
+    background:
+        radial-gradient(circle at 20% 20%, rgba(34, 197, 94, 0.35), transparent 55%),
+        radial-gradient(circle at 80% 10%, rgba(16, 185, 129, 0.25), transparent 50%),
+        linear-gradient(135deg, #0f9b4f 0%, #047857 100%);
 }
 
-.modal-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, #ff3b3b 0%, #b30000 100%);
-    backdrop-filter: blur(8px);
-}
-
-.success-modal .modal-content {
+.success-card {
     position: relative;
-    background: #ffffff;
-    border-radius: 20px;
-    width: 90%;
-    max-width: 550px;
+    background: rgba(255, 255, 255, 0.97);
+    border-radius: 24px;
+    width: min(560px, 92vw);
     max-height: 90vh;
     overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 30px 70px rgba(6, 95, 70, 0.4);
     display: flex;
     flex-direction: column;
-    padding-bottom: 20px;
+    padding: 42px 36px 38px;
+    text-align: center;
 }
 
 .animate-scale-in {
@@ -225,233 +196,92 @@
     to { opacity: 1; }
 }
 
-.success-modal .modal-header {
-    background: none;
-    border-bottom: none;
-    color: #ff3b3b;
-    padding: 40px 30px;
-    text-align: center;
-    border-radius: 24px 24px 0 0;
-}
-
 .success-icon {
-    font-size: 100px;
-    color: #ff3b3b;
-    margin-bottom: 20px;
-    animation: bounceIn 0.8s ease;
-}
-
-@keyframes bounceIn {
-    0% { transform: scale(0); opacity: 0; }
-    50% { transform: scale(1.15); }
-    100% { transform: scale(1); opacity: 1; }
-}
-
-.success-modal h2 {
-    margin: 0;
-    font-size: 28px;
-    font-weight: 700;
-    line-height: 1.3;
-}
-
-.success-modal .modal-body {
-    padding: 35px 30px;
-}
-
-.main-message {
-    font-size: 18px;
-    color: #333;
-    text-align: center;
-    margin-bottom: 25px;
-    font-weight: 500;
-}
-
-.email-info {
-    background: #fff1f1;
-    border-radius: 16px;
-    padding: 25px;
-    text-align: center;
-    margin-bottom: 25px;
-    border: 1px solid #ffb3b3;
-}
-
-.email-info i {
-    font-size: 42px;
-    color: #ff3b3b;
-    margin-bottom: 12px;
-    display: block;
-}
-
-.email-info p {
-    margin: 8px 0;
-    color: #555;
-    font-size: 15px;
-}
-
-.email-address {
-    font-weight: 700;
-    color: #ff3b3b !important;
-    font-size: 17px !important;
-    word-break: break-all;
-    padding: 10px;
-    background: white;
-    border-radius: 8px;
-    margin-top: 12px !important;
-}
-
-.instructions {
-    background: #fff9e6;
-    border-left: 4px solid #ffc107;
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 20px;
-}
-
-.instructions h3 {
-    margin: 0 0 15px 0;
-    color: #333;
-    font-size: 17px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.instructions ol {
-    margin: 0;
-    padding-left: 25px;
-}
-
-.instructions li {
-    margin: 12px 0;
-    color: #555;
-    line-height: 1.8;
-    font-size: 15px;
-}
-
-.instructions li i {
-    margin-right: 10px;
-    color: #667eea;
-    width: 18px;
-}
-
-.warning-box {
-    background: #fff3cd;
-    border: 2px solid #ffc107;
-    border-radius: 12px;
-    padding: 15px;
-    text-align: center;
-    margin-bottom: 25px;
+    width: 112px;
+    height: 112px;
+    margin: 0 auto 18px;
+    border-radius: 999px;
+    background: #22c55e;
+    color: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    font-size: 64px;
+    box-shadow: 0 16px 40px rgba(34, 197, 94, 0.35);
 }
 
-.warning-box i {
-    font-size: 24px;
-    color: #856404;
-}
-
-.warning-box p {
+.success-overlay h2 {
     margin: 0;
-    color: #856404;
-    font-size: 14px;
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1.3;
+    color: #064e3b;
 }
 
-.resend-section {
+.success-message {
+    font-size: 18px;
+    color: #14532d;
     text-align: center;
-    padding: 25px 0 10px;
-    border-top: 2px solid #f0f0f0;
+    margin: 12px 0 16px;
+    font-weight: 600;
 }
 
-.resend-section p {
-    color: #888;
-    font-size: 15px;
-    margin-bottom: 15px;
+.success-email {
+    font-weight: 700;
+    color: #166534;
+    font-size: 16px;
+    word-break: break-all;
+    padding: 10px 12px;
+    background: #ecfdf5;
+    border-radius: 10px;
+    border: 1px solid #bbf7d0;
+    margin: 0 0 24px;
 }
 
 .btn-resend {
-    background: white;
-    color: #ff3b3b;
-    border: 2px solid #ff3b3b;
-    padding: 12px 30px;
-    border-radius: 50px;
-    font-weight: 600;
+    background: #16a34a;
+    color: #ffffff;
+    border: none;
+    padding: 14px 34px;
+    border-radius: 999px;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.3s ease;
     font-size: 15px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    box-shadow: 0 12px 26px rgba(22, 163, 74, 0.35);
 }
 
 .btn-resend:hover {
-    background: #ff3b3b;
-    color: white;
+    background: #15803d;
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 16px 30px rgba(21, 128, 61, 0.35);
 }
 
 .btn-resend:disabled {
-    opacity: 0.5;
+    opacity: 0.65;
     cursor: not-allowed;
     transform: none;
 }
 
-.success-modal .modal-footer {
-    padding: 0 30px 35px;
-    text-align: center;
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, #ff3b3b 0%, #b30000 100%);
-    color: white;
-    border: none;
-    padding: 16px 45px;
-    border-radius: 50px;
-    font-weight: 600;
-    font-size: 16px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 8px 30px rgba(255, 59, 59, 0.4);
-    width: 100%;
-}
-
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(255, 59, 59, 0.6);
-}
-
-.btn-primary:active {
-    transform: translateY(0);
-}
-
 /* Responsive */
 @media (max-width: 768px) {
-    .success-modal .modal-content {
+    .success-card {
         width: 95%;
         max-height: 95vh;
     }
 
-    .success-modal h2 {
+    .success-overlay h2 {
         font-size: 24px;
     }
 
     .success-icon {
-        font-size: 70px;
-    }
-
-    .success-modal .modal-body {
-        padding: 25px 20px;
-    }
-
-    .instructions ol {
-        padding-left: 20px;
-    }
-
-    .btn-primary {
-        padding: 14px 35px;
+        width: 86px;
+        height: 86px;
+        font-size: 48px;
     }
 }
-</style>
-
 </style>
 
 <script src="{$smarty.const.APP_URL}/assets/scripts/libs/dialog-js/main.min.js?V=01.03.04.2025"></script>

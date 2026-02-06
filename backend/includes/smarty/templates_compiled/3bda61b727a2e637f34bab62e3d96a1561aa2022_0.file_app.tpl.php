@@ -1,18 +1,18 @@
 <?php
-/* Smarty version 5.7.0, created on 2026-02-06 20:29:16
+/* Smarty version 5.7.0, created on 2026-02-06 21:51:22
   from 'file:app.tpl' */
 
 /* @var \Smarty\Template $_smarty_tpl */
 if ($_smarty_tpl->getCompiled()->isFresh($_smarty_tpl, array (
   'version' => '5.7.0',
-  'unifunc' => 'content_698601c46b6385_04914094',
+  'unifunc' => 'content_69861502c131b6_51298784',
   'has_nocache_code' => false,
   'file_dependency' => 
   array (
     '3bda61b727a2e637f34bab62e3d96a1561aa2022' => 
     array (
       0 => 'app.tpl',
-      1 => 1770389891,
+      1 => 1770394788,
       2 => 'file',
     ),
   ),
@@ -21,7 +21,7 @@ if ($_smarty_tpl->getCompiled()->isFresh($_smarty_tpl, array (
     'file:components/head.tpl' => 1,
   ),
 ))) {
-function content_698601c46b6385_04914094 (\Smarty\Template $_smarty_tpl) {
+function content_69861502c131b6_51298784 (\Smarty\Template $_smarty_tpl) {
 $_smarty_current_dir = '/Users/dinethgunawardana/Documents/GitHub/apilageai-personal/backend/includes/smarty/templates';
 $_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_id, $_smarty_tpl->compile_id, 0, $_smarty_tpl->cache_lifetime, array(), (int) 0, $_smarty_current_dir);
 echo '<script'; ?>
@@ -961,9 +961,8 @@ echo (defined('APP_URL') ? constant('APP_URL') : null);?>
                     <!-- Chat input box above icons -->
                     <div class="chat-input-center" style="flex: 1 1 auto; min-width: 0;">
                         <div class="max-w-3xl mx-auto px-4" style="padding: 0;">
-                            <div id="suggestions-dropdown" class="chat-suggestion position-absolute" style="display: none;">
-                            </div>
                             <form id="chat-form" class="position-relative">
+                                <div id="suggestions-dropdown" class="chat-suggestion position-absolute" style="display: none;"></div>
                                 <textarea id="message-input" name="message" placeholder="type @ to get suggestions..." class="chat-input"
                                     autocomplete="off" aria-label="Message" style="width: 100%;"></textarea>
                             </form>
