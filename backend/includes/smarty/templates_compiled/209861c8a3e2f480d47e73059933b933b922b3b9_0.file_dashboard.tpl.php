@@ -29,8 +29,7 @@ $_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_
   <div class="main-container images-shell">
     <aside class="rail">
       <div class="rail-brand" aria-label="Apilage AI">
-        <img src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
-/assets/images/icon.png" alt="Apilage AI logo" class="brand-logo" />
+        <img src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>/assets/images/icon.png" alt="Apilage AI logo" class="brand-logo" />
       </div>
 
       <nav class="rail-nav" aria-label="Primary">
@@ -52,13 +51,11 @@ $_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_
 echo (defined('APP_URL') ? constant('APP_URL') : null);?>
 /uploads/<?php echo $_smarty_tpl->getValue('user')->_data['image'];
 } else {
-echo (defined('APP_URL') ? constant('APP_URL') : null);?>
-/assets/images/user.png<?php }?>"
+echo (defined('APP_URL') ? constant('APP_URL') : null);?>/assets/images/user.png<?php }?>"
           alt="<?php echo $_smarty_tpl->getValue('user')->_data['first_name'];?>
  Avatar"
           class="profile-pic"
-          onerror="this.onerror=null;this.src='<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
-/assets/images/user.png';"
+          onerror="this.onerror=null;this.src='<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>/assets/images/user.png';"
         />
       </div>
     </aside>
@@ -100,8 +97,7 @@ echo (defined('APP_URL') ? constant('APP_URL') : null);?>
   </div>
 
   <?php echo '<script'; ?>
- src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
-/assets/scripts/dashboard.min.js?V=04.22.10.2025"><?php echo '</script'; ?>
+ src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>/assets/scripts/dashboard.min.js?V=04.22.10.2025"><?php echo '</script'; ?>
 >
 </body>
 </html>

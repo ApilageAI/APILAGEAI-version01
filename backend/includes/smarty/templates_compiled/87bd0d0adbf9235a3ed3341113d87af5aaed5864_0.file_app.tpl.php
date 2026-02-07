@@ -42,8 +42,7 @@ echo '<script'; ?>
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header" style="display: flex; align-items: center; justify-content: center; position: relative;">
-            <img class="sidebar-logo" src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
-/assets/images/icon.png" alt="Apilageai logo" style="width: 44px; height: 44px; object-fit: contain;" />
+            <img class="sidebar-logo" src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>/assets/images/icon.png" alt="Apilageai logo" style="width: 44px; height: 44px; object-fit: contain;" />
             <button id="sidebarback" class="sidebar-backn" aria-label="Open sidebar" style="position: absolute; right: 0;">
                 <i class="fa fa-chevron-left" aria-hidden="true"></i>
             </button>
@@ -99,12 +98,10 @@ echo '<script'; ?>
 echo (defined('APP_URL') ? constant('APP_URL') : null);
 echo $_smarty_tpl->getValue('user')->_data['image'];
 } else {
-echo (defined('APP_URL') ? constant('APP_URL') : null);?>
-/assets/images/user.png<?php }?>"
+echo (defined('APP_URL') ? constant('APP_URL') : null);?>/assets/images/user.png<?php }?>"
         alt="<?php echo $_smarty_tpl->getValue('user')->_data['first_name'];?>
  Avatar"
-        onerror="this.onerror=null;this.src='<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
-/assets/images/user.png';"
+        onerror="this.onerror=null;this.src='<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>/assets/images/user.png';"
       />
     </div>
     <div class="user-details">
@@ -438,12 +435,10 @@ echo (defined('APP_URL') ? constant('APP_URL') : null);?>
 echo (defined('APP_URL') ? constant('APP_URL') : null);
 echo $_smarty_tpl->getValue('user')->_data['image'];
 } else {
-echo (defined('APP_URL') ? constant('APP_URL') : null);?>
-/assets/images/user.png<?php }?>"
+echo (defined('APP_URL') ? constant('APP_URL') : null);?>/assets/images/user.png<?php }?>"
                               alt="<?php echo $_smarty_tpl->getValue('user')->_data['first_name'];?>
  Avatar"
-                              onerror="this.onerror=null;this.src='<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
-/assets/images/user.png';"
+                              onerror="this.onerror=null;this.src='<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>/assets/images/user.png';"
                             />
                             <div>
                                 <input type="file" id="profilePhotoInput" accept="image/*" style="display:none;">
@@ -1081,42 +1076,33 @@ echo (defined('APP_URL') ? constant('APP_URL') : null);?>
  src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"><?php echo '</script'; ?>
 >
 <?php echo '<script'; ?>
- src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
-/assets/scripts/libs/dialog-js/main.min.js?V=01.03.04.2025"><?php echo '</script'; ?>
+ src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>/assets/scripts/libs/dialog-js/main.min.js?V=01.03.04.2025"><?php echo '</script'; ?>
 >
 <?php echo '<script'; ?>
- src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
-/assets/scripts/mp.min.js?V=01.22.22.2025"><?php echo '</script'; ?>
+ src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>/assets/scripts/mp.min.js?V=01.22.22.2025"><?php echo '</script'; ?>
 >
 <?php echo '<script'; ?>
- src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
-/assets/scripts/app.min.js?V=1.30.01.2026<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
+ src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>/assets/scripts/app.min.js?V=1.30.01.2026<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
 "><?php echo '</script'; ?>
 >
 <?php echo '<script'; ?>
- src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
-/assets/scripts/prefrence.min.js?V=1.25.1.2026"><?php echo '</script'; ?>
+ src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>/assets/scripts/prefrence.min.js?V=1.25.1.2026"><?php echo '</script'; ?>
 >
 <?php echo '<script'; ?>
- src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
-/assets/scripts/notifications.js?V=03.01.10.2025"><?php echo '</script'; ?>
+ src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>/assets/scripts/notifications.js?V=03.01.10.2025"><?php echo '</script'; ?>
 >
 <?php echo '<script'; ?>
- type="module" src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
-/assets/scripts/gm.min.js?V=12.20.10.2025"><?php echo '</script'; ?>
+ type="module" src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>/assets/scripts/gm.min.js?V=12.20.10.2025"><?php echo '</script'; ?>
 >
 <?php echo '<script'; ?>
- src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
-/assets/scripts/ob.js?V=10.26.09.2025"><?php echo '</script'; ?>
+ src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>/assets/scripts/ob.js?V=10.26.09.2025"><?php echo '</script'; ?>
 >
 <?php echo '<script'; ?>
- src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
-/assets/scripts/report-data.js?V=1.25.01.2026<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
+ src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>/assets/scripts/report-data.js?V=1.25.01.2026<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
 "><?php echo '</script'; ?>
 >
 <?php echo '<script'; ?>
- src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
-/assets/scripts/canvo.min.js?V=1.25.01.2026<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
+ src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>/assets/scripts/canvo.min.js?V=1.25.01.2026<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
 "><?php echo '</script'; ?>
 >
 
