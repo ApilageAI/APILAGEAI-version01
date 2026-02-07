@@ -48,7 +48,7 @@
           </div>
 
           <div class="auth-captcha">
-            <div id="loginCaptcha"></div>
+            <div id="loginCaptcha" class="cf-turnstile" data-sitekey="{$smarty.const.RECAPTCHA_SITE_KEY}"></div>
           </div>
 
           <div id="loginAlert" class="auth-alert"></div>
@@ -104,7 +104,7 @@
           </div>
 
           <div class="auth-captcha">
-            <div id="signupCaptcha"></div>
+            <div id="signupCaptcha" class="cf-turnstile" data-sitekey="{$smarty.const.RECAPTCHA_SITE_KEY}"></div>
           </div>
 
           <div id="signupAlert" class="auth-alert"></div>
@@ -122,7 +122,7 @@
           <input type="email" name="email" required placeholder="Your email" />
 
           <div class="auth-captcha">
-            <div id="forgotCaptcha"></div>
+            <div id="forgotCaptcha" class="cf-turnstile" data-sitekey="{$smarty.const.RECAPTCHA_SITE_KEY}"></div>
           </div>
 
           <div id="forgotAlert" class="auth-alert"></div>
@@ -154,9 +154,10 @@
 <script>
   window.AUTH_APP_BASE = '{$smarty.const.APP_URL}';
   window.AUTH_CAPTCHA_SITE_KEY = '{$smarty.const.RECAPTCHA_SITE_KEY}';
+  window.AUTH_DEBUG = {if $smarty.const.APP_DEBUG}true{else}false{/if};
 </script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/libs/dialog-js/main.min.js?V=01.03.04.2025"></script>
-<script src="{$smarty.const.APP_URL}/assets/scripts/auth-login.min.js?V={get_hash_token()}"></script>
+<script src="{$smarty.const.APP_URL}/assets/scripts/auth-traditional.js?V={get_hash_token()}"></script>
 
 <style>
 body {

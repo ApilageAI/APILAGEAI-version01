@@ -141,7 +141,7 @@ window.MathJax = {
             <link rel="stylesheet" href="{$smarty.const.APP_URL}/assets/styles/dashboard.min.css?V={get_hash_number()}" />
         {elseif in_array($page, ["login", "register", "password_reset"])}
             <link rel="stylesheet" type="text/css" href="{$smarty.const.APP_URL}/assets/styles/auth.min.css?V={get_hash_number()}">
-            <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+            <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
         {else}
             <link rel="stylesheet" type="text/css" href="{$smarty.const.APP_URL}/assets/styles/main.min.css?V={get_hash_number()}">
         {/if}

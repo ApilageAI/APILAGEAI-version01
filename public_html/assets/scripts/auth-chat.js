@@ -9,9 +9,72 @@
     const restartBtn = document.getElementById('authRestart');
     const showOptionsBtn = document.getElementById('authShowOptions');
     const captchaRow = document.getElementById('authCaptchaRow');
+    const captchaEl = document.getElementById('authCaptcha')
+        || (captchaRow ? captchaRow.querySelector('.cf-turnstile') : null)
+        || (captchaRow ? captchaRow.querySelector('.g-recaptcha') : null);
     const continueBtn = document.getElementById('authContinue');
     const loadingOverlay = document.getElementById('loadingOverlay');
     const chatInputWrap = document.getElementById('authChatInput');
+
+    let turnstileWidgetId = null;
+    let turnstileWaiter = null;
+
+    function initTurnstileWidget() {
+        if (!window.turnstile || turnstileWidgetId !== null) return;
+        const el = captchaEl || document.querySelector('.cf-turnstile') || document.querySelector('.g-recaptcha');
+        const siteKey = (el && el.dataset && el.dataset.sitekey) ? el.dataset.sitekey : (window.AUTH_CAPTCHA_SITE_KEY || '');
+        if (!el || !siteKey) return;
+        turnstile.ready(() => {
+            if (turnstileWidgetId !== null) return;
+            turnstileWidgetId = turnstile.render(el, {
+                sitekey: siteKey,
+                size: 'normal',
+                execution: 'execute',
+                appearance: 'interaction-only',
+                callback: (token) => {
+                    if (turnstileWaiter) {
+                        const cb = turnstileWaiter;
+                        turnstileWaiter = null;
+                        cb(token || '');
+                    }
+                },
+                'error-callback': () => {
+                    if (turnstileWaiter) {
+                        const cb = turnstileWaiter;
+                        turnstileWaiter = null;
+                        cb('');
+                    }
+                },
+                'expired-callback': () => {
+                    if (turnstileWaiter) {
+                        const cb = turnstileWaiter;
+                        turnstileWaiter = null;
+                        cb('');
+                    }
+                }
+            });
+        });
+    }
+
+    async function getTurnstileToken() {
+        if (!window.turnstile) return '';
+        initTurnstileWidget();
+        if (turnstileWidgetId === null) return '';
+        return new Promise((resolve) => {
+            const timer = setTimeout(() => resolve(''), 10000);
+            turnstileWaiter = (token) => {
+                clearTimeout(timer);
+                resolve(token || '');
+            };
+            try { turnstile.execute(turnstileWidgetId); } catch (_) { clearTimeout(timer); resolve(''); }
+        });
+    }
+
+    function resetTurnstile() {
+        if (window.turnstile && turnstileWidgetId !== null) {
+            try { turnstile.reset(turnstileWidgetId); } catch (_) {}
+        }
+    }
 
     const state = {
         flow: null,
@@ -102,9 +165,7 @@
         captchaRow.style.display = 'none';
         continueBtn.disabled = true;
         if (chatInputWrap) chatInputWrap.style.display = 'flex';
-        if (window.grecaptcha) {
-            try { grecaptcha.reset(); } catch (_) {}
-        }
+        resetTurnstile();
     }
 
     function showCaptcha() {
@@ -237,7 +298,7 @@
 
     async function handleContinue() {
         if (!state.readyToContinue) return;
-        const captchaToken = window.grecaptcha ? grecaptcha.getResponse() : '';
+        const captchaToken = await getTurnstileToken();
         if (!captchaToken) {
             addMessage('Please complete the captcha first.', 'bot');
             return;
@@ -258,12 +319,13 @@
             const formData = new FormData();
             formData.append('e', state.data.email || '');
             formData.append('p', state.data.password || '');
+            formData.append('cf-turnstile-response', captchaToken);
             formData.append('g-recaptcha-response', captchaToken);
             const res = await fetch(`${appBase}/api/auth.php?act=login`, { method: 'POST', body: formData });
             const data = await res.json();
             showLoading(false);
             if (data.e) {
-                if (window.grecaptcha) grecaptcha.reset();
+                resetTurnstile();
                 if (data.resend && data.email) {
                     addMessage(data.m || 'Please verify your email address.', 'bot');
                     addActionButtons([
@@ -280,7 +342,7 @@
             setTimeout(() => { window.location.href = `${appBase}/app`; }, 800);
         } catch (err) {
             showLoading(false);
-            if (window.grecaptcha) grecaptcha.reset();
+            resetTurnstile();
             addMessage('Login failed. Please try again.', 'bot');
         }
     }
@@ -301,12 +363,13 @@
             formData.append('e', state.data.email || '');
             formData.append('t', state.data.phone || '');
             formData.append('p', state.data.password || '');
+            formData.append('cf-turnstile-response', captchaToken);
             formData.append('g-recaptcha-response', captchaToken);
             const res = await fetch(`${appBase}/api/auth.php?act=register`, { method: 'POST', body: formData });
             const data = await res.json();
             showLoading(false);
             if (data.e) {
-                if (window.grecaptcha) grecaptcha.reset();
+                resetTurnstile();
                 addMessage(data.m || 'Registration failed.', 'bot');
                 addActionButtons([{ html: '<i class="fa fa-arrow-rotate-right"></i> Try again', onClick: () => startFlow('register') }]);
                 return;
@@ -315,7 +378,7 @@
             addActionButtons([{ html: '<i class="fa fa-rotate-left"></i> Back to options', onClick: showMenu }]);
         } catch (err) {
             showLoading(false);
-            if (window.grecaptcha) grecaptcha.reset();
+            resetTurnstile();
             addMessage('Registration failed. Please try again.', 'bot');
         }
     }
@@ -330,7 +393,7 @@
             const data = await res.json();
             showLoading(false);
             if (data.e) {
-                if (window.grecaptcha) grecaptcha.reset();
+                resetTurnstile();
                 addMessage(data.m || 'Unable to send login link.', 'bot');
                 addActionButtons([{ html: '<i class="fa fa-arrow-rotate-right"></i> Try again', onClick: () => startFlow('magic') }]);
                 return;
@@ -339,7 +402,7 @@
             addActionButtons([{ html: '<i class="fa fa-rotate-left"></i> Back to options', onClick: showMenu }]);
         } catch (err) {
             showLoading(false);
-            if (window.grecaptcha) grecaptcha.reset();
+            resetTurnstile();
             addMessage('Unable to send login link. Please try again.', 'bot');
         }
     }

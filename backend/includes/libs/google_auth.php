@@ -5,14 +5,16 @@ use League\OAuth2\Client\Provider\Google;
 
 switch ($_GET["act"] ?? '') {
     case "login":
+        $captcha = $_POST['cf-turnstile-response'] ?? $_POST['g-recaptcha-response'] ?? '';
         $user->sign_in([
             "email"   => $_POST["e"] ?? '',
             "password"=> $_POST["p"] ?? '',
-            "captcha" => $_POST['g-recaptcha-response'] ?? ''
+            "captcha" => $captcha
         ]);
     break;
 
     case "register":
+        $captcha = $_POST['cf-turnstile-response'] ?? $_POST['g-recaptcha-response'] ?? '';
         $user->sign_up([
             "firstName" => $_POST["f"] ?? '',
             "lastName"  => $_POST["l"] ?? '',
@@ -20,15 +22,15 @@ switch ($_GET["act"] ?? '') {
             "phone"     => $_POST["t"] ?? '',
             "password"  => $_POST["p"] ?? '',
             "image"     => $_FILES['i'] ?? null,
-            "captcha"   => $_POST['g-recaptcha-response'] ?? ''
+            "captcha"   => $captcha
         ]);
     break;
 
     case "google":
         // Google OAuth setup
         $provider = new Google([
-            'clientId'     => 'YOUR_GOOGLE_CLIENT_ID',
-            'clientSecret' => 'YOUR_GOOGLE_CLIENT_SECRET',
+            'clientId'     => GOOGLE_CLIENT_ID,
+            'clientSecret' => GOOGLE_CLIENT_SECRET,
             'redirectUri'  => APP_URL . '/api/auth/index.php?act=google_callback',
         ]);
 
@@ -42,8 +44,8 @@ switch ($_GET["act"] ?? '') {
 
     case "google_callback":
         $provider = new Google([
-            'clientId'     => 'YOUR_GOOGLE_CLIENT_ID',
-            'clientSecret' => 'YOUR_GOOGLE_CLIENT_SECRET',
+            'clientId'     => GOOGLE_CLIENT_ID,
+            'clientSecret' => GOOGLE_CLIENT_SECRET,
             'redirectUri'  => APP_URL . '/api/auth/index.php?act=google_callback',
         ]);
 

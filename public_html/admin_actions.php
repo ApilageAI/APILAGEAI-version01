@@ -23,7 +23,7 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
 }
 
 $csrf = $_POST["csrf_token"] ?? "";
-if (!verify_csrf_token($csrf)) {
+if (!apilage_verify_csrf_token($csrf)) {
     respond(false, "Invalid CSRF token", [], 403);
 }
 

@@ -7,6 +7,7 @@
  * @package ApilageAI
  */
 
+define('APILAGE_EXPECTS_JSON', true);
 require_once __DIR__ . '/../../backend/bootstrap.php';
 
 // Security headers

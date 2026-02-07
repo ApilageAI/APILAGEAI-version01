@@ -205,6 +205,22 @@ function get_user_ip() {
  * @return string
  */
 function returnJSON($jsonData) {
+  if (defined('APILAGE_EXPECTS_JSON') && APILAGE_EXPECTS_JSON) {
+    $buffer = '';
+    if (ob_get_level() > 0) {
+      $buffer = trim(ob_get_contents());
+      while (ob_get_level() > 0) {
+        ob_end_clean();
+      }
+    }
+    if (!empty($buffer) && defined('APP_DEBUG') && APP_DEBUG) {
+      if (!is_array($jsonData)) {
+        $jsonData = ['data' => $jsonData];
+      }
+      $jsonData['_debug_output'] = $buffer;
+    }
+  }
+  $GLOBALS['APILAGE_JSON_SENT'] = true;
   $jsonString = json_encode($jsonData);
   //$compressedData = gzencode($jsonString, 8);
   //header('Content-Encoding: gzip');
@@ -226,23 +242,46 @@ function captchaVerify($token){
         return false;
     }
 
-    static $recaptchaLoaded = false;
-    if (!$recaptchaLoaded) {
-        $autoload = __DIR__ . '/includes/libs/vendor/autoload.php';
-        if (file_exists($autoload)) {
-            require_once $autoload;
-            $recaptchaLoaded = true;
-        } else {
-            return false;
-        }
-    }
+    $endpoint = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+    $payload = http_build_query([
+        'secret'   => RECAPTCHA_SECRET_KEY,
+        'response' => $token,
+        'remoteip' => get_user_ip(),
+    ]);
 
     try {
-        $recaptcha = new \ReCaptcha\ReCaptcha(RECAPTCHA_SECRET_KEY);
-        $resp = $recaptcha->verify($token, get_user_ip());
-        return $resp->isSuccess();
+        $response = null;
+        if (function_exists('curl_init')) {
+            $ch = curl_init($endpoint);
+            curl_setopt_array($ch, [
+                CURLOPT_POST            => true,
+                CURLOPT_POSTFIELDS      => $payload,
+                CURLOPT_RETURNTRANSFER  => true,
+                CURLOPT_CONNECTTIMEOUT  => 5,
+                CURLOPT_TIMEOUT         => 8,
+            ]);
+            $response = curl_exec($ch);
+            curl_close($ch);
+        } else {
+            $context = stream_context_create([
+                'http' => [
+                    'method'  => 'POST',
+                    'header'  => "Content-Type: application/x-www-form-urlencoded\r\n",
+                    'content' => $payload,
+                    'timeout' => 8,
+                ],
+            ]);
+            $response = @file_get_contents($endpoint, false, $context);
+        }
+
+        if (!$response) {
+            return false;
+        }
+
+        $data = json_decode($response, true);
+        return !empty($data['success']);
     } catch (Throwable $e) {
-        error_log('Recaptcha verify error: ' . $e->getMessage());
+        error_log('Turnstile verify error: ' . $e->getMessage());
         return false;
     }
 }

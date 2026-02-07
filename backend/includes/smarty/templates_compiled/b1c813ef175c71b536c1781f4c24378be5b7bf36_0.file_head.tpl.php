@@ -213,7 +213,7 @@ window.MathJax = {
 /assets/styles/auth.min.css?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_number')();?>
 ">
             <?php echo '<script'; ?>
- src="https://www.google.com/recaptcha/api.js" async defer><?php echo '</script'; ?>
+ src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer><?php echo '</script'; ?>
 >
         <?php } else { ?>
             <link rel="stylesheet" type="text/css" href="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>

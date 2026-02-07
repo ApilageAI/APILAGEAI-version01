@@ -136,7 +136,7 @@ $_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_
                         </div>
 
                         <center>
-                            <div class="g-recaptcha" data-sitekey="<?php echo (defined('RECAPTCHA_SITE_KEY') ? constant('RECAPTCHA_SITE_KEY') : null);?>
+                            <div id="registerCaptcha" class="cf-turnstile" data-sitekey="<?php echo (defined('RECAPTCHA_SITE_KEY') ? constant('RECAPTCHA_SITE_KEY') : null);?>
 "></div>
                         </center>
 

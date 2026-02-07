@@ -23,6 +23,8 @@
   const loginFacebook = document.getElementById('loginFacebook');
 
   const captchaIds = { login: null, signup: null, forgot: null };
+  const captchaTokens = { login: '', signup: '', forgot: '' };
+  const captchaWaiters = { login: [], signup: [], forgot: [] };
 
   const RESEND_COOLDOWN_SECONDS = 50;
   let resendCooldown = 0;
@@ -104,19 +106,36 @@
           return { ok: res.ok, data: JSON.parse(match[0]) };
         } catch (_) {}
       }
-      return { ok: false, data: null, raw: '', status: res.status };
+      return { ok: false, data: null, raw: text || '', status: res.status };
     }
   }
 
-  function getCaptchaToken(widgetId) {
-    if (!window.grecaptcha || widgetId === null) return '';
-    return grecaptcha.getResponse(widgetId);
+  async function getCaptchaToken(name, widgetId) {
+    if (captchaTokens[name]) return captchaTokens[name];
+    if (!window.turnstile) return '';
+    if (widgetId === null) initCaptchaWidgets();
+    const id = captchaIds[name];
+    if (id === null) return '';
+
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => resolve(''), 10000);
+      captchaWaiters[name].push((token) => {
+        clearTimeout(timer);
+        resolve(token || '');
+      });
+      try {
+        turnstile.execute(id);
+      } catch (_) {
+        clearTimeout(timer);
+        resolve('');
+      }
+    });
   }
 
-  function resetCaptcha(widgetId) {
-    if (window.grecaptcha && widgetId !== null) {
-      try { grecaptcha.reset(widgetId); } catch (_) {}
-    }
+  function resetCaptcha(name, widgetId) {
+    if (!window.turnstile || widgetId === null) return;
+    captchaTokens[name] = '';
+    try { turnstile.reset(widgetId); } catch (_) {}
   }
 
   function togglePassword(btnId, inputId) {
@@ -147,7 +166,7 @@
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       clearAlerts();
-      const captcha = getCaptchaToken(captchaIds.login);
+      const captcha = await getCaptchaToken('login', captchaIds.login);
       if (!captcha) {
         showAlert(loginAlert, 'Please complete the captcha.', 'error');
         return;
@@ -156,19 +175,26 @@
       showLoading(true);
       try {
         const data = new FormData(loginForm);
+        data.append('cf-turnstile-response', captcha);
         data.append('g-recaptcha-response', captcha);
         const res = await fetch(`${appBase}/api/auth.php?act=login`, { method: 'POST', body: data });
         const parsed = await parseResponse(res);
         const result = parsed.data || {};
         showLoading(false);
         if (!parsed.ok && !parsed.data) {
-          resetCaptcha(captchaIds.login);
-          showAlert(loginAlert, 'Login failed. Please try again.', 'error');
+          resetCaptcha('login', captchaIds.login);
+          const msg = (window.AUTH_DEBUG && parsed.raw)
+            ? parsed.raw
+            : 'Login failed. Please try again.';
+          showAlert(loginAlert, msg, 'error');
           return;
         }
         if (result.e) {
-          resetCaptcha(captchaIds.login);
-          showAlert(loginAlert, result.m || 'Login failed.', 'error');
+          resetCaptcha('login', captchaIds.login);
+          const msg = (window.AUTH_DEBUG && result._debug_output)
+            ? `${result.m || 'Login failed.'}\n${result._debug_output}`
+            : (result.m || 'Login failed.');
+          showAlert(loginAlert, msg, 'error');
           if (result.resend && result.email && resendBtn) {
             resendBtn.onclick = () => resendVerification(result.email, loginAlert);
           }
@@ -178,7 +204,7 @@
         setTimeout(() => { window.location.href = `${appBase}/app`; }, 800);
       } catch (err) {
         showLoading(false);
-        resetCaptcha(captchaIds.login);
+        resetCaptcha('login', captchaIds.login);
         showAlert(loginAlert, 'Login failed. Please try again.', 'error');
       }
     });
@@ -188,7 +214,7 @@
     signupForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       clearAlerts();
-      const captcha = getCaptchaToken(captchaIds.signup);
+      const captcha = await getCaptchaToken('signup', captchaIds.signup);
       if (!captcha) {
         showAlert(signupAlert, 'Please complete the captcha.', 'error');
         return;
@@ -215,26 +241,33 @@
       showLoading(true);
       try {
         const data = new FormData(signupForm);
+        data.append('cf-turnstile-response', captcha);
         data.append('g-recaptcha-response', captcha);
         const res = await fetch(`${appBase}/api/auth.php?act=register`, { method: 'POST', body: data });
         const parsed = await parseResponse(res);
         const result = parsed.data || {};
         showLoading(false);
         if (!parsed.ok && !parsed.data) {
-          resetCaptcha(captchaIds.signup);
-          showAlert(signupAlert, 'Registration failed. Please try again.', 'error');
+          resetCaptcha('signup', captchaIds.signup);
+          const msg = (window.AUTH_DEBUG && parsed.raw)
+            ? parsed.raw
+            : 'Registration failed. Please try again.';
+          showAlert(signupAlert, msg, 'error');
           return;
         }
         if (result.e) {
-          resetCaptcha(captchaIds.signup);
-          showAlert(signupAlert, result.m || 'Registration failed.', 'error');
+          resetCaptcha('signup', captchaIds.signup);
+          const msg = (window.AUTH_DEBUG && result._debug_output)
+            ? `${result.m || 'Registration failed.'}\n${result._debug_output}`
+            : (result.m || 'Registration failed.');
+          showAlert(signupAlert, msg, 'error');
           return;
         }
-        resetCaptcha(captchaIds.signup);
+        resetCaptcha('signup', captchaIds.signup);
         showSignupSuccess();
       } catch (err) {
         showLoading(false);
-        resetCaptcha(captchaIds.signup);
+        resetCaptcha('signup', captchaIds.signup);
         showAlert(signupAlert, 'Registration failed. Please try again.', 'error');
       }
     });
@@ -244,7 +277,7 @@
     forgotForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       clearAlerts();
-      const captcha = getCaptchaToken(captchaIds.forgot);
+      const captcha = await getCaptchaToken('forgot', captchaIds.forgot);
       if (!captcha) {
         showAlert(forgotAlert, 'Please complete the captcha.', 'error');
         return;
@@ -253,25 +286,33 @@
       showLoading(true);
       try {
         const data = new FormData(forgotForm);
+        data.append('cf-turnstile-response', captcha);
+        data.append('g-recaptcha-response', captcha);
         const res = await fetch(`${appBase}/api/auth.php?act=reset-request`, { method: 'POST', body: data });
         const parsed = await parseResponse(res);
         const result = parsed.data || {};
         showLoading(false);
         if (!parsed.ok && !parsed.data) {
-          resetCaptcha(captchaIds.forgot);
-          showAlert(forgotAlert, 'Failed to send reset link. Please try again.', 'error');
+          resetCaptcha('forgot', captchaIds.forgot);
+          const msg = (window.AUTH_DEBUG && parsed.raw)
+            ? parsed.raw
+            : 'Failed to send reset link. Please try again.';
+          showAlert(forgotAlert, msg, 'error');
           return;
         }
         if (result.e) {
-          resetCaptcha(captchaIds.forgot);
-          showAlert(forgotAlert, result.m || 'Failed to send reset link.', 'error');
+          resetCaptcha('forgot', captchaIds.forgot);
+          const msg = (window.AUTH_DEBUG && result._debug_output)
+            ? `${result.m || 'Failed to send reset link.'}\n${result._debug_output}`
+            : (result.m || 'Failed to send reset link.');
+          showAlert(forgotAlert, msg, 'error');
           return;
         }
         showAlert(forgotAlert, result.m || 'Reset instructions sent. Check your email.', 'success');
-        resetCaptcha(captchaIds.forgot);
+        resetCaptcha('forgot', captchaIds.forgot);
       } catch (err) {
         showLoading(false);
-        resetCaptcha(captchaIds.forgot);
+        resetCaptcha('forgot', captchaIds.forgot);
         showAlert(forgotAlert, 'Failed to send reset link. Please try again.', 'error');
       }
     });
@@ -316,24 +357,73 @@
     resendVerification(email, signupAlert);
   }
 
+  function resolveSiteKey(...els) {
+    if (captchaSiteKey) return captchaSiteKey;
+    for (const el of els) {
+      const key = el?.dataset?.sitekey?.trim();
+      if (key) return key;
+    }
+    return '';
+  }
+
+  function resolveToken(name, token) {
+    captchaTokens[name] = token || '';
+    const waiters = captchaWaiters[name];
+    if (waiters.length) {
+      while (waiters.length) {
+        const cb = waiters.shift();
+        cb(token || '');
+      }
+    }
+  }
+
+  function renderWidget(name, el, siteKey) {
+    if (!el || !siteKey) return null;
+    if (el.querySelector('iframe') || el.childElementCount) return null;
+    return turnstile.render(el, {
+      sitekey: siteKey,
+      size: 'normal',
+      execution: 'execute',
+      appearance: 'interaction-only',
+      callback: (token) => resolveToken(name, token),
+      'error-callback': () => resolveToken(name, ''),
+      'expired-callback': () => resolveToken(name, '')
+    });
+  }
+
+  function ensureRecaptchaScript() {
+    if (document.querySelector('script[src*="challenges.cloudflare.com/turnstile"]')) return;
+    const script = document.createElement('script');
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    document.head.appendChild(script);
+  }
+
   function initCaptchaWidgets() {
-    if (!window.grecaptcha) return;
+    if (!window.turnstile) return;
     if (captchaIds.login !== null) return;
-    if (!captchaSiteKey) return;
     const loginEl = document.getElementById('loginCaptcha');
     const signupEl = document.getElementById('signupCaptcha');
     const forgotEl = document.getElementById('forgotCaptcha');
-    if (loginEl) captchaIds.login = grecaptcha.render(loginEl, { sitekey: captchaSiteKey });
-    if (signupEl) captchaIds.signup = grecaptcha.render(signupEl, { sitekey: captchaSiteKey });
-    if (forgotEl) captchaIds.forgot = grecaptcha.render(forgotEl, { sitekey: captchaSiteKey });
+    const siteKey = resolveSiteKey(loginEl, signupEl, forgotEl);
+    if (!siteKey) return;
+    turnstile.ready(() => {
+      if (loginEl) captchaIds.login = renderWidget('login', loginEl, siteKey);
+      if (signupEl) captchaIds.signup = renderWidget('signup', signupEl, siteKey);
+      if (forgotEl) captchaIds.forgot = renderWidget('forgot', forgotEl, siteKey);
+    });
   }
 
-  function waitForCaptcha() {
-    if (window.grecaptcha && typeof grecaptcha.render === 'function') {
+  function waitForCaptcha(attempt = 0) {
+    if (window.turnstile && typeof turnstile.render === 'function') {
       initCaptchaWidgets();
       return;
     }
-    setTimeout(waitForCaptcha, 200);
+    if (attempt === 0) ensureRecaptchaScript();
+    if (attempt > 50) {
+      showAlert(loginAlert, 'Captcha failed to load. Please disable blockers and refresh.', 'error');
+      return;
+    }
+    setTimeout(() => waitForCaptcha(attempt + 1), 200);
   }
 
   const googleUrl = `${appBase}/auth/google`;

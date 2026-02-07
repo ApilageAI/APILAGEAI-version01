@@ -127,7 +127,7 @@ echo '<script'; ?>
                         </div>
 
                         <center>
-                            <div class="g-recaptcha" data-sitekey="<?php echo RECAPTCHA_SITE_KEY;?>
+                            <div class="cf-turnstile" data-sitekey="<?php echo RECAPTCHA_SITE_KEY;?>
 "></div>
                         </center>
 
@@ -159,7 +159,7 @@ document.getElementById("showEmailLoginBtn").addEventListener("click", function(
  src="https://apilageai.lk/assets/scripts/libs/dialog-js/main.min.js?V=01.03.04.2025"><?php echo '</script'; ?>
 >
 	<?php echo '<script'; ?>
- src="https://apilageai.lk/assets/scripts/auth-login.min.js?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
+ src="https://apilageai.lk/assets/scripts/auth-traditional.js?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
 "><?php echo '</script'; ?>
 >
 </body>

@@ -30,6 +30,11 @@ header("Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate");
 header("Pragma: no-cache");
 header("Expires: 0");
 
+// Capture any PHP output for JSON API responses so we can surface errors cleanly.
+if (defined('APILAGE_EXPECTS_JSON') && APILAGE_EXPECTS_JSON && ob_get_level() === 0) {
+    ob_start();
+}
+
 // ================================================================
 // ERROR HANDLING
 // ================================================================
@@ -47,30 +52,34 @@ if (APP_DEBUG) {
 // ================================================================
 // INPUT NORMALIZATION (basic sanitization)
 // ================================================================
-function sanitize_scalar_input($value) {
-    if (!is_string($value)) {
-        return $value;
+if (!function_exists('apilage_sanitize_scalar_input')) {
+    function apilage_sanitize_scalar_input($value) {
+        if (!is_string($value)) {
+            return $value;
+        }
+        // Remove null bytes and control chars
+        $value = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $value);
+        return trim($value);
     }
-    // Remove null bytes and control chars
-    $value = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $value);
-    return trim($value);
 }
 
-function sanitize_array_input($data) {
-    if (!is_array($data)) {
-        return sanitize_scalar_input($data);
+if (!function_exists('apilage_sanitize_array_input')) {
+    function apilage_sanitize_array_input($data) {
+        if (!is_array($data)) {
+            return apilage_sanitize_scalar_input($data);
+        }
+        $clean = [];
+        foreach ($data as $key => $value) {
+            $clean_key = apilage_sanitize_scalar_input((string) $key);
+            $clean[$clean_key] = is_array($value) ? apilage_sanitize_array_input($value) : apilage_sanitize_scalar_input($value);
+        }
+        return $clean;
     }
-    $clean = [];
-    foreach ($data as $key => $value) {
-        $clean_key = sanitize_scalar_input((string) $key);
-        $clean[$clean_key] = is_array($value) ? sanitize_array_input($value) : sanitize_scalar_input($value);
-    }
-    return $clean;
 }
 
-$_GET = sanitize_array_input($_GET);
-$_POST = sanitize_array_input($_POST);
-$_COOKIE = sanitize_array_input($_COOKIE);
+$_GET = apilage_sanitize_array_input($_GET);
+$_POST = apilage_sanitize_array_input($_POST);
+$_COOKIE = apilage_sanitize_array_input($_COOKIE);
 
 // ================================================================
 // TIMEZONE
@@ -85,6 +94,33 @@ $date = $DateTime->format('Y-m-d H:i:s');
 // ================================================================
 require __DIR__ . "/includes/libs/vendor/autoload.php";
 require __DIR__ . '/functions.php';
+
+// Ensure fatal errors still return JSON for API callers.
+if (defined('APILAGE_EXPECTS_JSON') && APILAGE_EXPECTS_JSON) {
+    register_shutdown_function(function () {
+        if (!empty($GLOBALS['APILAGE_JSON_SENT'])) {
+            return;
+        }
+        $error = error_get_last();
+        if (!$error) {
+            return;
+        }
+        $fatalTypes = [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR];
+        if (!in_array($error['type'], $fatalTypes, true)) {
+            return;
+        }
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        if (!headers_sent()) {
+            header('Content-Type: application/json');
+        }
+        $message = (defined('APP_DEBUG') && APP_DEBUG)
+            ? ($error['message'] . ' in ' . $error['file'] . ':' . $error['line'])
+            : 'Server error. Please try again later.';
+        echo json_encode(["e" => true, "m" => $message, "fatal" => true]);
+    });
+}
 
 // ================================================================
 // SESSION SECURITY
@@ -118,6 +154,12 @@ try {
     
     if ($db->connect_error) {
         error_log("Database connection failed: " . $db->connect_error);
+        if (defined('APILAGE_EXPECTS_JSON') && APILAGE_EXPECTS_JSON) {
+            $message = APP_DEBUG
+                ? "Database connection failed: " . $db->connect_error
+                : "Service temporarily unavailable. Please try again later.";
+            returnJSON(["e" => true, "m" => $message]);
+        }
         if (APP_DEBUG) {
             die("Database connection failed: " . $db->connect_error);
         } else {
@@ -130,6 +172,12 @@ try {
     $db->query("SET sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'");
 } catch (Exception $e) {
     error_log("Database exception: " . $e->getMessage());
+    if (defined('APILAGE_EXPECTS_JSON') && APILAGE_EXPECTS_JSON) {
+        $message = APP_DEBUG
+            ? "Database exception: " . $e->getMessage()
+            : "Service temporarily unavailable. Please try again later.";
+        returnJSON(["e" => true, "m" => $message]);
+    }
     if (APP_DEBUG) {
         die("Database exception: " . $e->getMessage());
     }
@@ -154,10 +202,12 @@ foreach (array_merge(...array_values(get_defined_functions())) as $function) {
 }
 
 // HTML minification
-function minify_html($tpl_output, \Smarty\Template $template) {
-    return preg_replace('/\s+/', ' ', $tpl_output);
+if (!function_exists('apilage_minify_html')) {
+    function apilage_minify_html($tpl_output, \Smarty\Template $template) {
+        return preg_replace('/\s+/', ' ', $tpl_output);
+    }
 }
-$smarty->registerFilter('output', 'minify_html');
+$smarty->registerFilter('output', 'apilage_minify_html');
 
 // ================================================================
 // GLOBAL CONSTANTS
@@ -193,6 +243,8 @@ $smarty->assign('csrf_token', $_SESSION['csrf_token']);
  * @param string $token Token to verify
  * @return bool
  */
-function verify_csrf_token($token) {
-    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+if (!function_exists('apilage_verify_csrf_token')) {
+    function apilage_verify_csrf_token($token) {
+        return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+    }
 }

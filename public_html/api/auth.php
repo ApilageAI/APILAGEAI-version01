@@ -7,6 +7,7 @@
  * @package ApilageAI
  */
 
+define('APILAGE_EXPECTS_JSON', true);
 require_once __DIR__ . '/../backend/bootstrap.php';
 
 // Security headers
@@ -27,10 +28,11 @@ switch ($action) {
             returnJSON(["e" => true, "m" => "Email and password required"]);
         }
         
+        $captcha = $_POST['cf-turnstile-response'] ?? $_POST['g-recaptcha-response'] ?? '';
         $user->sign_in([
             "email" => $_POST["e"],
             "password" => $_POST["p"],
-            "captcha" => $_POST['g-recaptcha-response'] ?? ''
+            "captcha" => $captcha
         ]);
         break;
         
@@ -43,6 +45,7 @@ switch ($action) {
             }
         }
         
+        $captcha = $_POST['cf-turnstile-response'] ?? $_POST['g-recaptcha-response'] ?? '';
         $user->sign_up([
             "firstName" => $_POST["f"],
             "lastName" => $_POST["l"],
@@ -50,7 +53,7 @@ switch ($action) {
             "phone" => $_POST["t"],
             "password" => $_POST["p"],
             "image" => $_FILES['i'] ?? null,
-            "captcha" => $_POST['g-recaptcha-response'] ?? ''
+            "captcha" => $captcha
         ]);
         break;
 

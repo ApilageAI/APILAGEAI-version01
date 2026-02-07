@@ -74,7 +74,7 @@ $_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_
           </div>
 
           <div class="auth-captcha">
-            <div id="loginCaptcha"></div>
+            <div id="loginCaptcha" class="cf-turnstile" data-sitekey="<?php echo (defined('RECAPTCHA_SITE_KEY') ? constant('RECAPTCHA_SITE_KEY') : null);?>"></div>
           </div>
 
           <div id="loginAlert" class="auth-alert"></div>
@@ -132,7 +132,7 @@ $_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_
           </div>
 
           <div class="auth-captcha">
-            <div id="signupCaptcha"></div>
+            <div id="signupCaptcha" class="cf-turnstile" data-sitekey="<?php echo (defined('RECAPTCHA_SITE_KEY') ? constant('RECAPTCHA_SITE_KEY') : null);?>"></div>
           </div>
 
           <div id="signupAlert" class="auth-alert"></div>
@@ -150,7 +150,7 @@ $_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_
           <input type="email" name="email" required placeholder="Your email" />
 
           <div class="auth-captcha">
-            <div id="forgotCaptcha"></div>
+            <div id="forgotCaptcha" class="cf-turnstile" data-sitekey="<?php echo (defined('RECAPTCHA_SITE_KEY') ? constant('RECAPTCHA_SITE_KEY') : null);?>"></div>
           </div>
 
           <div id="forgotAlert" class="auth-alert"></div>
@@ -193,7 +193,7 @@ $_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_
 >
 <?php echo '<script'; ?>
  src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
-/assets/scripts/auth-login.min.js?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
+/assets/scripts/auth-traditional.js?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
 "><?php echo '</script'; ?>
 >
 

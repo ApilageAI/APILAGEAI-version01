@@ -104,7 +104,7 @@
                         </div>
 
                         <center>
-                            <div class="g-recaptcha" data-sitekey="{$smarty.const.RECAPTCHA_SITE_KEY}"></div>
+                            <div id="registerCaptcha" class="cf-turnstile" data-sitekey="{$smarty.const.RECAPTCHA_SITE_KEY}"></div>
                         </center>
 
                         <button type="submit" class="auth-submit-button animate-slide-up" style="animation-delay: 0.4s" disabled>
@@ -141,7 +141,13 @@
             </button>
         </div>
     </div>
-</div>
+    </div>
+
+<script>
+    window.AUTH_APP_BASE = '{$smarty.const.APP_URL}';
+    window.AUTH_CAPTCHA_SITE_KEY = '{$smarty.const.RECAPTCHA_SITE_KEY}';
+    window.AUTH_DEBUG = {if $smarty.const.APP_DEBUG}true{else}false{/if};
+</script>
 
 <style>
 /* Success Overlay Styles */
