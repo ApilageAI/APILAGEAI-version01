@@ -50,6 +50,20 @@ if (APP_DEBUG) {
 }
 
 // ================================================================
+// SIMPLE HTML ERROR RESPONSE (non-JSON)
+// ================================================================
+if (!function_exists('apilage_render_service_unavailable')) {
+    function apilage_render_service_unavailable(string $message = 'Service temporarily unavailable. Please try again later.'): void {
+        if (!headers_sent()) {
+            http_response_code(503);
+            header('Content-Type: text/html; charset=utf-8');
+        }
+        echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Service Unavailable</title><style>body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial,sans-serif;background:#f8fafc;color:#0f172a;display:flex;min-height:100vh;align-items:center;justify-content:center}main{max-width:640px;padding:32px;border-radius:16px;background:#fff;box-shadow:0 20px 60px rgba(15,23,42,.12)}h1{margin:0 0 12px;font-size:22px}p{margin:0;color:#475569;line-height:1.6}</style></head><body><main><h1>We&rsquo;re working on it</h1><p>' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</p></main></body></html>';
+        exit;
+    }
+}
+
+// ================================================================
 // INPUT NORMALIZATION (basic sanitization)
 // ================================================================
 if (!function_exists('apilage_sanitize_scalar_input')) {
@@ -168,10 +182,9 @@ try {
             returnJSON(["e" => true, "m" => $message]);
         }
         if (APP_DEBUG) {
-            die("Database connection failed: " . $db->connect_error);
-        } else {
-            die("Service temporarily unavailable. Please try again later.");
+            apilage_render_service_unavailable("Database connection failed: " . $db->connect_error);
         }
+        apilage_render_service_unavailable();
     }
     
     $db->set_charset(DB_CHARSET);
@@ -186,9 +199,9 @@ try {
         returnJSON(["e" => true, "m" => $message]);
     }
     if (APP_DEBUG) {
-        die("Database exception: " . $e->getMessage());
+        apilage_render_service_unavailable("Database exception: " . $e->getMessage());
     }
-    die("Service temporarily unavailable. Please try again later.");
+    apilage_render_service_unavailable();
 }
 
 // ================================================================
