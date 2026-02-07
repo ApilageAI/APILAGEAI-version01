@@ -59,7 +59,7 @@ async function sendMessage(message) {
   chatMessages.scrollTop = chatMessages.scrollHeight;
 
   try {
-    const response = await fetch("https://endpoint.apilageai.lk/api/chat", {
+    const response = await fetch("https://endpoint.apilageai.edu.lk/api/chat", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

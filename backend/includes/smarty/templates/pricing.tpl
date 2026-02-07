@@ -79,7 +79,7 @@
                         </tr>
                         <tr>
                             <td>Rs. 1.00</td>
-                            <td>Memory Cost (apilageai.lk)</td>
+                            <td>Memory Cost (apilageai.edu.lk)</td>
                         </tr>
                         <tr>
                             <td colspan="2">And you will get daily Rs. 50.00 FREE 🎁 reward, only valid for a day. <a

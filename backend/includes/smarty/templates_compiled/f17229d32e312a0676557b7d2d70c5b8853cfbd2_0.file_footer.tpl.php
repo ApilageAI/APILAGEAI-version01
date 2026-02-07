@@ -1,11 +1,36 @@
-  <!-- Footer -->
+<?php
+/* Smarty version 5.7.0, created on 2026-02-07 17:14:36
+  from 'file:components/footer.tpl' */
+
+/* @var \Smarty\Template $_smarty_tpl */
+if ($_smarty_tpl->getCompiled()->isFresh($_smarty_tpl, array (
+  'version' => '5.7.0',
+  'unifunc' => 'content_698725a4902b58_74611059',
+  'has_nocache_code' => false,
+  'file_dependency' => 
+  array (
+    'f17229d32e312a0676557b7d2d70c5b8853cfbd2' => 
+    array (
+      0 => 'components/footer.tpl',
+      1 => 1770464248,
+      2 => 'file',
+    ),
+  ),
+  'includes' => 
+  array (
+  ),
+))) {
+function content_698725a4902b58_74611059 (\Smarty\Template $_smarty_tpl) {
+$_smarty_current_dir = '/Users/dinethgunawardana/Documents/GitHub/APILAGEAI-HIGH-SECURED-2026/backend/includes/smarty/templates/components';
+?>  <!-- Footer -->
      <footer class="bg-white text-brand-dark pt-20 pb-10 border-t-2 border-brand-dark">
         <div class="container mx-auto px-6">
           <div class="grid md:grid-cols-4 gap-12 mb-16">
             <div class="col-span-2 md:col-span-1">
               <div class="flex items-center gap-3 mb-6">
                 <img
-                  src="{$smarty.const.APP_URL}/assets/images/icon.png"
+                  src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
+/assets/images/icon.png"
                   alt="ApilageAI Logo"
                   class="w-10 h-10 object-contain"
                 />
@@ -27,7 +52,7 @@
               <h4 class="font-bold text-brand-dark mb-6 uppercase tracking-wider font-display border-b-2 border-brand-dark inline-block">Product</h4>
               <ul class="space-y-4 text-sm font-bold text-brand-dark/60">
                 <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="#pricing">Pricing</a></li>
-                <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="https://api.apilageai.edu.lk">API Docs</a></li>
+                <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="https://api.apilageai.lk">API Docs</a></li>
                 <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="#mobile">Mobile App</a></li>
               </ul>
             </div>
@@ -35,8 +60,10 @@
             <div>
               <h4 class="font-bold text-brand-dark mb-6 uppercase tracking-wider font-display border-b-2 border-brand-dark inline-block">Legal</h4>
               <ul class="space-y-4 text-sm font-bold text-brand-dark/60">
-                <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="{$smarty.const.APP_URL}/privacypolicy/">Privacy Policy</a></li>
-                <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="{$smarty.const.APP_URL}/termsconditions/">Terms of Service</a></li>
+                <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
+/privacypolicy/">Privacy Policy</a></li>
+                <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
+/termsconditions/">Terms of Service</a></li>
               </ul>
             </div>
 
@@ -79,8 +106,16 @@
       </footer>
     </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="{$smarty.const.APP_URL}/assets/scripts/main.js?V={get_hash_token()}"></script>
+<?php echo '<script'; ?>
+ src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"><?php echo '</script'; ?>
+>
+<?php echo '<script'; ?>
+ src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
+/assets/scripts/main.js?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
+"><?php echo '</script'; ?>
+>
 
 </body>
 </html>
+<?php }
+}

@@ -129,7 +129,14 @@ if (defined('APILAGE_EXPECTS_JSON') && APILAGE_EXPECTS_JSON) {
 ini_set('session.cookie_httponly', 1);
 $cookieSecure = APP_ENV === 'production';
 ini_set('session.cookie_secure', $cookieSecure ? 1 : 0);
-ini_set('session.cookie_samesite', 'Lax');
+$cookieSameSite = defined('COOKIE_SAMESITE') ? COOKIE_SAMESITE : 'Lax';
+if (!in_array($cookieSameSite, ['Lax', 'Strict', 'None'], true)) {
+    $cookieSameSite = 'Lax';
+}
+ini_set('session.cookie_samesite', $cookieSameSite);
+if (defined('COOKIE_DOMAIN') && COOKIE_DOMAIN !== '') {
+    ini_set('session.cookie_domain', COOKIE_DOMAIN);
+}
 ini_set('session.use_strict_mode', 1);
 ini_set('session.use_only_cookies', 1);
 ini_set('session.gc_maxlifetime', 3600);

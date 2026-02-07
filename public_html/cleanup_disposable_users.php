@@ -65,7 +65,7 @@ function cleanupUserData($userId, $profileImage) {
     $stmt->execute();
     $res = $stmt->get_result();
     while ($row = $res->fetch_assoc()) {
-        $path = __DIR__ . '/../../public_html/' . ltrim(parse_url($row['image_url'], PHP_URL_PATH), '/');
+        $path = __DIR__ . '/' . ltrim(parse_url($row['image_url'], PHP_URL_PATH), '/');
         if (file_exists($path) && is_file($path)) {
             unlink($path);
             echo "    Deleted image: " . basename($path) . "\n";
@@ -75,7 +75,7 @@ function cleanupUserData($userId, $profileImage) {
     
     // 2. Delete profile image from disk
     if (!empty($profileImage)) {
-        $path = __DIR__ . '/../../public_html/' . ltrim(parse_url($profileImage, PHP_URL_PATH), '/');
+        $path = __DIR__ . '/' . ltrim(parse_url($profileImage, PHP_URL_PATH), '/');
         if (file_exists($path) && is_file($path)) {
             unlink($path);
             echo "    Deleted profile photo: " . basename($path) . "\n";

@@ -1,7 +1,14 @@
 <?php
 require_once __DIR__ . '/../backend/bootstrap.php';
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: ' . APP_URL);
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+$allowedOrigins = defined('ALLOWED_ORIGINS') ? ALLOWED_ORIGINS : [APP_URL];
+$allowOrigin = APP_URL;
+if ($origin && in_array($origin, $allowedOrigins, true)) {
+    $allowOrigin = $origin;
+}
+header('Access-Control-Allow-Origin: ' . $allowOrigin);
+header('Vary: Origin');
 header('Access-Control-Allow-Credentials: true');
 
 function jsonResponse($arr) { echo json_encode($arr, JSON_UNESCAPED_UNICODE); exit; }

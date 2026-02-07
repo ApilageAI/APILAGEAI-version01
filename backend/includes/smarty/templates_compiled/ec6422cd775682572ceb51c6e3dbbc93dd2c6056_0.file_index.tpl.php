@@ -1,5 +1,33 @@
-{include file="components/head.tpl"}
-{include file="components/header.tpl"}
+<?php
+/* Smarty version 5.7.0, created on 2026-02-07 17:14:36
+  from 'file:index.tpl' */
+
+/* @var \Smarty\Template $_smarty_tpl */
+if ($_smarty_tpl->getCompiled()->isFresh($_smarty_tpl, array (
+  'version' => '5.7.0',
+  'unifunc' => 'content_698725a48bf400_06296477',
+  'has_nocache_code' => false,
+  'file_dependency' => 
+  array (
+    'ec6422cd775682572ceb51c6e3dbbc93dd2c6056' => 
+    array (
+      0 => 'index.tpl',
+      1 => 1770464248,
+      2 => 'file',
+    ),
+  ),
+  'includes' => 
+  array (
+    'file:components/head.tpl' => 1,
+    'file:components/header.tpl' => 1,
+    'file:components/footer.tpl' => 1,
+  ),
+))) {
+function content_698725a48bf400_06296477 (\Smarty\Template $_smarty_tpl) {
+$_smarty_current_dir = '/Users/dinethgunawardana/Documents/GitHub/APILAGEAI-HIGH-SECURED-2026/backend/includes/smarty/templates';
+$_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_id, $_smarty_tpl->compile_id, 0, $_smarty_tpl->cache_lifetime, array(), (int) 0, $_smarty_current_dir);
+$_smarty_tpl->renderSubTemplate("file:components/header.tpl", $_smarty_tpl->cache_id, $_smarty_tpl->compile_id, 0, $_smarty_tpl->cache_lifetime, array(), (int) 0, $_smarty_current_dir);
+?>
       <!-- Marquee -->
       <section class="py-8 border-y-2 border-brand-dark bg-brand-dark text-white overflow-hidden">
         <div class="flex whitespace-nowrap gap-16 animate-marquee" style="width: calc(200% + 4rem);">
@@ -53,7 +81,8 @@
                 </div>
                 <div class="flip-card-back p-6">
                   <video class="w-full h-full object-cover rounded-lg" muted loop playsinline preload="metadata">
-                    <source src="{$smarty.const.APP_URL}/assets/videos/Mind%20map.mp4" type="video/mp4">
+                    <source src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
+/assets/videos/Mind%20map.mp4" type="video/mp4">
                   </video>
                 </div>
               </div>
@@ -80,7 +109,8 @@
                 </div>
                 <div class="flip-card-back p-6">
                   <video class="w-full h-full object-cover rounded-lg" muted loop playsinline preload="metadata">
-                    <source src="{$smarty.const.APP_URL}/assets/videos/Flowchart.mp4" type="video/mp4">
+                    <source src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
+/assets/videos/Flowchart.mp4" type="video/mp4">
                   </video>
                 </div>
               </div>
@@ -102,7 +132,8 @@
                 </div>
                 <div class="flip-card-back p-6">
                   <video class="w-full h-full object-cover rounded-lg" muted loop playsinline preload="metadata">
-                    <source src="{$smarty.const.APP_URL}/assets/videos/1009%20(1).mp4" type="video/mp4">
+                    <source src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
+/assets/videos/1009%20(1).mp4" type="video/mp4">
                   </video>
                 </div>
               </div>
@@ -123,7 +154,8 @@
                 </div>
                 <div class="flip-card-back p-6">
                   <video class="w-full h-full object-cover rounded-lg" muted loop playsinline preload="metadata">
-                    <source src="{$smarty.const.APP_URL}/assets/videos/image%20process.mp4" type="video/mp4">
+                    <source src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
+/assets/videos/image%20process.mp4" type="video/mp4">
                   </video>
                 </div>
               </div>
@@ -150,7 +182,8 @@
                 Soon it can generate educational explanatory videos.
             </div>
             <div class="flex-1">
-              <img src="{$smarty.const.APP_URL}/assets/images/super.png" alt="Master Model Screenshot" class="w-full rounded-lg shadow-hard border-2 border-brand-dark">
+              <img src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
+/assets/images/super.png" alt="Master Model Screenshot" class="w-full rounded-lg shadow-hard border-2 border-brand-dark">
             </div>
           </div>
         </div>
@@ -206,7 +239,8 @@
                       Valid for 60 days
                     </li>
                  </ul>
-                 <a href="{$smarty.const.APP_URL}/pay/200" class="btn-secondary w-full">Top Up</a>
+                 <a href="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
+/pay/200" class="btn-secondary w-full">Top Up</a>
               </div>
 
               <div class="bg-brand-red p-8 rounded-2xl border-2 border-brand-dark shadow-hard-lg relative transform md:-translate-y-4">
@@ -251,7 +285,8 @@
                       Valid for 60 days
                     </li>
                  </ul>
-                 <a href="{$smarty.const.APP_URL}/pay/500" class="btn-secondary w-full border-none !shadow-hard">Top Up Now</a>
+                 <a href="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
+/pay/500" class="btn-secondary w-full border-none !shadow-hard">Top Up Now</a>
               </div>
 
               <div class="bg-white p-8 rounded-2xl border-2 border-brand-dark shadow-hard hover:shadow-hard-lg transition-all">
@@ -289,7 +324,8 @@
                       Access to video generation model (Coming soon)
                     </li>
                  </ul>
-                 <a href="{$smarty.const.APP_URL}/pay/1000" class="btn-secondary w-full">Top Up</a>
+                 <a href="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
+/pay/1000" class="btn-secondary w-full">Top Up</a>
               </div>
            </div>
 
@@ -320,8 +356,8 @@
                   Integrate Sri Lanka's most powerful educational AI models directly into your LMS, website, or mobile app. Native Sinhala support out of the box.
                 </p>
                 <div class="flex gap-4">
-                  <a href="https://api.apilageai.edu.lk" class="btn-primary bg-brand-dark text-white hover:bg-brand-dark/90">Get API Key</a>
-                  <a href="https://api.apilageai.edu.lk" class="btn-outline">Read Docs</a>
+                  <a href="https://api.apilageai.lk" class="btn-primary bg-brand-dark text-white hover:bg-brand-dark/90">Get API Key</a>
+                  <a href="https://api.apilageai.lk" class="btn-outline">Read Docs</a>
                 </div>
              </div>
              <div class="flex-1 w-full relative">
@@ -337,7 +373,7 @@
 <span class="text-brand-blue">curl</span> -s -X POST <span class="text-green-400">APILAGEAPI_URL</span> \ <br>
   -H <span class="text-green-400">Content-Type: application/json</span> \ <br>
   -H <span class="text-green-400">Authorization: Bearer APILAGEAI_API</span> \ <br>
-  -d <span class="text-green-400">{literal}{'message': 'Explain Newton law of motion', 'enableGoogleSearch': true}{/literal}</span> \  <br>
+  -d <span class="text-green-400">{'message': 'Explain Newton law of motion', 'enableGoogleSearch': true}</span> \  <br>
   | jq -r <span class="text-green-400">.response</span> <br>
                     </code>
                   </pre>
@@ -390,4 +426,6 @@
       </section>
 
 
-{include file="components/footer.tpl"}
+<?php $_smarty_tpl->renderSubTemplate("file:components/footer.tpl", $_smarty_tpl->cache_id, $_smarty_tpl->compile_id, 0, $_smarty_tpl->cache_lifetime, array(), (int) 0, $_smarty_current_dir);
+}
+}

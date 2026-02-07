@@ -7,8 +7,12 @@
  * @package ApilageAI
  */
 
+<<<<<<< Updated upstream
 define('APILAGE_EXPECTS_JSON', true);
 require_once __DIR__ . '/../backend/bootstrap.php';
+=======
+require_once __DIR__ . '/../../backend/bootstrap.php';
+>>>>>>> Stashed changes
 
 // Security headers
 header('Content-Type: application/json');

@@ -22,10 +22,10 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                  <li class="nav-item">
-                        <a class="nav-link" href="https://www.apilageai.lk">Home</a>
+                        <a class="nav-link" href="https://www.apilageai.edu.lk">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="https://blog.apilageai.lk">Blog</a>
+                        <a class="nav-link" href="https://blog.apilageai.edu.lk">Blog</a>
                     </li>
                     <li class="nav-item ms-lg-3">
                         <a class="btn btn-primary" href="{$smarty.const.APP_URL}{if !$user->_logged_in}/auth/login{else}/app{/if}">{if !$user->_logged_in}Login{else}Continue{/if}</a>

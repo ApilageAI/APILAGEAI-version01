@@ -1,6 +1,6 @@
 <?php
 define('APILAGE_LOADED', true);
-require_once __DIR__ . '/../backend/config.php';
+require_once __DIR__ . '/../../backend/config.php';
 /**
  * ApilageAI MCQ Blast Configuration API
  * 
@@ -17,7 +17,7 @@ header('Content-Type: application/json');
 // Allowed referrers
 $allowedReferrers = [
     APP_URL,
-    'https://www.apilageai.lk',
+    'https://www.apilageai.edu.lk',
 ];
 
 // Get the Referer header

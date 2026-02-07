@@ -1,9 +1,34 @@
- <!-- Navbar -->
+<?php
+/* Smarty version 5.7.0, created on 2026-02-07 17:14:36
+  from 'file:components/header.tpl' */
+
+/* @var \Smarty\Template $_smarty_tpl */
+if ($_smarty_tpl->getCompiled()->isFresh($_smarty_tpl, array (
+  'version' => '5.7.0',
+  'unifunc' => 'content_698725a48f8786_16071383',
+  'has_nocache_code' => false,
+  'file_dependency' => 
+  array (
+    'a48c03154f7a8c5d1fcdb6fa23d21a5f21f78bd0' => 
+    array (
+      0 => 'components/header.tpl',
+      1 => 1770464248,
+      2 => 'file',
+    ),
+  ),
+  'includes' => 
+  array (
+  ),
+))) {
+function content_698725a48f8786_16071383 (\Smarty\Template $_smarty_tpl) {
+$_smarty_current_dir = '/Users/dinethgunawardana/Documents/GitHub/APILAGEAI-HIGH-SECURED-2026/backend/includes/smarty/templates/components';
+?> <!-- Navbar -->
     <nav id="navbar" class="navbar-normal fixed top-0 left-0 right-0 z-50 transition-all duration-300">
       <div class="container mx-auto px-6 flex items-center justify-between">
         <div class="flex items-center gap-3">
           <img
-            src="{$smarty.const.APP_URL}/assets/images/icon.png"
+            src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
+/assets/images/icon.png"
             alt="ApilageAI Logo"
             class="w-10 h-10 object-contain hover:rotate-6 transition-transform duration-300"
           />
@@ -16,11 +41,13 @@
           <a href="#features" class="hover:text-brand-red hover:underline decoration-2 underline-offset-4 transition-all">Features</a>
           <a href="#pricing" class="hover:text-brand-red hover:underline decoration-2 underline-offset-4 transition-all">Pricing</a>
           <a href="#developers" class="hover:text-brand-red hover:underline decoration-2 underline-offset-4 transition-all">Developers</a>
-          <a href="{$smarty.const.APP_URL}/blog" class="hover:text-brand-red hover:underline decoration-2 underline-offset-4 transition-all">Blog</a>
+          <a href="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
+/blog" class="hover:text-brand-red hover:underline decoration-2 underline-offset-4 transition-all">Blog</a>
         </div>
 
         <div class="flex items-center gap-4">
-          <a href="{$smarty.const.APP_URL}/app" class="btn-primary !py-2 !px-5 !text-sm">Start Chat</a>
+          <a href="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
+/app" class="btn-primary !py-2 !px-5 !text-sm">Start Chat</a>
         </div>
       </div>
     </nav>
@@ -59,13 +86,14 @@
               </p>
 
               <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
-                <a href="{$smarty.const.APP_URL}/app" class="btn-primary w-full sm:w-auto text-lg">
+                <a href="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
+/app" class="btn-primary w-full sm:w-auto text-lg">
                   Start Learning Free
                   <svg class="w-5 h-5 inline ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                   </svg>
                 </a>
-                <a href="https://api.apilageai.edu.lk" class="btn-secondary w-full sm:w-auto text-lg">Try API</a>
+                <a href="https://api.apilageai.lk" class="btn-secondary w-full sm:w-auto text-lg">Try API</a>
               </div>
 
               <div class="mt-12 flex items-center justify-center lg:justify-start gap-6">
@@ -140,3 +168,5 @@
           </div>
         </div>
       </section>
+<?php }
+}

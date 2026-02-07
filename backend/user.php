@@ -362,7 +362,7 @@ class User
             require_once __DIR__ . "/class-image.php";
             $image = new Image($data["image"]["tmp_name"]);
             $image_name = $this->get_unique_media_prefix() . $image->_img_ext;
-            $path = __DIR__ . "/../uploads/userimg/" . $image_name;
+            $path = __DIR__ . "/../public_html/uploads/userimg/" . $image_name;
             $image->save($path, "low");
             $imageName = $image_name;
         }

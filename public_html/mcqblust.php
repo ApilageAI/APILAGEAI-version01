@@ -1,12 +1,12 @@
 <?php
 define('APILAGE_LOADED', true);
-require_once __DIR__ . '/backend/config.php';
+require_once __DIR__ . '/../backend/config.php';
 header('Content-Type: application/json');
 
 // Allowed referrers (your site and trusted services)
 $allowedReferrers = [
     APP_URL,
-    'https://www.apilageai.lk',
+    'https://www.apilageai.edu.lk',
     'https://firebase.google.com',
     'https://www.googleapis.com'
 ];
@@ -43,7 +43,7 @@ $firebaseConfig = [
 ];
 
 // ------------------- Gemini API Key -------------------
-$geminiApiKey = "AIzaSyBjjzjDzp5ruIzuMg_FEJLjrmoOydsKSSg";
+$geminiApiKey = GEMINI_API_KEY_MCQBLUST;
 
 // ------------------- Return JSON -------------------
 echo json_encode([

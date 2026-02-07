@@ -1,6 +1,24 @@
 # Friendly URL routing for ApilageAI
 # Requires Apache mod_rewrite and AllowOverride All
 
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "DENY"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  Header set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+</IfModule>
+
+<FilesMatch "^(\.env|\.git|\.htaccess|composer\.json|composer\.lock|package\.json|package-lock\.json|yarn\.lock|pnpm-lock\.yaml|apilageai_main_db\.sql|README\.md|SECURITY\.md)$">
+  Require all denied
+</FilesMatch>
+
+# Block direct access to internal folders
+RedirectMatch 403 ^backend/
+RedirectMatch 403 ^node/
+RedirectMatch 403 ^doc_text/
+RedirectMatch 403 ^uploads/userdocs/
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /

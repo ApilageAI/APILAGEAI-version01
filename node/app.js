@@ -479,7 +479,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
 // ====== Static/Uploads ======
-const baseUploadsDir = path.join(__dirname, '/../uploads');
+const baseUploadsDir = path.join(__dirname, '/../public_html/uploads');
 const userUploadsDir = path.join(baseUploadsDir, 'userimg');
 const genimgUploadsDir = path.join(baseUploadsDir, 'genimg');
 const userDocsDir = path.join(baseUploadsDir, 'userdocs');

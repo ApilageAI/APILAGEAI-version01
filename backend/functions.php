@@ -86,14 +86,19 @@ function setSecureCookie($name, $value, $expire, $path, $domain = null) {
     $secure = APP_ENV === 'production';
     $cookieDomain = $domain;
     if ($cookieDomain === null && $secure) {
-        $cookieDomain = "apilageai.lk";
+        $cookieDomain = defined('COOKIE_DOMAIN') ? COOKIE_DOMAIN : '';
+        if ($cookieDomain === '') {
+            $cookieDomain = parse_url(APP_URL, PHP_URL_HOST) ?: '';
+        }
     }
+    $sameSite = defined('COOKIE_SAMESITE') ? COOKIE_SAMESITE : 'Lax';
+    $validSameSite = in_array($sameSite, ['Lax', 'Strict', 'None'], true) ? $sameSite : 'Lax';
     $options = [
         'expires'  => $expire,
         'path'     => $path,
         'secure'   => $secure,
         'httponly' => true,
-        'samesite' => 'Lax'
+        'samesite' => $validSameSite
     ];
     if (!empty($cookieDomain)) {
         $options['domain'] = $cookieDomain;
@@ -409,7 +414,7 @@ function save_picture_from_url($file, $prefix, $img_quality = 'medium') {
     
     $image = new Image($file);
     $image_name = $prefix.$image->_img_ext;
-    $path = __DIR__.'/../uploads/userimg/'.$image_name;
+    $path = __DIR__.'/../public_html/uploads/userimg/'.$image_name;
 
     /* save the new image */
     $image->save($path, $img_quality);
