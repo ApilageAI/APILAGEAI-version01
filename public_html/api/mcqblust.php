@@ -17,7 +17,7 @@ header('Content-Type: application/json');
 // Allowed referrers
 $allowedReferrers = [
     APP_URL,
-    'https://www.apilageai.edu.lk',
+    'https://apilageai.lk',
 ];
 
 // Get the Referer header

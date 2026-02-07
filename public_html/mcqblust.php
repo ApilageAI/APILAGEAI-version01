@@ -6,7 +6,7 @@ header('Content-Type: application/json');
 // Allowed referrers (your site and trusted services)
 $allowedReferrers = [
     APP_URL,
-    'https://www.apilageai.edu.lk',
+    'https://apilageai.lk',
     'https://firebase.google.com',
     'https://www.googleapis.com'
 ];

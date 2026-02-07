@@ -320,8 +320,8 @@
                   Integrate Sri Lanka's most powerful educational AI models directly into your LMS, website, or mobile app. Native Sinhala support out of the box.
                 </p>
                 <div class="flex gap-4">
-                  <a href="https://api.apilageai.edu.lk" class="btn-primary bg-brand-dark text-white hover:bg-brand-dark/90">Get API Key</a>
-                  <a href="https://api.apilageai.edu.lk" class="btn-outline">Read Docs</a>
+                  <a href="https://api.apilageai.lk" class="btn-primary bg-brand-dark text-white hover:bg-brand-dark/90">Get API Key</a>
+                  <a href="https://api.apilageai.lk" class="btn-outline">Read Docs</a>
                 </div>
              </div>
              <div class="flex-1 w-full relative">

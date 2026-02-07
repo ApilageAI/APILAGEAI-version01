@@ -1,5 +1,3 @@
-<<<<<<< Updated upstream
-=======
 <?php
 /**
  * ApilageAI Configuration
@@ -174,4 +172,3 @@ define('PAYABLE_MERCHANT_TOKEN', env_value('PAYABLE_MERCHANT_TOKEN', ''));
 // ================================================================
 // Generate with: bin2hex(random_bytes(32))
 define('APP_KEY', env_value('APP_KEY', ''));
->>>>>>> Stashed changes

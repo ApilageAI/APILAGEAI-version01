@@ -65,7 +65,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                   </svg>
                 </a>
-                <a href="https://api.apilageai.edu.lk" class="btn-secondary w-full sm:w-auto text-lg">Try API</a>
+                <a href="https://api.apilageai.lk" class="btn-secondary w-full sm:w-auto text-lg">Try API</a>
               </div>
 
               <div class="mt-12 flex items-center justify-center lg:justify-start gap-6">
