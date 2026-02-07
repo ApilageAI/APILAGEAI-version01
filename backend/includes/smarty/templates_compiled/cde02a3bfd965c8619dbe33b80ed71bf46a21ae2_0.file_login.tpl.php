@@ -193,7 +193,7 @@ $_smarty_tpl->renderSubTemplate("file:components/head.tpl", $_smarty_tpl->cache_
 >
 <?php echo '<script'; ?>
  src="<?php echo (defined('APP_URL') ? constant('APP_URL') : null);?>
-/assets/scripts/auth-traditional.js?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
+/assets/scripts/auth-login.min.js?V=<?php echo $_smarty_tpl->getSmarty()->getModifierCallback('get_hash_token')();?>
 "><?php echo '</script'; ?>
 >
 

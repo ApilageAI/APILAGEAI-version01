@@ -156,7 +156,7 @@
   window.AUTH_CAPTCHA_SITE_KEY = '{$smarty.const.RECAPTCHA_SITE_KEY}';
 </script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/libs/dialog-js/main.min.js?V=01.03.04.2025"></script>
-<script src="{$smarty.const.APP_URL}/assets/scripts/auth-traditional.js?V={get_hash_token()}"></script>
+<script src="{$smarty.const.APP_URL}/assets/scripts/auth-login.min.js?V={get_hash_token()}"></script>
 
 <style>
 body {
