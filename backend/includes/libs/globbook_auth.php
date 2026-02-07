@@ -7,8 +7,8 @@ class GlobbookAuthAPI {
     public string $version = "1.0";
 
     public function __construct($app_id = null, $app_secret = null) {
-        $this->app_id = $app_id ?: getenv('APP_ID');
-        $this->app_secret = $app_secret ?: getenv('APP_SECRET');
+        $this->app_id = $app_id ?: (defined('GLOBBOOK_APP_ID') ? GLOBBOOK_APP_ID : '');
+        $this->app_secret = $app_secret ?: (defined('GLOBBOOK_APP_SECRET') ? GLOBBOOK_APP_SECRET : '');
     }
     
     private function request($endpoint, $params = [], $method = 'POST') {
