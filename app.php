@@ -7,7 +7,7 @@
  * @package ApilageAI
  */
 
-require_once __DIR__ . /../backend/bootstrap.php";
+require_once __DIR__ . '/../backend/bootstrap.php';
 
 // Require authentication (allow guest mode)
 $is_guest = (!$user->_logged_in && !empty($_SESSION['guest_mode']));

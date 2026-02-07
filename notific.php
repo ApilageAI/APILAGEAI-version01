@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . /../backend/bootstrap.php";
+require_once __DIR__ . '/../backend/bootstrap.php';
 header('Content-Type: application/json');
 
 // ✅ Must be logged in
