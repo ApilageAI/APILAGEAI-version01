@@ -51,8 +51,8 @@
             <option value="yearly">Last 5 years (yearly)</option>
           </select>
         </div>
-        <div class="mt-4">
-          <canvas id="userGrowthChart" height="120"></canvas>
+        <div class="mt-4" style="height:240px;">
+          <canvas id="userGrowthChart" style="width:100%;height:100%;display:block;"></canvas>
         </div>
       </div>
       <div class="rounded-2xl border-2 border-brand-dark bg-white p-6 shadow-hard">
@@ -529,6 +529,86 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/chart-lite.js?V={get_hash_number()}"></script>
 <script>
+  (function () {
+    var growthLabels = {$admin_user_growth_labels|json_encode};
+    var growthData = {$admin_user_growth_data|json_encode};
+    var growthSeries = {$admin_user_growth_series|json_encode};
+    var chartEl = document.getElementById("userGrowthChart");
+    var growthRangeSelect = document.getElementById("userGrowthRange");
+    var growthSeriesMap = (growthSeries && growthSeries.daily) ? growthSeries : {
+      daily: { labels: growthLabels, data: growthData },
+    };
+    var getSeries = function (key) {
+      return growthSeriesMap[key] || growthSeriesMap.daily || { labels: growthLabels, data: growthData };
+    };
+    var growthChart = null;
+    var growthLiteKey = (growthRangeSelect && growthRangeSelect.value) ? growthRangeSelect.value : "daily";
+
+    var renderLiteChart = function (key) {
+      if (!chartEl || !window.ChartLite) return;
+      var series = getSeries(key);
+      window.ChartLite.line(chartEl, series.labels, series.data, {
+        lineColor: "#172554",
+        pointColor: "#0ea5e9",
+      });
+    };
+
+    var renderGrowthChart = function () {
+      if (!chartEl) return;
+      var initialSeries = getSeries(growthLiteKey);
+      if (window.Chart) {
+        if (growthChart) {
+          growthChart.data.labels = initialSeries.labels;
+          growthChart.data.datasets[0].data = initialSeries.data;
+          growthChart.update();
+          return;
+        }
+        growthChart = new Chart(chartEl, {
+          type: "line",
+          data: {
+            labels: initialSeries.labels,
+            datasets: [{
+              label: "New Users",
+              data: initialSeries.data,
+              borderColor: "#172554",
+              backgroundColor: "rgba(56, 189, 248, 0.3)",
+              fill: true,
+              tension: 0.3,
+              pointRadius: 2,
+            }],
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: { beginAtZero: true },
+            },
+          },
+        });
+        return;
+      }
+      if (window.ChartLite) {
+        renderLiteChart(growthLiteKey);
+      }
+    };
+
+    if (chartEl) {
+      renderGrowthChart();
+      window.setTimeout(renderGrowthChart, 200);
+      window.addEventListener("resize", function () {
+        renderGrowthChart();
+      });
+    }
+
+    if (growthRangeSelect) {
+      growthRangeSelect.addEventListener("change", function () {
+        var nextKey = growthRangeSelect.value || "daily";
+        growthLiteKey = nextKey;
+        renderGrowthChart();
+      });
+    }
+  })();
+</script>
+<script>
   const adminEndpoint = (window.APP_BASE_URL || window.location.origin).replace(/\/$/, "") + "/admin_actions.php";
   const csrfEl = document.querySelector("[data-csrf]");
   const csrfToken = csrfEl ? csrfEl.getAttribute("data-csrf") : "";
@@ -562,74 +642,6 @@
       throw new Error(data.message || "Request failed");
     }
     return data;
-  }
-
-  // Chart
-  const growthLabels = {$admin_user_growth_labels|json_encode};
-  const growthData = {$admin_user_growth_data|json_encode};
-  const growthSeries = {$admin_user_growth_series|json_encode};
-  const chartEl = document.getElementById("userGrowthChart");
-  const growthRangeSelect = document.getElementById("userGrowthRange");
-  const growthSeriesMap = (growthSeries && growthSeries.daily) ? growthSeries : {
-    daily: { labels: growthLabels, data: growthData },
-  };
-  const getSeries = (key) => growthSeriesMap[key] || growthSeriesMap.daily || { labels: growthLabels, data: growthData };
-  let growthChart = null;
-  let growthLiteKey = (growthRangeSelect && growthRangeSelect.value) ? growthRangeSelect.value : "daily";
-  const renderLiteChart = (key) => {
-    if (!chartEl || !window.ChartLite) return;
-    const series = getSeries(key);
-    window.ChartLite.line(chartEl, series.labels, series.data, {
-      lineColor: "#172554",
-      pointColor: "#0ea5e9",
-    });
-  };
-
-  if (chartEl) {
-    const initialSeries = getSeries(growthLiteKey);
-    if (window.Chart) {
-      growthChart = new Chart(chartEl, {
-        type: "line",
-        data: {
-          labels: initialSeries.labels,
-          datasets: [{
-            label: "New Users",
-            data: initialSeries.data,
-            borderColor: "#172554",
-            backgroundColor: "rgba(56, 189, 248, 0.3)",
-            fill: true,
-            tension: 0.3,
-            pointRadius: 2,
-          }],
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: { beginAtZero: true },
-          },
-        },
-      });
-    } else if (window.ChartLite) {
-      renderLiteChart(growthLiteKey);
-      window.addEventListener("resize", () => {
-        renderLiteChart(growthLiteKey);
-      });
-    }
-  }
-
-  if (growthRangeSelect) {
-    growthRangeSelect.addEventListener("change", () => {
-      const nextKey = growthRangeSelect.value || "daily";
-      if (growthChart) {
-        const next = getSeries(nextKey);
-        growthChart.data.labels = next.labels;
-        growthChart.data.datasets[0].data = next.data;
-        growthChart.update();
-        return;
-      }
-      growthLiteKey = nextKey;
-      renderLiteChart(growthLiteKey);
-    });
   }
 
   // Notifications

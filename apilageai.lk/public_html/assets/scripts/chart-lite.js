@@ -13,16 +13,26 @@
     });
   }
 
+  function getDisplaySize(canvas) {
+    var rect = canvas.getBoundingClientRect ? canvas.getBoundingClientRect() : { width: 0, height: 0 };
+    var parent = canvas.parentElement;
+    var parentWidth = parent ? parent.clientWidth : 0;
+    var width = rect.width || canvas.clientWidth || parentWidth || canvas.width || 600;
+    var height = rect.height || canvas.clientHeight || canvas.height || 200;
+    if (height < 50) height = canvas.height || 200;
+    if (width < 50) width = 600;
+    return { width: width, height: height };
+  }
+
   function prepareCanvas(canvas) {
     var ctx = canvas.getContext("2d");
     var dpr = window.devicePixelRatio || 1;
-    var displayWidth = canvas.clientWidth || canvas.width || 300;
-    var displayHeight = canvas.clientHeight || canvas.height || 150;
-    canvas.width = displayWidth * dpr;
-    canvas.height = displayHeight * dpr;
+    var size = getDisplaySize(canvas);
+    canvas.width = size.width * dpr;
+    canvas.height = size.height * dpr;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(dpr, dpr);
-    return { ctx: ctx, width: displayWidth, height: displayHeight };
+    return { ctx: ctx, width: size.width, height: size.height };
   }
 
   function drawLine(ctx, points, color, width) {
@@ -148,8 +158,18 @@
       points.push({ x: x, y: y });
     }
 
-    drawLine(ctx, points, opts.lineColor || "#172554", 2);
-    drawPoints(ctx, points, opts.pointColor || "#0ea5e9");
+    if (points.length) {
+      drawLine(ctx, points, opts.lineColor || "#172554", 2);
+      drawPoints(ctx, points, opts.pointColor || "#0ea5e9");
+    } else {
+      ctx.save();
+      ctx.fillStyle = "#64748b";
+      ctx.font = "12px 'Plus Jakarta Sans', sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("No data available", area.left + area.width / 2, area.top + area.height / 2);
+      ctx.restore();
+    }
     drawLabels(ctx, area, labelList, min, max);
   }
 
