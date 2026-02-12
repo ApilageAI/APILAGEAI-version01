@@ -38,17 +38,17 @@
 
     <div class="sidebar-items" style="padding: 16px; display: flex; flex-direction: column; gap: 12px;">
         <button class="sidebar-but new-chat-btn" id="sidebar-new-chat" type="button" title="New chat">
-            <span class="sidebar-but-icon"><i class="fa fa-plus"></i></span>
+            <span class="sidebar-but-icon" aria-hidden="true">✏️</span>
             <span class="sidebar-but-text">New chat</span>
             <span class="sidebar-but-shortcut" aria-hidden="true">⇧⌘O</span>
         </button>
         <button class="sidebar-but" id="open-conversation-gallery" type="button" title="Conversations">
-            <span class="sidebar-but-icon"><i class="fa fa-comments"></i></span>
+            <span class="sidebar-but-icon" aria-hidden="true">💬</span>
             <span class="sidebar-but-text">Conversations</span>
             <span class="sidebar-but-shortcut" aria-hidden="true">⇧⌘K</span>
         </button>
         <button class="sidebar-but" id="open-share-modal" type="button" title="Share with friends">
-            <span class="sidebar-but-icon"><i class="fa fa-share-alt"></i></span>
+            <span class="sidebar-but-icon" aria-hidden="true">🚀</span>
             <span class="sidebar-but-text">Share with friends</span>
             <span class="sidebar-but-shortcut" aria-hidden="true">⇧⌘S</span>
         </button>
@@ -59,16 +59,24 @@
             <span class="sidebar-but-text">Mic</span>
         </button>
         <button class="sidebar-but" id="mindmap-open-btn" type="button" title="Mind map">
-            <span class="sidebar-but-icon"><i class="fa-solid fa-brain"></i></span>
+            <span class="sidebar-but-icon" aria-hidden="true">🧠</span>
             <span class="sidebar-but-text">Mind map</span>
         </button>
         <button class="sidebar-but" id="mcqblust-gameyard-icon" type="button" title="MCQ game">
-            <span class="sidebar-but-icon"><i class="fas fa-gamepad"></i></span>
+            <span class="sidebar-but-icon" aria-hidden="true">🎮</span>
             <span class="sidebar-but-text">MCQ game</span>
         </button>
         <button class="sidebar-but" type="button" onclick="window.open('{$smarty.const.APP_URL}/images', '_self');" title="Image Gallery">
-            <span class="sidebar-but-icon"><i class="fa fa-image"></i></span>
+            <span class="sidebar-but-icon" aria-hidden="true">📷</span>
             <span class="sidebar-but-text">Image Gallery</span>
+        </button>
+        {assign var=profileSlug value=$user->_data.public_profile_username}
+        {if !$profileSlug}
+            {assign var=profileSlug value=$user->_data.public_profile_token}
+        {/if}
+        <button class="sidebar-but" type="button" onclick="window.open('{$smarty.const.APP_URL}/{$profileSlug|default:''}', '_self');" title="Public Profile">
+            <span class="sidebar-but-icon" aria-hidden="true">👤</span>
+            <span class="sidebar-but-text">Public Profile</span>
         </button>
     </div>
 

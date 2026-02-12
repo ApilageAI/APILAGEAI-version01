@@ -1,6 +1,188 @@
 <?php
 require_once __DIR__ . '/../backend/bootstrap.php';
 
+if (!function_exists('normalize_public_image_url_profile')) {
+    function normalize_public_image_url_profile(?string $value): ?string {
+        if ($value === null) {
+            return null;
+        }
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+        if (preg_match('#^https?://#i', $value)) {
+            $parsed = parse_url($value);
+            $path = $parsed['path'] ?? '';
+            $host = $parsed['host'] ?? '';
+            $appHost = parse_url(APP_URL, PHP_URL_HOST);
+            if ($host && $appHost && strcasecmp($host, $appHost) === 0 && stripos($path, '/uploads/') === 0) {
+                return rtrim(UPLOADS_BASE_URL, '/') . $path;
+            }
+            return $value;
+        }
+        if (stripos($value, '/uploads/') === 0) {
+            return rtrim(UPLOADS_BASE_URL, '/') . $value;
+        }
+        if (stripos($value, 'uploads/') === 0) {
+            return rtrim(UPLOADS_BASE_URL, '/') . '/' . $value;
+        }
+        if (preg_match('#^(userimg|profile|genimg)/#i', $value)) {
+            return rtrim(UPLOADS_BASE_URL, '/') . '/uploads/' . $value;
+        }
+        return $value;
+    }
+}
+
+if (isset($_GET['action']) && $_GET['action'] === 'search_users') {
+    header('Content-Type: application/json; charset=utf-8');
+
+    $query = trim((string)($_GET['q'] ?? ''));
+    $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 8;
+    if ($limit < 1) $limit = 1;
+    if ($limit > 12) $limit = 12;
+
+    $users = [];
+    if ($query !== '') {
+        $q = '%' . strtolower($query) . '%';
+        $stmt = $db->prepare(
+            "SELECT u.id, u.first_name, u.last_name, u.image, u.public_profile_username, u.public_profile_token,
+                    o.school, o.not_student
+             FROM users u
+             LEFT JOIN user_onboarding o ON o.user_id = u.id
+             WHERE u.public_profile_enabled = 1
+               AND (
+                    LOWER(u.first_name) LIKE ?
+                 OR LOWER(u.last_name) LIKE ?
+                 OR LOWER(CONCAT(u.first_name, ' ', u.last_name)) LIKE ?
+                 OR LOWER(COALESCE(u.public_profile_username, '')) LIKE ?
+                 OR LOWER(COALESCE(o.school, '')) LIKE ?
+               )
+             ORDER BY u.reg_date DESC
+             LIMIT ?"
+        );
+        $stmt->bind_param('sssssi', $q, $q, $q, $q, $q, $limit);
+    } else {
+        $stmt = $db->prepare(
+            "SELECT u.id, u.first_name, u.last_name, u.image, u.public_profile_username, u.public_profile_token,
+                    o.school, o.not_student
+             FROM users u
+             LEFT JOIN user_onboarding o ON o.user_id = u.id
+             WHERE u.public_profile_enabled = 1
+             ORDER BY RAND()
+             LIMIT ?"
+        );
+        $stmt->bind_param('i', $limit);
+    }
+
+    $stmt->execute();
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) {
+        $users[] = $row;
+    }
+    $stmt->close();
+
+    $userIds = array_values(array_map(static function ($u) {
+        return (int)$u['id'];
+    }, $users));
+
+    $chatCounts = [];
+    $imageCounts = [];
+    $imageSamples = [];
+
+    if (!empty($userIds)) {
+        $in = implode(',', array_fill(0, count($userIds), '?'));
+        $types = str_repeat('i', count($userIds));
+
+        $stmt = $db->prepare(
+            "SELECT user_id, COUNT(*) AS chat_count
+             FROM conversations
+             WHERE is_published = 1 AND user_id IN ($in)
+             GROUP BY user_id"
+        );
+        $stmt->bind_param($types, ...$userIds);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($row = $res->fetch_assoc()) {
+            $chatCounts[(int)$row['user_id']] = (int)$row['chat_count'];
+        }
+        $stmt->close();
+
+        $stmt = $db->prepare(
+            "SELECT user_id, COUNT(*) AS image_count
+             FROM generated_images
+             WHERE public = 1 AND user_id IN ($in)
+             GROUP BY user_id"
+        );
+        $stmt->bind_param($types, ...$userIds);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($row = $res->fetch_assoc()) {
+            $imageCounts[(int)$row['user_id']] = (int)$row['image_count'];
+        }
+        $stmt->close();
+
+        $stmt = $db->prepare(
+            "SELECT user_id, image_url
+             FROM generated_images
+             WHERE public = 1 AND user_id IN ($in)
+             ORDER BY generated_at DESC"
+        );
+        $stmt->bind_param($types, ...$userIds);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($row = $res->fetch_assoc()) {
+            $uid = (int)$row['user_id'];
+            $imgValue = trim((string)($row['image_url'] ?? ''));
+            if ($imgValue === '') {
+                continue;
+            }
+            if (!isset($imageSamples[$uid])) {
+                $imageSamples[$uid] = [];
+            }
+            if (count($imageSamples[$uid]) < 3) {
+                $imageSamples[$uid][] = $imgValue;
+            }
+        }
+        $stmt->close();
+    }
+
+    $payload = [];
+    foreach ($users as $u) {
+        $name = trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? ''));
+        if ($name === '') {
+            $name = 'ApilageAI User';
+        }
+        $slug = !empty($u['public_profile_username']) ? $u['public_profile_username'] : $u['public_profile_token'];
+        $profileUrl = APP_URL . '/' . $slug;
+        $rawImage = trim((string)($u['image'] ?? ''));
+        $hasImage = $rawImage !== '' && stripos($rawImage, 'array') === false;
+        $profileImage = $hasImage ? user_image_url($rawImage) : '';
+
+        $uid = (int)$u['id'];
+        $images = [];
+        if (!empty($imageSamples[$uid])) {
+            foreach ($imageSamples[$uid] as $img) {
+                $images[] = normalize_public_image_url_profile($img);
+            }
+        }
+
+        $payload[] = [
+            'id' => $uid,
+            'name' => $name,
+            'profile_url' => $profileUrl,
+            'image_url' => $profileImage,
+            'school' => $u['school'] ?? '',
+            'not_student' => (int)($u['not_student'] ?? 0),
+            'chat_count' => $chatCounts[$uid] ?? 0,
+            'image_count' => $imageCounts[$uid] ?? 0,
+            'images' => $images
+        ];
+    }
+
+    echo json_encode(['success' => true, 'users' => $payload]);
+    exit();
+}
+
 $slug = trim($_GET['u'] ?? '');
 if ($slug === '') {
     http_response_code(404);
@@ -87,6 +269,22 @@ while ($row = $chatResult->fetch_assoc()) {
 }
 $chatStmt->close();
 
+$publishedImages = [];
+$imageStmt = $db->prepare(
+    "SELECT id, image_url, prompt, generated_at
+     FROM generated_images
+     WHERE public = 1 AND user_id = ?
+     ORDER BY generated_at DESC
+     LIMIT 9"
+);
+$imageStmt->bind_param('i', $userRow['id']);
+$imageStmt->execute();
+$imageResult = $imageStmt->get_result();
+while ($row = $imageResult->fetch_assoc()) {
+    $publishedImages[] = $row;
+}
+$imageStmt->close();
+
 $exploreUsers = [];
 $exploreStmt = $db->prepare(
     "SELECT id, first_name, last_name, image, public_profile_username, public_profile_token
@@ -163,24 +361,26 @@ $schoolEscaped = htmlspecialchars($schoolText, ENT_QUOTES, 'UTF-8');
 $coverStyleEscaped = htmlspecialchars($coverStyle, ENT_QUOTES, 'UTF-8');
 $shareImage = $imageUrl !== '' ? $imageUrl : (APP_URL . '/assets/images/logo.png');
 $shareImageEscaped = htmlspecialchars($shareImage, ENT_QUOTES, 'UTF-8');
-$initialsSource = preg_replace('/[^\p{L}\p{N}]+/u', ' ', $displayName);
-$initialParts = array_values(array_filter(explode(' ', trim($initialsSource))));
-$initials = 'AI';
 $getSub = function ($str, $length) {
     if (function_exists('mb_substr')) {
         return mb_substr($str, 0, $length, 'UTF-8');
     }
     return substr($str, 0, $length);
 };
-if (!empty($initialParts)) {
-    $first = $initialParts[0];
-    $last = $initialParts[count($initialParts) - 1];
-    if (count($initialParts) >= 2) {
-        $initials = strtoupper($getSub($first, 1) . $getSub($last, 1));
-    } else {
-        $initials = strtoupper($getSub($first, 2));
+$getInitials = function ($fullName) use ($getSub) {
+    $source = preg_replace('/[^\p{L}\p{N}]+/u', ' ', (string)$fullName);
+    $parts = array_values(array_filter(explode(' ', trim($source))));
+    if (empty($parts)) {
+        return 'AI';
     }
-}
+    $first = $parts[0];
+    $last = $parts[count($parts) - 1];
+    if (count($parts) >= 2) {
+        return strtoupper($getSub($first, 1) . $getSub($last, 1));
+    }
+    return strtoupper($getSub($first, 2));
+};
+$initials = $getInitials($displayName);
 $initialsEscaped = htmlspecialchars($initials, ENT_QUOTES, 'UTF-8');
 $shareText = rawurlencode("Check out {$displayName} on ApilageAI");
 $shareUrlEncoded = rawurlencode($profileUrl);
@@ -207,7 +407,7 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
   <link rel="shortcut icon" type="image/png" href="<?php echo APP_URL; ?>/assets/images/icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=STIX+Two+Text:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
   <script>
     (function () {
@@ -223,42 +423,42 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
   <style>
     :root {
       color-scheme: light;
-      --brand-red: #FF3B30;
-      --brand-blue: #38BDF8;
-      --brand-blueLight: #E0F2FE;
-      --brand-dark: #172554;
-      --brand-gray: #F8FAFC;
-      --page-bg: #F8FAFC;
-      --surface: #ffffff;
+      --brand-red: #e53e3e;
+      --brand-blue: #3b82f6;
+      --brand-blueLight: #eff6ff;
+      --brand-dark: #1a202c;
+      --brand-gray: #f9fafb;
+      --page-bg: #ffffff;
+      --surface: #f9fafb;
       --card-bg: #ffffff;
-      --border-color: #172554;
-      --text-primary: #172554;
-      --text-muted: rgba(23, 37, 84, 0.7);
-      --meta-bg: #E0F2FE;
-      --badge-bg: #172554;
+      --border-color: #d1d5db;
+      --text-primary: #1a202c;
+      --text-muted: #4a5568;
+      --meta-bg: #eff6ff;
+      --badge-bg: #e53e3e;
       --badge-text: #ffffff;
-      --pattern-color: rgba(23, 37, 84, 0.08);
-      --shadow-hard: 6px 6px 0px 0px var(--border-color);
-      --shadow-hard-lg: 10px 10px 0px 0px var(--border-color);
+      --pattern-color: rgba(15, 23, 42, 0.05);
+      --shadow-hard: 0 8px 24px rgba(15, 23, 42, 0.08);
+      --shadow-hard-lg: 0 18px 38px rgba(15, 23, 42, 0.12);
     }
     [data-theme="dark"] {
       color-scheme: dark;
-      --page-bg: #0b1120;
-      --surface: #0f172a;
-      --card-bg: #111827;
-      --border-color: #334155;
-      --text-primary: #e2e8f0;
-      --text-muted: rgba(226, 232, 240, 0.7);
-      --meta-bg: #0b1f3a;
-      --badge-bg: #38BDF8;
-      --badge-text: #0b1120;
-      --pattern-color: rgba(148, 163, 184, 0.12);
-      --shadow-hard: 6px 6px 0px 0px #0b1120;
-      --shadow-hard-lg: 10px 10px 0px 0px #0b1120;
+      --page-bg: #1a1a1a;
+      --surface: #1a1a1a;
+      --card-bg: #1e1e1e;
+      --border-color: #444444;
+      --text-primary: #f7fafc;
+      --text-muted: #a0aec0;
+      --meta-bg: #1a2a3a;
+      --badge-bg: #e53e3e;
+      --badge-text: #ffffff;
+      --pattern-color: rgba(255, 255, 255, 0.06);
+      --shadow-hard: 0 10px 26px rgba(0, 0, 0, 0.35);
+      --shadow-hard-lg: 0 18px 40px rgba(0, 0, 0, 0.45);
     }
     body {
       margin: 0;
-      font-family: "Plus Jakarta Sans", "Segoe UI", Arial, sans-serif;
+      font-family: "Inter", "Segoe UI", Arial, sans-serif;
       background: var(--page-bg);
       color: var(--text-primary);
       min-height: 100vh;
@@ -301,11 +501,17 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
     .sidebar-header {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 12px;
-      font-family: "Outfit", sans-serif;
+      font-family: "Inter", sans-serif;
       font-size: 20px;
       font-weight: 800;
       color: var(--text-primary);
+    }
+    .sidebar-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
     }
     .sidebar-header img {
       width: 36px;
@@ -313,6 +519,62 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       border-radius: 12px;
       border: 2px solid var(--border-color);
       background: #ffffff;
+    }
+    .sidebar-toggle,
+    .sidebar-show {
+      border: 2px solid var(--border-color);
+      background: var(--card-bg);
+      color: var(--text-primary);
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: var(--shadow-hard);
+      transition: transform 0.15s ease;
+    }
+    [data-theme="dark"] .sidebar-toggle,
+    [data-theme="dark"] .sidebar-show {
+      box-shadow: none;
+    }
+    .sidebar-toggle:hover,
+    .sidebar-show:hover {
+      transform: translateY(-2px);
+    }
+    .sidebar-show {
+      position: fixed;
+      top: 18px;
+      left: 18px;
+      z-index: 60;
+      display: none;
+    }
+    .sidebar-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .sidebar-actions a {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 2px solid var(--border-color);
+      background: var(--card-bg);
+      text-decoration: none;
+      color: var(--text-primary);
+      font-size: 12px;
+      font-weight: 600;
+      box-shadow: var(--shadow-hard);
+      transition: transform 0.15s ease;
+    }
+    [data-theme="dark"] .sidebar-actions a {
+      box-shadow: none;
+    }
+    .sidebar-actions a:hover {
+      transform: translateY(-2px);
     }
     .sidebar-section {
       display: flex;
@@ -330,22 +592,28 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       display: flex;
       align-items: center;
       gap: 10px;
+      width: 100%;
       border: 2px solid var(--border-color);
       border-radius: 999px;
-      padding: 8px 12px;
+      padding: 10px 14px;
       background: var(--card-bg);
       box-shadow: var(--shadow-hard);
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      color: var(--text-primary);
+      transition: transform 0.15s ease;
     }
     [data-theme="dark"] .sidebar-search {
       box-shadow: none;
     }
-    .sidebar-search input {
-      border: none;
-      background: transparent;
-      width: 100%;
+    .sidebar-search:hover {
+      transform: translateY(-2px);
+    }
+    .sidebar-search span {
       font-size: 13px;
-      color: var(--text-primary);
-      outline: none;
+      font-weight: 600;
+      color: var(--text-muted);
     }
     .user-list {
       display: flex;
@@ -378,6 +646,20 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       object-fit: cover;
       border: 2px solid var(--border-color);
       background: #ffffff;
+    }
+    .user-avatar-fallback {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2px solid var(--border-color);
+      background: var(--meta-bg);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: 0.04em;
     }
     .user-row .user-name {
       font-size: 14px;
@@ -426,7 +708,7 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       pointer-events: none;
     }
     .cover-title {
-      font-family: "Outfit", sans-serif;
+      font-family: "STIX Two Text", serif;
       font-size: 32px;
       letter-spacing: 0.4em;
       text-transform: uppercase;
@@ -472,7 +754,7 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: "Outfit", sans-serif;
+      font-family: "STIX Two Text", serif;
       font-weight: 800;
       font-size: 40px;
       color: var(--text-primary);
@@ -489,7 +771,7 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       color: var(--text-primary);
     }
     .profile-name {
-      font-family: "Outfit", sans-serif;
+      font-family: "STIX Two Text", serif;
       font-size: 30px;
       font-weight: 800;
       margin: 18px 0 6px;
@@ -558,7 +840,7 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       padding: 8px 14px;
       font-size: 13px;
       font-weight: 700;
-      background: var(--surface);
+      background: var(--card-bg);
       color: var(--text-primary);
       text-decoration: none;
       box-shadow: var(--shadow-hard);
@@ -576,7 +858,7 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       border-color: var(--border-color);
     }
     .section-title {
-      font-family: "Outfit", sans-serif;
+      font-family: "STIX Two Text", serif;
       font-size: 22px;
       font-weight: 800;
       margin: 0 0 16px;
@@ -647,6 +929,38 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
     .chat-card:hover {
       transform: translateY(-3px);
     }
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 200px));
+      gap: 16px;
+      justify-content: center;
+    }
+    .image-card {
+      border: 2px solid var(--border-color);
+      border-radius: 18px;
+      background: var(--card-bg);
+      box-shadow: var(--shadow-hard);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    [data-theme="dark"] .image-card {
+      box-shadow: none;
+    }
+    .image-card img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      display: block;
+      background: var(--surface);
+    }
+    .image-caption {
+      padding: 10px 12px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
     .chat-title {
       font-weight: 700;
       font-size: 15px;
@@ -682,6 +996,266 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       color: var(--text-muted);
       background: var(--surface);
     }
+    .mobile-search {
+      display: none;
+      justify-content: center;
+      margin: 18px 0 8px;
+    }
+    .user-search-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 999;
+    }
+    .user-search-backdrop[hidden] {
+      display: none;
+    }
+    [data-theme="dark"] .user-search-backdrop {
+      background: rgba(0, 0, 0, 0.6);
+    }
+    .user-search-modal {
+      width: min(960px, 96vw);
+      max-height: 90vh;
+      overflow: auto;
+      background: var(--card-bg);
+      border: 2px solid var(--border-color);
+      border-radius: 22px;
+      box-shadow: var(--shadow-hard-lg);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .user-search-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .user-search-header h2 {
+      margin: 0;
+      font-family: "STIX Two Text", serif;
+      font-size: 22px;
+      font-weight: 700;
+    }
+    .user-search-header p {
+      margin: 4px 0 0;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .user-search-close {
+      border: 2px solid var(--border-color);
+      background: var(--card-bg);
+      color: var(--text-primary);
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: var(--shadow-hard);
+    }
+    [data-theme="dark"] .user-search-close {
+      box-shadow: none;
+    }
+    .user-search-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 2px solid var(--border-color);
+      border-radius: 999px;
+      padding: 10px 14px;
+      background: var(--card-bg);
+      box-shadow: var(--shadow-hard);
+    }
+    [data-theme="dark"] .user-search-input-wrap {
+      box-shadow: none;
+    }
+    .user-search-input-wrap i {
+      color: var(--text-muted);
+    }
+    .user-search-input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-size: 14px;
+      color: var(--text-primary);
+      outline: none;
+      font-family: inherit;
+    }
+    .user-search-clear {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .user-search-results {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .user-search-card {
+      border: 2px solid var(--border-color);
+      border-radius: 18px;
+      padding: 16px;
+      background: var(--card-bg);
+      text-decoration: none;
+      color: var(--text-primary);
+      box-shadow: var(--shadow-hard);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: transform 0.15s ease;
+    }
+    [data-theme="dark"] .user-search-card {
+      box-shadow: none;
+    }
+    .user-search-card:hover {
+      transform: translateY(-2px);
+    }
+    .user-search-main {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .user-search-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: 2px solid var(--border-color);
+      background: var(--meta-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: var(--text-primary);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .user-search-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .user-search-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .user-search-name {
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .user-search-meta {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .user-search-stats {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .user-search-images {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .user-search-images img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: 12px;
+      border: 2px solid var(--border-color);
+      background: var(--surface);
+    }
+    .user-search-images-empty {
+      grid-column: 1 / -1;
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 10px 0;
+    }
+    body.modal-open {
+      overflow: hidden;
+    }
+    .mobile-dock {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      background: var(--card-bg);
+      border: 2px solid var(--border-color);
+      border-radius: 999px;
+      padding: 10px 14px;
+      display: none;
+      align-items: center;
+      gap: 12px;
+      box-shadow: var(--shadow-hard-lg);
+      z-index: 50;
+    }
+    [data-theme="dark"] .mobile-dock {
+      box-shadow: none;
+    }
+    .dock-item {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      border: none;
+      background: transparent;
+      color: var(--text-primary);
+      text-decoration: none;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      min-width: 58px;
+    }
+    .dock-item i {
+      font-size: 16px;
+    }
+    @media (max-width: 900px) {
+      .page-layout {
+        grid-template-columns: 1fr;
+      }
+      body {
+        padding-bottom: 96px;
+      }
+      .sidebar {
+        display: none;
+      }
+      .content-inner {
+        padding: 0 20px 36px;
+      }
+      .cover {
+        height: 230px;
+      }
+      .mobile-search {
+        display: none;
+      }
+      .mobile-dock {
+        display: flex;
+      }
+      .sidebar-show {
+        display: none !important;
+      }
+    }
+    body.sidebar-hidden .page-layout {
+      grid-template-columns: 1fr;
+    }
+    body.sidebar-hidden .sidebar {
+      display: none;
+    }
+    body.sidebar-hidden .sidebar-show {
+      display: inline-flex;
+    }
     @media (max-width: 640px) {
       .page-layout {
         grid-template-columns: 1fr;
@@ -714,6 +1288,15 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       .profile-name {
         font-size: 24px;
       }
+      .user-search-backdrop {
+        padding: 0;
+      }
+      .user-search-modal {
+        width: 100%;
+        height: 100%;
+        max-height: none;
+        border-radius: 0;
+      }
     }
   </style>
 </head>
@@ -721,17 +1304,32 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
   <div class="page-layout">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <img src="<?php echo APP_URL; ?>/assets/images/icon.png" alt="Apilageai logo">
-        <span>Apilageai</span>
+        <div class="sidebar-brand">
+          <img src="<?php echo APP_URL; ?>/assets/images/icon.png" alt="Apilageai logo">
+          <span>Apilageai</span>
+        </div>
+        <button class="sidebar-toggle" type="button" id="sidebarToggle" aria-label="Hide sidebar" aria-pressed="false">
+          <i class="fa-solid fa-angles-left"></i>
+        </button>
+      </div>
+      <div class="sidebar-actions">
+        <a href="<?php echo APP_URL; ?>/app" aria-label="Open chat app">
+          <i class="fa-solid fa-comments"></i>
+          <span>Chat</span>
+        </a>
+        <a href="<?php echo APP_URL; ?>/images" aria-label="Open image gallery">
+          <i class="fa-solid fa-image"></i>
+          <span>Images</span>
+        </a>
       </div>
 
       <div class="sidebar-section">
         <div class="sidebar-title">Explore Users</div>
-        <div class="sidebar-search" role="search">
+        <button class="sidebar-search" type="button" id="openUserSearch" data-open-user-search aria-haspopup="dialog" aria-controls="userSearchModal">
           <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="search" id="exploreSearch" placeholder="Search users" aria-describedby="exploreStatus">
-        </div>
-        <div id="exploreStatus" class="search-status" role="status" aria-live="polite"></div>
+          <span>Search users</span>
+        </button>
+        <div id="exploreStatus" class="search-status" role="status" aria-live="polite">Search all public profiles.</div>
         <div class="user-list" id="exploreList">
           <?php if (!empty($exploreUsers)): ?>
             <?php foreach ($exploreUsers as $row): ?>
@@ -745,11 +1343,18 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
                 $slugValue = !empty($row['public_profile_username']) ? $row['public_profile_username'] : $row['public_profile_token'];
                 $profileLink = APP_URL . '/' . $slugValue;
                 $profileLinkEscaped = htmlspecialchars($profileLink, ENT_QUOTES, 'UTF-8');
-                $avatarUrl = user_image_url($row['image'] ?? null);
+                $rawAvatar = trim((string)($row['image'] ?? ''));
+                $hasAvatar = $rawAvatar !== '' && stripos($rawAvatar, 'array') === false;
+                $avatarUrl = $hasAvatar ? user_image_url($rawAvatar) : '';
                 $avatarEscaped = htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8');
+                $avatarInitials = htmlspecialchars($getInitials($name), ENT_QUOTES, 'UTF-8');
               ?>
               <a class="user-row" href="<?php echo $profileLinkEscaped; ?>" data-user-name="<?php echo $nameData; ?>">
-                <img src="<?php echo $avatarEscaped; ?>" alt="<?php echo $nameEscaped; ?>">
+                <?php if ($avatarEscaped !== ''): ?>
+                  <img src="<?php echo $avatarEscaped; ?>" alt="<?php echo $nameEscaped; ?>">
+                <?php else: ?>
+                  <div class="user-avatar-fallback" aria-hidden="true"><?php echo $avatarInitials; ?></div>
+                <?php endif; ?>
                 <div>
                   <div class="user-name"><?php echo $nameEscaped; ?></div>
                   <div class="user-sub">View profile</div>
@@ -778,11 +1383,18 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
                 $slugValue = !empty($row['public_profile_username']) ? $row['public_profile_username'] : $row['public_profile_token'];
                 $profileLink = APP_URL . '/' . $slugValue;
                 $profileLinkEscaped = htmlspecialchars($profileLink, ENT_QUOTES, 'UTF-8');
-                $avatarUrl = user_image_url($row['image'] ?? null);
+                $rawAvatar = trim((string)($row['image'] ?? ''));
+                $hasAvatar = $rawAvatar !== '' && stripos($rawAvatar, 'array') === false;
+                $avatarUrl = $hasAvatar ? user_image_url($rawAvatar) : '';
                 $avatarEscaped = htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8');
+                $avatarInitials = htmlspecialchars($getInitials($name), ENT_QUOTES, 'UTF-8');
               ?>
               <a class="user-row" href="<?php echo $profileLinkEscaped; ?>">
-                <img src="<?php echo $avatarEscaped; ?>" alt="<?php echo $nameEscaped; ?>">
+                <?php if ($avatarEscaped !== ''): ?>
+                  <img src="<?php echo $avatarEscaped; ?>" alt="<?php echo $nameEscaped; ?>">
+                <?php else: ?>
+                  <div class="user-avatar-fallback" aria-hidden="true"><?php echo $avatarInitials; ?></div>
+                <?php endif; ?>
                 <div>
                   <div class="user-name"><?php echo $nameEscaped; ?></div>
                   <div class="user-sub"><?php echo $schoolRowEscaped; ?></div>
@@ -813,6 +1425,11 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
         <h1 class="profile-name"><?php echo $displayNameEscaped; ?></h1>
         <div class="profile-link">
           <a href="<?php echo $profileUrlEscaped; ?>"><?php echo $profileUrlEscaped; ?></a>
+        </div>
+        <div class="mobile-search">
+          <button class="share-btn" type="button" data-open-user-search aria-haspopup="dialog" aria-controls="userSearchModal">
+            <i class="fa-solid fa-magnifying-glass"></i> Search users
+          </button>
         </div>
 
         <div class="meta-grid">
@@ -892,10 +1509,86 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
             <div class="empty-state">No published chats yet.</div>
           <?php endif; ?>
         </section>
+
+        <section style="margin-top: 28px;">
+          <h2 class="section-title">Published Images</h2>
+          <?php if (!empty($publishedImages)): ?>
+            <div class="image-grid">
+              <?php foreach ($publishedImages as $img): ?>
+                <?php
+                  $imgUrlRaw = trim((string)($img['image_url'] ?? ''));
+                  $imgUrl = normalize_public_image_url_profile($imgUrlRaw);
+                  $imgUrlEscaped = htmlspecialchars($imgUrl ?? '', ENT_QUOTES, 'UTF-8');
+                  $prompt = trim((string)($img['prompt'] ?? ''));
+                  if ($prompt === '') {
+                      $prompt = 'Published image';
+                  }
+                  if (function_exists('mb_strlen')) {
+                      if (mb_strlen($prompt, 'UTF-8') > 80) {
+                          $prompt = mb_substr($prompt, 0, 77, 'UTF-8') . '...';
+                      }
+                  } elseif (strlen($prompt) > 80) {
+                      $prompt = substr($prompt, 0, 77) . '...';
+                  }
+                  $promptEscaped = htmlspecialchars($prompt, ENT_QUOTES, 'UTF-8');
+                ?>
+                <?php if ($imgUrlEscaped !== ''): ?>
+                  <div class="image-card">
+                    <img src="<?php echo $imgUrlEscaped; ?>" alt="<?php echo $promptEscaped; ?>">
+                    <div class="image-caption"><?php echo $promptEscaped; ?></div>
+                  </div>
+                <?php endif; ?>
+              <?php endforeach; ?>
+            </div>
+          <?php else: ?>
+            <div class="empty-state">No published images yet.</div>
+          <?php endif; ?>
+        </section>
       </div>
         </div>
       </div>
     </main>
+  </div>
+
+  <button class="sidebar-show" type="button" id="sidebarShow" aria-label="Show sidebar">
+    <i class="fa-solid fa-angles-right"></i>
+  </button>
+
+  <nav class="mobile-dock" aria-label="Quick actions">
+    <a class="dock-item" href="<?php echo APP_URL; ?>/app" aria-label="Open chat app">
+      <i class="fa-solid fa-comments"></i>
+      <span>Chat</span>
+    </a>
+    <a class="dock-item" href="<?php echo APP_URL; ?>/images" aria-label="Open image gallery">
+      <i class="fa-solid fa-image"></i>
+      <span>Images</span>
+    </a>
+    <button class="dock-item" type="button" data-open-user-search aria-haspopup="dialog" aria-controls="userSearchModal">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <span>Search</span>
+    </button>
+  </nav>
+
+  <div class="user-search-backdrop" id="userSearchModal" hidden aria-hidden="true">
+    <div class="user-search-modal" role="dialog" aria-modal="true" aria-labelledby="userSearchTitle" aria-describedby="userSearchDesc">
+      <div class="user-search-header">
+        <div>
+          <h2 id="userSearchTitle">Search users</h2>
+          <p id="userSearchDesc">Find public profiles and preview their published chats and images.</p>
+        </div>
+        <button class="user-search-close" type="button" id="userSearchClose" aria-label="Close search">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="user-search-input-wrap">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input class="user-search-input" id="userSearchInput" type="search" placeholder="Search by name, username, or school">
+        <button class="user-search-clear" type="button" id="userSearchClear">Clear</button>
+      </div>
+      <div id="userSearchStatus" class="search-status" role="status" aria-live="polite"></div>
+      <div id="userSearchResults" class="user-search-results" role="list"></div>
+      <div id="userSearchEmpty" class="empty-state" hidden>No public profiles match your search.</div>
+    </div>
   </div>
 
   <script>
@@ -955,31 +1648,248 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       });
     }
 
-    const exploreSearch = document.getElementById('exploreSearch');
-    const exploreRows = Array.from(document.querySelectorAll('#exploreList .user-row'));
-    const exploreStatus = document.getElementById('exploreStatus');
+    const searchEndpoint = "<?php echo APP_URL; ?>/public_profile.php?action=search_users";
+    const searchModal = document.getElementById('userSearchModal');
+    const searchInput = document.getElementById('userSearchInput');
+    const searchResults = document.getElementById('userSearchResults');
+    const searchStatus = document.getElementById('userSearchStatus');
+    const searchEmpty = document.getElementById('userSearchEmpty');
+    const searchClose = document.getElementById('userSearchClose');
+    const searchClear = document.getElementById('userSearchClear');
+    const openSearchButtons = Array.from(document.querySelectorAll('[data-open-user-search]'));
+    let searchTimer = null;
+    let activeSearchId = 0;
+    let lastFocused = null;
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebarShow = document.getElementById('sidebarShow');
 
-    function updateExploreStatus(visibleCount, query) {
-      if (!exploreStatus) return;
-      if (!query) {
-        exploreStatus.textContent = `Showing ${visibleCount} profiles.`;
-        return;
-      }
-      exploreStatus.textContent = `Found ${visibleCount} result${visibleCount === 1 ? '' : 's'} for "${query}".`;
+    if (searchModal) {
+      searchModal.hidden = true;
+      searchModal.setAttribute('aria-hidden', 'true');
+    }
+    if (sidebarShow) {
+      sidebarShow.hidden = false;
     }
 
-    if (exploreSearch && exploreRows.length) {
-      updateExploreStatus(exploreRows.length, '');
-      exploreSearch.addEventListener('input', (event) => {
-        const query = event.target.value.trim().toLowerCase();
-        let visibleCount = 0;
-        exploreRows.forEach((row) => {
-          const name = row.getAttribute('data-user-name') || '';
-          const match = query === '' || name.includes(query);
-          row.style.display = match ? '' : 'none';
-          if (match) visibleCount += 1;
+    function setSidebarHidden(hidden) {
+      document.body.classList.toggle('sidebar-hidden', hidden);
+      if (sidebarToggle) {
+        sidebarToggle.setAttribute('aria-pressed', hidden ? 'true' : 'false');
+        sidebarToggle.setAttribute('aria-label', hidden ? 'Show sidebar' : 'Hide sidebar');
+      }
+    }
+
+    function initialsFromName(name) {
+      if (!name) return 'AI';
+      const parts = name.trim().split(/\s+/).filter(Boolean);
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      }
+      if (parts.length === 1) {
+        return parts[0].slice(0, 2).toUpperCase();
+      }
+      return 'AI';
+    }
+
+    function setSearchStatus(message) {
+      if (!searchStatus) return;
+      searchStatus.textContent = message;
+    }
+
+    function renderSearchResults(users, query) {
+      if (!searchResults) return;
+      searchResults.innerHTML = '';
+      if (!Array.isArray(users) || users.length === 0) {
+        if (searchEmpty) {
+          searchEmpty.hidden = false;
+          searchEmpty.textContent = query ? 'No public profiles match your search.' : 'No public profiles yet.';
+        }
+        setSearchStatus(query ? `No results for "${query}".` : 'No public profiles yet.');
+        return;
+      }
+
+      if (searchEmpty) {
+        searchEmpty.hidden = true;
+      }
+      setSearchStatus(query ? `Found ${users.length} result${users.length === 1 ? '' : 's'} for "${query}".` : `Showing ${users.length} suggested users.`);
+
+      users.forEach((user) => {
+        const card = document.createElement('a');
+        card.className = 'user-search-card';
+        card.href = user.profile_url || '#';
+        card.setAttribute('role', 'listitem');
+
+        const main = document.createElement('div');
+        main.className = 'user-search-main';
+
+        const avatar = document.createElement('div');
+        avatar.className = 'user-search-avatar';
+        if (user.image_url) {
+          const img = document.createElement('img');
+          img.src = user.image_url;
+          img.alt = `${user.name || 'User'} profile picture`;
+          avatar.appendChild(img);
+        } else {
+          avatar.textContent = initialsFromName(user.name || '');
+        }
+
+        const info = document.createElement('div');
+        info.className = 'user-search-info';
+
+        const name = document.createElement('div');
+        name.className = 'user-search-name';
+        name.textContent = user.name || 'ApilageAI User';
+
+        const meta = document.createElement('div');
+        meta.className = 'user-search-meta';
+        if (Number(user.not_student) === 1) {
+          meta.textContent = 'Not a student';
+        } else if (user.school) {
+          meta.textContent = user.school;
+        } else {
+          meta.textContent = 'School not set';
+        }
+
+        const stats = document.createElement('div');
+        stats.className = 'user-search-stats';
+        const chatCount = Number(user.chat_count) || 0;
+        const imageCount = Number(user.image_count) || 0;
+        stats.textContent = `${chatCount} chat${chatCount === 1 ? '' : 's'} · ${imageCount} image${imageCount === 1 ? '' : 's'}`;
+
+        info.append(name, meta, stats);
+        main.append(avatar, info);
+        card.appendChild(main);
+
+        const imagesWrap = document.createElement('div');
+        imagesWrap.className = 'user-search-images';
+        const images = Array.isArray(user.images) ? user.images.slice(0, 3) : [];
+        if (images.length) {
+          images.forEach((imgUrl) => {
+            const img = document.createElement('img');
+            img.src = imgUrl;
+            img.alt = 'Published image';
+            imagesWrap.appendChild(img);
+          });
+        } else {
+          const empty = document.createElement('div');
+          empty.className = 'user-search-images-empty';
+          empty.textContent = 'No public images yet.';
+          imagesWrap.appendChild(empty);
+        }
+
+        card.appendChild(imagesWrap);
+        searchResults.appendChild(card);
+      });
+    }
+
+    async function runUserSearch(query) {
+      if (!searchResults) return;
+      const requestId = ++activeSearchId;
+      if (searchEmpty) {
+        searchEmpty.hidden = true;
+      }
+      setSearchStatus(query ? `Searching for "${query}"...` : 'Loading suggestions...');
+
+      try {
+        const url = `${searchEndpoint}&q=${encodeURIComponent(query)}&limit=12`;
+        const response = await fetch(url, { credentials: 'same-origin' });
+        const payload = await response.json();
+        if (requestId !== activeSearchId) return;
+        const users = Array.isArray(payload.users) ? payload.users : [];
+        renderSearchResults(users, query);
+      } catch (error) {
+        if (requestId !== activeSearchId) return;
+        if (searchResults) {
+          searchResults.innerHTML = '';
+        }
+        if (searchEmpty) {
+          searchEmpty.hidden = false;
+          searchEmpty.textContent = 'Unable to load users right now.';
+        }
+        setSearchStatus('Search failed. Please try again.');
+      }
+    }
+
+    function openSearchModal() {
+      if (!searchModal) return;
+      lastFocused = document.activeElement;
+      searchModal.hidden = false;
+      searchModal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('modal-open');
+      setTimeout(() => {
+        if (searchInput) {
+          searchInput.focus();
+          runUserSearch(searchInput.value.trim());
+        } else {
+          runUserSearch('');
+        }
+      }, 0);
+    }
+
+    function closeSearchModal() {
+      if (!searchModal) return;
+      searchModal.hidden = true;
+      searchModal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('modal-open');
+      if (lastFocused && typeof lastFocused.focus === 'function') {
+        lastFocused.focus();
+      }
+    }
+
+    if (openSearchButtons.length) {
+      openSearchButtons.forEach((btn) => {
+        btn.addEventListener('click', (event) => {
+          event.preventDefault();
+          openSearchModal();
         });
-        updateExploreStatus(visibleCount, query);
+      });
+    }
+
+    if (sidebarToggle) {
+      sidebarToggle.addEventListener('click', () => {
+        setSidebarHidden(!document.body.classList.contains('sidebar-hidden'));
+      });
+    }
+    if (sidebarShow) {
+      sidebarShow.addEventListener('click', () => {
+        setSidebarHidden(false);
+      });
+    }
+
+    if (searchClose) {
+      searchClose.addEventListener('click', closeSearchModal);
+    }
+
+    if (searchModal) {
+      searchModal.addEventListener('click', (event) => {
+        if (event.target === searchModal) {
+          closeSearchModal();
+        }
+      });
+    }
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && searchModal && !searchModal.hidden) {
+        closeSearchModal();
+      }
+    });
+
+    if (searchInput) {
+      searchInput.addEventListener('input', (event) => {
+        const query = event.target.value.trim();
+        if (searchTimer) {
+          window.clearTimeout(searchTimer);
+        }
+        searchTimer = window.setTimeout(() => runUserSearch(query), 250);
+      });
+    }
+
+    if (searchClear) {
+      searchClear.addEventListener('click', () => {
+        if (!searchInput) return;
+        searchInput.value = '';
+        searchInput.focus();
+        runUserSearch('');
       });
     }
   </script>
