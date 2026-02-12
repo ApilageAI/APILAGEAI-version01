@@ -71,7 +71,7 @@ $activeUsersMap = [];
 $activeSessions = [];
 $bugReports = [];
 $transactions = [];
-$freeUserLimits = [];
+$freeUserDailyUsage = [];
 $trialAbuseTracking = [];
 $userGrowthLabels = [];
 $userGrowthData = [];
@@ -393,17 +393,18 @@ if (table_exists($db, "users")) {
     ];
 }
 
-if (table_exists($db, "free_user_limits")) {
+if (table_exists($db, "free_user_daily_usage")) {
     $result = $db->query("
-        SELECT f.id, f.user_id, f.image_uses, f.last_reset,
+        SELECT f.user_id, f.date, f.window_id,
+               f.messages_used, f.image_uploads_used, f.file_uploads_used, f.image_generations_used,
                u.first_name, u.last_name, u.email
-        FROM free_user_limits f
+        FROM free_user_daily_usage f
         LEFT JOIN users u ON u.id = f.user_id
-        ORDER BY f.last_reset DESC
+        ORDER BY f.date DESC, f.user_id ASC, f.window_id DESC
         LIMIT 100
     ");
     if ($result) {
-        $freeUserLimits = $result->fetch_all(MYSQLI_ASSOC);
+        $freeUserDailyUsage = $result->fetch_all(MYSQLI_ASSOC);
     }
 }
 
@@ -447,7 +448,7 @@ $smarty->assign("admin_user_page_base", $adminUserPageBase);
 $smarty->assign("admin_user_search", $userSearch);
 $smarty->assign("admin_user_sort", $userSort);
 $smarty->assign("admin_txn_search", $txnSearch);
-$smarty->assign("admin_free_user_limits", $freeUserLimits);
+$smarty->assign("admin_free_user_daily_usage", $freeUserDailyUsage);
 $smarty->assign("admin_trial_abuse_tracking", $trialAbuseTracking);
 $smarty->assign("admin_stats", $stats);
 

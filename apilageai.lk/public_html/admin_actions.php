@@ -369,36 +369,53 @@ switch ($action) {
         break;
     }
 
+    case "update_free_user_daily_usage":
     case "update_free_user_limit": {
-        $id = (int) ($_POST["id"] ?? 0);
         $userId = (int) ($_POST["user_id"] ?? 0);
-        $imageUses = (int) ($_POST["image_uses"] ?? 0);
-        $lastResetRaw = trim((string) ($_POST["last_reset"] ?? ""));
-        if ($id <= 0) {
-            respond(false, "Invalid row");
-        }
+        $dateRaw = trim((string) ($_POST["date"] ?? ""));
+        $windowId = (int) ($_POST["window_id"] ?? 0);
+        $messagesUsed = (int) ($_POST["messages_used"] ?? 0);
+        $imageUploadsUsed = (int) ($_POST["image_uploads_used"] ?? 0);
+        $fileUploadsUsed = (int) ($_POST["file_uploads_used"] ?? 0);
+        $imageGenerationsUsed = (int) ($_POST["image_generations_used"] ?? 0);
+
         if ($userId <= 0) {
             respond(false, "Invalid user");
         }
-        if (!table_exists($db, "free_user_limits")) {
-            respond(false, "Free user limits table not found", [], 500);
+        if ($dateRaw === "") {
+            respond(false, "Invalid date");
         }
-        $lastReset = null;
-        if ($lastResetRaw !== "") {
-            $ts = strtotime($lastResetRaw);
-            if ($ts === false) {
-                respond(false, "Invalid last_reset value");
-            }
-            $lastReset = date("Y-m-d H:i:s", $ts);
-        } else {
-            $lastReset = date("Y-m-d H:i:s");
+        if ($windowId < 0) {
+            respond(false, "Invalid window");
+        }
+        if (!table_exists($db, "free_user_daily_usage")) {
+            respond(false, "Free user daily usage table not found", [], 500);
         }
 
-        $stmt = $db->prepare("UPDATE free_user_limits SET user_id = ?, image_uses = ?, last_reset = ? WHERE id = ?");
-        $stmt->bind_param("iisi", $userId, $imageUses, $lastReset, $id);
+        $ts = strtotime($dateRaw);
+        if ($ts === false) {
+            respond(false, "Invalid date");
+        }
+        $date = date("Y-m-d", $ts);
+
+        $stmt = $db->prepare("
+            UPDATE free_user_daily_usage
+            SET messages_used = ?, image_uploads_used = ?, file_uploads_used = ?, image_generations_used = ?
+            WHERE user_id = ? AND date = ? AND window_id = ?
+        ");
+        $stmt->bind_param(
+            "iiiiisi",
+            $messagesUsed,
+            $imageUploadsUsed,
+            $fileUploadsUsed,
+            $imageGenerationsUsed,
+            $userId,
+            $date,
+            $windowId
+        );
         $stmt->execute();
         $stmt->close();
-        respond(true, "Free user limit updated");
+        respond(true, "Free user usage updated");
         break;
     }
 

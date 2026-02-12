@@ -424,44 +424,52 @@
 
     <section class="mt-10 rounded-2xl border-2 border-brand-dark bg-white p-6 shadow-hard">
       <h2 class="text-xl font-bold text-brand-dark">Free User Limits</h2>
-      <p class="text-sm text-brand-dark/70 mt-1">Edit per-user image limits and reset timestamps.</p>
+      <p class="text-sm text-brand-dark/70 mt-1">Daily usage counters per free user.</p>
       <div class="mt-4 overflow-x-auto">
         <table class="min-w-full text-sm">
           <thead class="text-left text-brand-dark/70">
             <tr>
-              <th class="py-2">ID</th>
               <th class="py-2">User ID</th>
               <th class="py-2">User</th>
-              <th class="py-2">Image Uses</th>
-              <th class="py-2">Last Reset</th>
+              <th class="py-2">Date</th>
+              <th class="py-2">Messages</th>
+              <th class="py-2">Image Uploads</th>
+              <th class="py-2">File Uploads</th>
+              <th class="py-2">Image Generations</th>
+              <th class="py-2">Window</th>
               <th class="py-2">Action</th>
             </tr>
           </thead>
           <tbody>
-            {foreach from=$admin_free_user_limits item=limit}
-              <tr class="border-t border-brand-dark/10" data-free-limit-row="{$limit.id}">
-                <td class="py-2">{$limit.id}</td>
+            {foreach from=$admin_free_user_daily_usage item=usage}
+              <tr class="border-t border-brand-dark/10" data-user-id="{$usage.user_id|escape}" data-date="{$usage.date|escape}" data-window-id="{$usage.window_id|escape}">
+                <td class="py-2">{$usage.user_id|escape}</td>
                 <td class="py-2">
-                  <input data-field="user_id" value="{$limit.user_id|escape}" class="w-24 rounded-lg border-2 border-brand-dark px-2 py-1 text-xs">
+                  <div class="font-semibold text-brand-dark">{$usage.first_name|escape} {$usage.last_name|escape}</div>
+                  <div class="text-xs text-brand-dark/60">{$usage.email|escape}</div>
+                </td>
+                <td class="py-2">{$usage.date|escape}</td>
+                <td class="py-2">
+                  <input data-field="messages_used" value="{$usage.messages_used|escape}" class="w-24 rounded-lg border-2 border-brand-dark px-2 py-1 text-xs">
                 </td>
                 <td class="py-2">
-                  <div class="font-semibold text-brand-dark">{$limit.first_name|escape} {$limit.last_name|escape}</div>
-                  <div class="text-xs text-brand-dark/60">{$limit.email|escape}</div>
+                  <input data-field="image_uploads_used" value="{$usage.image_uploads_used|escape}" class="w-28 rounded-lg border-2 border-brand-dark px-2 py-1 text-xs">
                 </td>
                 <td class="py-2">
-                  <input data-field="image_uses" value="{$limit.image_uses|escape}" class="w-24 rounded-lg border-2 border-brand-dark px-2 py-1 text-xs">
+                  <input data-field="file_uploads_used" value="{$usage.file_uploads_used|escape}" class="w-24 rounded-lg border-2 border-brand-dark px-2 py-1 text-xs">
                 </td>
                 <td class="py-2">
-                  <input data-field="last_reset" value="{$limit.last_reset|escape}" placeholder="YYYY-MM-DD HH:MM:SS" class="w-48 rounded-lg border-2 border-brand-dark px-2 py-1 text-xs">
+                  <input data-field="image_generations_used" value="{$usage.image_generations_used|escape}" class="w-28 rounded-lg border-2 border-brand-dark px-2 py-1 text-xs">
                 </td>
+                <td class="py-2">{$usage.window_id|escape}</td>
                 <td class="py-2">
-                  <button class="save-free-limit-btn rounded-lg border-2 border-brand-dark bg-brand-blueLight px-3 py-1 text-xs font-bold" data-id="{$limit.id}">Save</button>
+                  <button class="save-free-usage-btn rounded-lg border-2 border-brand-dark bg-brand-blueLight px-3 py-1 text-xs font-bold">Save</button>
                 </td>
               </tr>
             {/foreach}
-            {if $admin_free_user_limits|@count == 0}
+            {if $admin_free_user_daily_usage|@count == 0}
               <tr>
-                <td colspan="6" class="py-4 text-center text-sm text-brand-dark/60">No free user limits found.</td>
+                <td colspan="9" class="py-4 text-center text-sm text-brand-dark/60">No free user usage records found.</td>
               </tr>
             {/if}
           </tbody>
@@ -769,24 +777,30 @@
     });
   });
 
-  // Free user limits update
-  document.querySelectorAll(".save-free-limit-btn").forEach((button) => {
+  // Free user daily usage update
+  document.querySelectorAll(".save-free-usage-btn").forEach((button) => {
     button.addEventListener("click", async () => {
       const row = button.closest("tr");
-      const id = button.getAttribute("data-id");
-      if (!row || !id) return;
-      const userIdEl = row.querySelector('[data-field=\"user_id\"]');
-      const imageUsesEl = row.querySelector('[data-field=\"image_uses\"]');
-      const lastResetEl = row.querySelector('[data-field=\"last_reset\"]');
+      if (!row) return;
+      const userId = row.dataset.userId || "";
+      const date = row.dataset.date || "";
+      const windowId = row.dataset.windowId || "";
+      const messagesEl = row.querySelector('[data-field=\"messages_used\"]');
+      const imageUploadsEl = row.querySelector('[data-field=\"image_uploads_used\"]');
+      const fileUploadsEl = row.querySelector('[data-field=\"file_uploads_used\"]');
+      const imageGenerationsEl = row.querySelector('[data-field=\"image_generations_used\"]');
       const payload = {
-        id,
-        user_id: userIdEl ? userIdEl.value : "",
-        image_uses: imageUsesEl ? imageUsesEl.value : "",
-        last_reset: lastResetEl ? lastResetEl.value : "",
+        user_id: userId,
+        date,
+        window_id: windowId,
+        messages_used: messagesEl ? messagesEl.value : "",
+        image_uploads_used: imageUploadsEl ? imageUploadsEl.value : "",
+        file_uploads_used: fileUploadsEl ? fileUploadsEl.value : "",
+        image_generations_used: imageGenerationsEl ? imageGenerationsEl.value : "",
       };
       try {
-        await postAdminAction("update_free_user_limit", payload);
-        alert("Free user limit updated.");
+        await postAdminAction("update_free_user_daily_usage", payload);
+        alert("Free user usage updated.");
       } catch (error) {
         alert(error.message);
       }
