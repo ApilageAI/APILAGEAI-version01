@@ -125,6 +125,24 @@ class User
         $stmt->close();
     }
 
+    private function link_facebook_auth_by_email($userId, $email)
+    {
+        global $db;
+
+        if (empty($userId) || empty($email)) {
+            return;
+        }
+
+        $email = strtolower(trim($email));
+
+        $stmt = $db->prepare(
+            "UPDATE facebook_auth SET user_id = ? WHERE facebook_email = ? AND user_id <> ?"
+        );
+        $stmt->bind_param("isi", $userId, $email, $userId);
+        $stmt->execute();
+        $stmt->close();
+    }
+
     // Rate limiting helper
     private function check_rate_limit($key, $max_attempts = 5, $time_window = 900)
     {
@@ -148,6 +166,256 @@ class User
         
         self::$rateLimitStore[$key]['count']++;
         return true;
+    }
+
+    private function http_get_json($url, $params = [], $timeout = 8)
+    {
+        $endpoint = $url;
+        if (!empty($params)) {
+            $query = http_build_query($params);
+            $endpoint .= (strpos($url, '?') === false ? '?' : '&') . $query;
+        }
+
+        $response = null;
+        if (function_exists('curl_init')) {
+            $ch = curl_init($endpoint);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_CONNECTTIMEOUT => $timeout,
+                CURLOPT_TIMEOUT => $timeout,
+            ]);
+            $response = curl_exec($ch);
+            $curlError = curl_error($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($response === false) {
+                throw new Exception("HTTP request failed: " . $curlError);
+            }
+            if ($httpCode >= 400) {
+                throw new Exception("HTTP request returned status " . $httpCode);
+            }
+        } else {
+            $context = stream_context_create([
+                'http' => [
+                    'method'  => 'GET',
+                    'timeout' => $timeout,
+                ],
+            ]);
+            $response = @file_get_contents($endpoint, false, $context);
+            if ($response === false) {
+                throw new Exception("HTTP request failed");
+            }
+        }
+
+        $data = json_decode($response, true);
+        if (!is_array($data)) {
+            throw new Exception("Invalid JSON response");
+        }
+        if (isset($data['error'])) {
+            $message = 'API error';
+            if (is_array($data['error'])) {
+                $message = $data['error']['message'] ?? $message;
+            } elseif (is_string($data['error'])) {
+                $message = $data['error'];
+            }
+            throw new Exception($message);
+        }
+
+        return $data;
+    }
+
+    private function base64_url_decode(string $input): string
+    {
+        $remainder = strlen($input) % 4;
+        if ($remainder) {
+            $input .= str_repeat('=', 4 - $remainder);
+        }
+        return base64_decode(strtr($input, '-_', '+/'));
+    }
+
+    private function parse_facebook_signed_request(string $signedRequest, string $secret): ?array
+    {
+        $parts = explode('.', $signedRequest, 2);
+        if (count($parts) !== 2) {
+            return null;
+        }
+
+        [$encodedSig, $payload] = $parts;
+        $sig = $this->base64_url_decode($encodedSig);
+        $data = json_decode($this->base64_url_decode($payload), true);
+
+        if (!is_array($data)) {
+            return null;
+        }
+        if (empty($data['algorithm']) || strtoupper($data['algorithm']) !== 'HMAC-SHA256') {
+            return null;
+        }
+
+        $expectedSig = hash_hmac('sha256', $payload, $secret, true);
+        if (!hash_equals($expectedSig, $sig)) {
+            return null;
+        }
+
+        return $data;
+    }
+
+    private function delete_user_account_by_id(int $userId): bool
+    {
+        global $db;
+
+        if ($userId <= 0) {
+            return false;
+        }
+
+        $table_exists = function (string $table) use ($db): bool {
+            $stmt = $db->prepare("SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ? LIMIT 1");
+            $stmt->bind_param("s", $table);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $exists = $result->num_rows > 0;
+            $stmt->close();
+            return $exists;
+        };
+
+        $column_exists = function (string $table, string $column) use ($db): bool {
+            $stmt = $db->prepare("SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ? LIMIT 1");
+            $stmt->bind_param("ss", $table, $column);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $exists = $result->num_rows > 0;
+            $stmt->close();
+            return $exists;
+        };
+
+        $delete_by_user_id = function (string $table, string $column) use ($db, $userId, $table_exists, $column_exists): void {
+            if (!$table_exists($table) || !$column_exists($table, $column)) {
+                return;
+            }
+            $stmt = $db->prepare("DELETE FROM `$table` WHERE `$column` = ?");
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $stmt->close();
+        };
+
+        $delete_by_ids = function (string $table, string $column, array $ids) use ($db, $table_exists, $column_exists): void {
+            if (!$table_exists($table) || !$column_exists($table, $column) || empty($ids)) {
+                return;
+            }
+            $safeIds = array_map("intval", $ids);
+            $in = implode(",", $safeIds);
+            $db->query("DELETE FROM `$table` WHERE `$column` IN ($in)");
+        };
+
+        $db->begin_transaction();
+        try {
+            // Conversations + messages
+            $conversationIds = [];
+            if ($table_exists("conversations") && $column_exists("conversations", "user_id")) {
+                $idColumn = $column_exists("conversations", "conversation_id") ? "conversation_id" : "id";
+                if ($column_exists("conversations", $idColumn)) {
+                    $stmt = $db->prepare("SELECT `$idColumn` AS cid FROM conversations WHERE user_id = ?");
+                    $stmt->bind_param("i", $userId);
+                    $stmt->execute();
+                    $res = $stmt->get_result();
+                    while ($row = $res->fetch_assoc()) {
+                        $conversationIds[] = (int) $row["cid"];
+                    }
+                    $stmt->close();
+                }
+            }
+
+            if (!empty($conversationIds)) {
+                $delete_by_ids("conversation_canvas", "conversation_id", $conversationIds);
+                $delete_by_ids("conversation_published", "conversation_id", $conversationIds);
+                $delete_by_ids("conversation_share_links", "conversation_id", $conversationIds);
+                $delete_by_ids("messages", "conversation_id", $conversationIds);
+                $delete_by_ids("conversation_participants", "conversation_id", $conversationIds);
+            }
+
+            $delete_by_user_id("conversations", "user_id");
+            $delete_by_user_id("messages", "user_id");
+
+            // Games + answers
+            $gameIds = [];
+            if ($table_exists("games") && $column_exists("games", "host_id")) {
+                $idColumn = $column_exists("games", "id") ? "id" : "game_id";
+                if ($column_exists("games", $idColumn)) {
+                    $stmt = $db->prepare("SELECT `$idColumn` AS gid FROM games WHERE host_id = ?");
+                    $stmt->bind_param("i", $userId);
+                    $stmt->execute();
+                    $res = $stmt->get_result();
+                    while ($row = $res->fetch_assoc()) {
+                        $gameIds[] = (int) $row["gid"];
+                    }
+                    $stmt->close();
+                }
+            }
+
+            if (!empty($gameIds)) {
+                $delete_by_ids("questions", "game_id", $gameIds);
+                $delete_by_ids("answers", "game_id", $gameIds);
+            }
+
+            $delete_by_user_id("answers", "user_id");
+            $delete_by_user_id("games", "host_id");
+
+            // Images + reactions
+            $imageIds = [];
+            if ($table_exists("generated_images") && $column_exists("generated_images", "user_id")) {
+                $idColumn = $column_exists("generated_images", "id") ? "id" : "image_id";
+                if ($column_exists("generated_images", $idColumn)) {
+                    $stmt = $db->prepare("SELECT `$idColumn` AS iid FROM generated_images WHERE user_id = ?");
+                    $stmt->bind_param("i", $userId);
+                    $stmt->execute();
+                    $res = $stmt->get_result();
+                    while ($row = $res->fetch_assoc()) {
+                        $imageIds[] = (int) $row["iid"];
+                    }
+                    $stmt->close();
+                }
+            }
+
+            if (!empty($imageIds)) {
+                $delete_by_ids("image_reactions", "image_id", $imageIds);
+            }
+
+            $delete_by_user_id("generated_images", "user_id");
+            $delete_by_user_id("image_reactions", "user_id");
+
+            // Auth + sessions
+            $delete_by_user_id("sessions", "user_id");
+            $delete_by_user_id("google_auth", "user_id");
+            $delete_by_user_id("facebook_auth", "user_id");
+            $delete_by_user_id("gb_auth", "user_id");
+            $delete_by_user_id("magic_login_tokens", "user_id");
+
+            // Usage + billing
+            $delete_by_user_id("usage_logs", "user_id");
+            $delete_by_user_id("thinking_usage_logs", "user_id");
+            $delete_by_user_id("transactions", "user_id");
+            $delete_by_user_id("free_user_daily_usage", "user_id");
+            $delete_by_user_id("free_user_limits", "user_id");
+            $delete_by_user_id("trial_abuse_tracking", "user_id");
+
+            // Notifications & onboarding
+            $delete_by_user_id("notific", "user_id");
+            $delete_by_user_id("user_onboarding", "user_id");
+
+            if ($table_exists("users") && $column_exists("users", "id")) {
+                $stmt = $db->prepare("DELETE FROM users WHERE id = ?");
+                $stmt->bind_param("i", $userId);
+                $stmt->execute();
+                $stmt->close();
+            }
+
+            $db->commit();
+            return true;
+        } catch (Exception $e) {
+            $db->rollback();
+            error_log("Facebook deauthorize delete failed: " . $e->getMessage());
+            return false;
+        }
     }
 
     public function sign_in($data = [])
@@ -225,6 +493,7 @@ class User
                 $resetStmt->close();
 
                 $this->link_google_auth_by_email((int)$row["id"], $email);
+                $this->link_facebook_auth_by_email((int)$row["id"], $email);
                 $this->create_session($row["id"]);
                 $stmt->close();
                 returnJSON(["e" => false]);
@@ -762,6 +1031,308 @@ class User
             header("Location: " . filter_var($authUrl, FILTER_SANITIZE_URL));
             exit();
         }
+    }
+
+    public function facebook_sign_in()
+    {
+        global $db, $date;
+
+        $linkUserId = null;
+        if ($this->_logged_in) {
+            if (!isset($_GET["code"]) && empty($_GET["error"])) {
+                $_SESSION["link_facebook_user_id"] = $this->_data['id'];
+            } else {
+                $linkUserId = isset($_SESSION["link_facebook_user_id"]) ? (int)$_SESSION["link_facebook_user_id"] : null;
+            }
+        }
+
+        $appId = defined('FACEBOOK_APP_ID') ? FACEBOOK_APP_ID : '';
+        $appSecret = defined('FACEBOOK_APP_SECRET') ? FACEBOOK_APP_SECRET : '';
+        $redirectUri = (defined('FACEBOOK_REDIRECT_URI') && FACEBOOK_REDIRECT_URI)
+            ? FACEBOOK_REDIRECT_URI
+            : (APP_URL . '/auth/facebook-callback');
+
+        if (empty($appId) || empty($appSecret)) {
+            error_log("Facebook OAuth not configured");
+            if (ob_get_level() > 0) ob_end_clean();
+            header("Location: " . APP_URL . "/auth/login?error=facebook_auth_failed");
+            exit();
+        }
+
+        if (!isset($_GET["code"])) {
+            if (!empty($_GET["error"])) {
+                $err = $_GET["error_description"] ?? $_GET["error_reason"] ?? $_GET["error"];
+                error_log("Facebook OAuth error: " . $err);
+                if (ob_get_level() > 0) ob_end_clean();
+                header("Location: " . APP_URL . "/auth/login?error=facebook_auth_failed");
+                exit();
+            }
+
+            $state = bin2hex(random_bytes(16));
+            $_SESSION["facebook_oauth_state"] = $state;
+
+            $authUrl = 'https://www.facebook.com/v20.0/dialog/oauth?' . http_build_query([
+                'client_id' => $appId,
+                'redirect_uri' => $redirectUri,
+                'state' => $state,
+                'scope' => 'email,public_profile',
+                'response_type' => 'code',
+            ]);
+            if (ob_get_level() > 0) ob_end_clean();
+            header("Location: " . filter_var($authUrl, FILTER_SANITIZE_URL));
+            exit();
+        }
+
+        $state = $_GET["state"] ?? '';
+        $expectedState = $_SESSION["facebook_oauth_state"] ?? '';
+        unset($_SESSION["facebook_oauth_state"]);
+
+        if (empty($state) || empty($expectedState) || !hash_equals($expectedState, $state)) {
+            error_log("Facebook OAuth state mismatch");
+            if (ob_get_level() > 0) ob_end_clean();
+            header("Location: " . APP_URL . "/auth/login?error=facebook_auth_failed");
+            exit();
+        }
+
+        try {
+            $tokenData = $this->http_get_json('https://graph.facebook.com/v20.0/oauth/access_token', [
+                'client_id' => $appId,
+                'client_secret' => $appSecret,
+                'redirect_uri' => $redirectUri,
+                'code' => $_GET["code"],
+            ]);
+            $accessToken = $tokenData["access_token"] ?? '';
+
+            if (empty($accessToken)) {
+                throw new Exception("Facebook access token missing");
+            }
+
+            $profileData = $this->http_get_json('https://graph.facebook.com/me', [
+                'fields' => 'id,first_name,last_name,email,picture.type(large)',
+                'access_token' => $accessToken,
+            ]);
+
+            $facebookId = $profileData["id"] ?? '';
+            $email = strtolower(trim((string)($profileData["email"] ?? '')));
+            $firstName = trim((string)($profileData["first_name"] ?? ''));
+            $lastName = trim((string)($profileData["last_name"] ?? ''));
+            $picture = null;
+            if (!empty($profileData['picture']['data']['url'])) {
+                $picture = $profileData['picture']['data']['url'];
+            }
+
+            if (empty($facebookId)) {
+                throw new Exception("Facebook user id missing");
+            }
+
+            if (empty($email)) {
+                if (ob_get_level() > 0) ob_end_clean();
+                header("Location: " . APP_URL . "/auth/login?error=facebook_email_required");
+                exit();
+            }
+
+            if (isDisposableEmail($email)) {
+                error_log("Attempted Facebook Sign-In with disposable email: $email");
+                if (ob_get_level() > 0) ob_end_clean();
+                header("Location: " . APP_URL . "/auth/login?error=disposable_email_not_allowed");
+                exit();
+            }
+
+            $stmt = $db->prepare(
+                "SELECT user_id FROM facebook_auth WHERE facebook_id = ? LIMIT 1"
+            );
+            $stmt->bind_param("s", $facebookId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($linkUserId) {
+                if ($result->num_rows === 1) {
+                    $row = $result->fetch_assoc();
+                    $stmt->close();
+                    if ((int)$row["user_id"] !== (int)$linkUserId) {
+                        unset($_SESSION["link_facebook_user_id"]);
+                        if (ob_get_level() > 0) ob_end_clean();
+                        header("Location: " . APP_URL . "/app?error=facebook_already_linked");
+                        exit();
+                    }
+                    $this->maybe_update_user_image_from_url($linkUserId, $picture);
+                    unset($_SESSION["link_facebook_user_id"]);
+                    if (ob_get_level() > 0) ob_end_clean();
+                    header("Location: " . APP_URL . "/app");
+                    exit();
+                }
+                $stmt->close();
+
+                $stmt = $db->prepare("UPDATE users SET email_verified = 1 WHERE id = ?");
+                $stmt->bind_param("i", $linkUserId);
+                $stmt->execute();
+                $stmt->close();
+
+                $stmt = $db->prepare(
+                    "INSERT INTO facebook_auth (user_id, facebook_id, facebook_email) VALUES (?, ?, ?)"
+                );
+                $stmt->bind_param("iss", $linkUserId, $facebookId, $email);
+                $stmt->execute();
+                $stmt->close();
+
+                $this->maybe_update_user_image_from_url($linkUserId, $picture);
+                unset($_SESSION["link_facebook_user_id"]);
+                if (ob_get_level() > 0) ob_end_clean();
+                header("Location: " . APP_URL . "/app");
+                exit();
+            }
+
+            if ($result->num_rows === 1) {
+                $row = $result->fetch_assoc();
+                $stmt->close();
+                $this->maybe_update_user_image_from_url((int)$row["user_id"], $picture);
+                $this->create_session($row["user_id"]);
+                if (ob_get_level() > 0) ob_end_clean();
+                header("Location: " . APP_URL . "/app");
+                exit();
+            }
+
+            $stmt->close();
+
+            $stmt = $db->prepare(
+                "SELECT id FROM users WHERE email = ? LIMIT 1"
+            );
+            $stmt->bind_param("s", $email);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($result->num_rows === 1) {
+                $row = $result->fetch_assoc();
+                $userId = $row["id"];
+                $stmt->close();
+
+                $this->link_facebook_auth_by_email((int)$userId, $email);
+
+                $stmt = $db->prepare(
+                    "UPDATE users SET email_verified = 1 WHERE id = ?"
+                );
+                $stmt->bind_param("i", $userId);
+                $stmt->execute();
+                $stmt->close();
+
+                $stmt = $db->prepare(
+                    "INSERT INTO facebook_auth (user_id, facebook_id, facebook_email) VALUES (?, ?, ?)"
+                );
+                $stmt->bind_param("iss", $userId, $facebookId, $email);
+                $stmt->execute();
+                $stmt->close();
+
+                $this->maybe_update_user_image_from_url((int)$userId, $picture);
+                $this->create_session($userId);
+                if (ob_get_level() > 0) ob_end_clean();
+                header("Location: " . APP_URL . "/app");
+                exit();
+            } else {
+                $stmt->close();
+
+                $imageName = null;
+                if ($picture) {
+                    $imagePrefix = $this->get_unique_media_prefix();
+                    // Save profile picture to profile folder - returns full URL with /uploads/
+                    $imageName = save_picture_from_url(
+                        $picture,
+                        $imagePrefix,
+                        "low",
+                        "profile"
+                    );
+                }
+
+                $randomPassword = _password_hash(bin2hex(random_bytes(32)));
+                $phone = '';
+
+                $stmt = $db->prepare(
+                    "INSERT INTO users (first_name, last_name, email, phone, image, password, email_verified, reg_date, failed_login_attempts) 
+                     VALUES (?, ?, ?, ?, ?, ?, 1, ?, 0)"
+                );
+                $stmt->bind_param(
+                    "sssssss",
+                    $firstName,
+                    $lastName,
+                    $email,
+                    $phone,
+                    $imageName,
+                    $randomPassword,
+                    $date
+                );
+                $stmt->execute();
+                $userId = $db->insert_id;
+                $stmt->close();
+
+                $stmt = $db->prepare(
+                    "INSERT INTO facebook_auth (user_id, facebook_id, facebook_email) VALUES (?, ?, ?)"
+                );
+                $stmt->bind_param("iss", $userId, $facebookId, $email);
+                $stmt->execute();
+                $stmt->close();
+
+                $this->create_session($userId);
+                if (ob_get_level() > 0) ob_end_clean();
+                header("Location: " . APP_URL . "/app");
+                exit();
+            }
+        } catch (Exception $e) {
+            error_log("Facebook Sign-In Error: " . $e->getMessage());
+            if (ob_get_level() > 0) ob_end_clean();
+            header("Location: " . APP_URL . "/auth/login?error=facebook_auth_failed");
+            exit();
+        }
+    }
+
+    public function facebook_deauthorize()
+    {
+        global $db;
+
+        if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+            http_response_code(405);
+            header('Content-Type: text/plain; charset=utf-8');
+            echo "Method not allowed";
+            exit();
+        }
+
+        $signedRequest = $_POST["signed_request"] ?? "";
+        if ($signedRequest === "") {
+            http_response_code(400);
+            header('Content-Type: text/plain; charset=utf-8');
+            echo "Missing signed_request";
+            exit();
+        }
+
+        $appSecret = defined('FACEBOOK_APP_SECRET') ? FACEBOOK_APP_SECRET : '';
+        if ($appSecret === "") {
+            http_response_code(500);
+            header('Content-Type: text/plain; charset=utf-8');
+            echo "Facebook not configured";
+            exit();
+        }
+
+        $data = $this->parse_facebook_signed_request($signedRequest, $appSecret);
+        if (!$data || empty($data["user_id"])) {
+            http_response_code(400);
+            header('Content-Type: text/plain; charset=utf-8');
+            echo "Invalid signed_request";
+            exit();
+        }
+
+        $facebookId = (string) $data["user_id"];
+        $stmt = $db->prepare("SELECT user_id FROM facebook_auth WHERE facebook_id = ? LIMIT 1");
+        $stmt->bind_param("s", $facebookId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+
+        if (!empty($row["user_id"])) {
+            $this->delete_user_account_by_id((int) $row["user_id"]);
+        }
+
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(["success" => true]);
+        exit();
     }
 
     function g_register($auth_key)

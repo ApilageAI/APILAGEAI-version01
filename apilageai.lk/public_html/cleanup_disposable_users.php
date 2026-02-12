@@ -91,6 +91,7 @@ function cleanupUserData($userId, $profileImage) {
         ['answers', 'user_id'],
         ['gb_auth', 'user_id'],
         ['google_auth', 'user_id'],
+        ['facebook_auth', 'user_id'],
         ['notific', 'user_id'],
         ['sessions', 'user_id'],
         ['thinking_usage_logs', 'user_id'],

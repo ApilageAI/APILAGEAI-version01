@@ -45,6 +45,13 @@ define('GOOGLE_CLIENT_SECRET', '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');  // CHANG
 define('GOOGLE_REDIRECT_URI', 'https://apilageai.lk/auth/google-callback');
 
 // ================================================================
+// FACEBOOK OAUTH CONFIGURATION
+// ================================================================
+define('FACEBOOK_APP_ID', '874468478910770');  // CHANGE THIS!
+define('FACEBOOK_APP_SECRET', 'a9f431ec60c2caf7675aa2054874e2e7');  // CHANGE THIS!
+define('FACEBOOK_REDIRECT_URI', 'https://apilageai.lk/auth/facebook-callback');
+
+// ================================================================
 // RECAPTCHA CONFIGURATION
 // ================================================================
 define('RECAPTCHA_SITE_KEY', '0x4AAAAAACYx8UDWjBj0tpkL');

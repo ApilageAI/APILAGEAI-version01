@@ -26,8 +26,14 @@
             Google sign-in failed. Please try again.
           {elseif $smarty.get.error == 'google_already_linked'}
             This Google account is already linked to another user.
+          {elseif $smarty.get.error == 'facebook_auth_failed'}
+            Facebook sign-in failed. Please try again.
+          {elseif $smarty.get.error == 'facebook_already_linked'}
+            This Facebook account is already linked to another user.
+          {elseif $smarty.get.error == 'facebook_email_required'}
+            Facebook did not provide an email address. Please use another login method.
           {elseif $smarty.get.error == 'disposable_email_not_allowed'}
-            Disposable email addresses are not allowed for Google sign-in.
+            Disposable email addresses are not allowed for social sign-in.
           {elseif $smarty.get.error == 'magic_expired'}
             Your login link expired. Please request a new one.
           {else}
@@ -62,7 +68,7 @@
 
           <a class="auth-social-btn auth-social-wide" id="loginGoogle" href="{$smarty.const.APP_URL}/auth/google"><i class="fab fa-google"></i> Login with Google</a>
           <a class="auth-social-btn auth-social-wide" id="loginGlobbook" href="https://globbook.com/api/oauth?app_id=56532326578385"><i class="fa fa-earth-asia"></i> Login with Globbook</a>
-          <a class="auth-social-btn auth-social-wide" id="loginFacebook" href="#"><i class="fab fa-facebook"></i> Login with Facebook</a>
+          <a class="auth-social-btn auth-social-wide" id="loginFacebook" href="{$smarty.const.APP_URL}/auth/facebook"><i class="fab fa-facebook"></i> Login with Facebook</a>
           <a class="auth-social-btn auth-social-wide auth-guest-btn" id="loginGuest" href="{$smarty.const.APP_URL}/auth/guest"><i class="fa fa-user"></i> Continue without account</a>
 
           <div class="auth-footnote">

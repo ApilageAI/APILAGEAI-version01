@@ -453,6 +453,7 @@
 
   const googleUrl = `${appBase}/auth/google`;
   const globbookUrl = 'https://globbook.com/api/oauth?app_id=56532326578385';
+  const facebookUrl = `${appBase}/auth/facebook`;
 
   function bindSocial(btn, url, alertTarget) {
     if (!btn) return;
@@ -468,7 +469,7 @@
 
   bindSocial(loginGoogle, googleUrl, loginAlert);
   bindSocial(loginGlobbook, globbookUrl, loginAlert);
-  bindSocial(loginFacebook, '', loginAlert);
+  bindSocial(loginFacebook, facebookUrl, loginAlert);
 
   if (resendBtn) resendBtn.addEventListener('click', resendVerificationFromLogin);
   if (successResendBtn) successResendBtn.addEventListener('click', resendVerificationFromSuccess);

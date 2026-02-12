@@ -62,7 +62,7 @@
                 <a href="{$smarty.const.APP_URL}/auth/login?mode=register" class="btn-secondary w-full md:w-auto !py-3 !px-6">
                   <i class="fa fa-envelope mr-2"></i> Continue with Email
                 </a>
-                <a href="#" class="btn-secondary w-full md:w-auto !py-3 !px-6">
+                <a href="{$smarty.const.APP_URL}/auth/facebook" class="btn-secondary w-full md:w-auto !py-3 !px-6">
                   <i class="fab fa-facebook mr-2"></i> Continue with Facebook
                 </a>
               </div>

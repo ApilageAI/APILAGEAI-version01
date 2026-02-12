@@ -38,6 +38,7 @@
                 <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="{$smarty.const.APP_URL}/about/">About ApilageAI</a></li>
                 <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="{$smarty.const.APP_URL}/privacypolicy/">Privacy Policy</a></li>
                 <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="{$smarty.const.APP_URL}/termsofservice/">Terms of Service</a></li>
+                <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="{$smarty.const.APP_URL}/data-deletion/">Data Deletion</a></li>
               </ul>
             </div>
 

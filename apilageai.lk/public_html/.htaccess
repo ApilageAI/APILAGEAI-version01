@@ -56,11 +56,15 @@ RedirectMatch 403 ^uploads/userdocs/
   RewriteRule ^auth/continue/?$ auth.php?do=guest [L,QSA]
   RewriteRule ^auth/google/?$ auth.php?do=google [L,QSA]
   RewriteRule ^auth/google-callback/?$ auth.php?do=google-callback [L,QSA]
+  RewriteRule ^auth/facebook/?$ auth.php?do=facebook [L,QSA]
+  RewriteRule ^auth/facebook-callback/?$ auth.php?do=facebook-callback [L,QSA]
+  RewriteRule ^auth/facebook-deauthorize/?$ auth.php?do=facebook-deauthorize [L,QSA]
 
   # Legal routes
   RewriteRule ^privacypolicy/?$ privacypolicy.php [L,QSA]
   RewriteRule ^termsofservice/?$ termsofservice.php [L,QSA]
   RewriteRule ^termsconditions/?$ termsofservice.php [L,QSA]
+  RewriteRule ^data-deletion/?$ data-deletion.php [L,QSA]
 
   # About routes
   RewriteRule ^about/?$ about.php [L,QSA]

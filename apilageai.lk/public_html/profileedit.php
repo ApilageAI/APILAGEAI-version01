@@ -418,6 +418,11 @@ if ($action === 'delete_account' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute();
         $stmt->close();
 
+        $stmt = $db->prepare("DELETE FROM facebook_auth WHERE user_id=?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $stmt->close();
+
         $stmt = $db->prepare("DELETE FROM gb_auth WHERE user_id=?");
         $stmt->bind_param("i", $user_id);
         $stmt->execute();
