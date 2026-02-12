@@ -93,6 +93,33 @@ class User
         return bin2hex(random_bytes(32));
     }
 
+    private function generate_public_profile_token()
+    {
+        return bin2hex(random_bytes(16));
+    }
+
+    private function get_unique_public_profile_token()
+    {
+        global $db;
+
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $token = $this->generate_public_profile_token();
+            $stmt = $db->prepare(
+                "SELECT id FROM users WHERE public_profile_token = ? OR public_profile_username = ? LIMIT 1"
+            );
+            $stmt->bind_param("ss", $token, $token);
+            $stmt->execute();
+            $exists = $stmt->get_result()->num_rows > 0;
+            $stmt->close();
+
+            if (!$exists) {
+                return $token;
+            }
+        }
+
+        return $this->generate_public_profile_token();
+    }
+
     private function send_verification_email($email, $firstName, $token)
     {
         // Sanitize inputs for email
@@ -644,12 +671,13 @@ class User
         $tokenExpires = date("Y-m-d H:i:s", strtotime("+24 hours"));
 
         $data["password"] = _password_hash($data["password"]);
+        $publicProfileToken = $this->get_unique_public_profile_token();
         $stmt = $db->prepare(
-            "INSERT INTO users (first_name, last_name, email, phone, image, password, email_verified, verification_token, verification_token_expires, reg_date, failed_login_attempts) 
-             VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, 0)"
+            "INSERT INTO users (first_name, last_name, email, phone, image, password, email_verified, verification_token, verification_token_expires, reg_date, failed_login_attempts, public_profile_token, public_profile_enabled) 
+             VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, 0, ?, 1)"
         );
         $stmt->bind_param(
-            "ssssissss",
+            "ssssisssss",
             $data["firstName"],
             $data["lastName"],
             $data["email"],
@@ -658,7 +686,8 @@ class User
             $data["password"],
             $verificationToken,
             $tokenExpires,
-            $date
+            $date,
+            $publicProfileToken
         );
         $stmt->execute();
         $userId = $db->insert_id;
@@ -986,19 +1015,21 @@ class User
                         $randomPassword = _password_hash(bin2hex(random_bytes(32)));
                         $phone = '';
 
+                        $publicProfileToken = $this->get_unique_public_profile_token();
                         $stmt = $db->prepare(
-                            "INSERT INTO users (first_name, last_name, email, phone, image, password, email_verified, reg_date, failed_login_attempts) 
-                             VALUES (?, ?, ?, ?, ?, ?, 1, ?, 0)"
+                            "INSERT INTO users (first_name, last_name, email, phone, image, password, email_verified, reg_date, failed_login_attempts, public_profile_token, public_profile_enabled) 
+                             VALUES (?, ?, ?, ?, ?, ?, 1, ?, 0, ?, 1)"
                         );
                         $stmt->bind_param(
-                            "sssssss",
+                            "ssssssss",
                             $firstName,
                             $lastName,
                             $email,
                             $phone,
                             $imageName,
                             $randomPassword,
-                            $date
+                            $date,
+                            $publicProfileToken
                         );
                         $stmt->execute();
                         $userId = $db->insert_id;
@@ -1245,19 +1276,21 @@ class User
                 $randomPassword = _password_hash(bin2hex(random_bytes(32)));
                 $phone = '';
 
+                $publicProfileToken = $this->get_unique_public_profile_token();
                 $stmt = $db->prepare(
-                    "INSERT INTO users (first_name, last_name, email, phone, image, password, email_verified, reg_date, failed_login_attempts) 
-                     VALUES (?, ?, ?, ?, ?, ?, 1, ?, 0)"
+                    "INSERT INTO users (first_name, last_name, email, phone, image, password, email_verified, reg_date, failed_login_attempts, public_profile_token, public_profile_enabled) 
+                     VALUES (?, ?, ?, ?, ?, ?, 1, ?, 0, ?, 1)"
                 );
                 $stmt->bind_param(
-                    "sssssss",
+                    "ssssssss",
                     $firstName,
                     $lastName,
                     $email,
                     $phone,
                     $imageName,
                     $randomPassword,
-                    $date
+                    $date,
+                    $publicProfileToken
                 );
                 $stmt->execute();
                 $userId = $db->insert_id;

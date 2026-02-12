@@ -31,7 +31,7 @@ function build_in_clause($count) {
 // ----------- LOAD ACTION -----------
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'load') {
     // Fetch user general info
-    $stmt = $db->prepare("SELECT first_name, last_name, email, phone, memory FROM users WHERE id=?");
+    $stmt = $db->prepare("SELECT first_name, last_name, email, phone, memory, public_profile_token, public_profile_username, public_profile_enabled, learning_streak_started_at FROM users WHERE id=?");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $userData = $stmt->get_result()->fetch_assoc();
@@ -83,7 +83,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'load') {
         'preference' => $preference,
         'billing' => $billing,
         'has_google_auth' => $hasGoogleAuth,
-        'google_email' => $googleEmail
+        'google_email' => $googleEmail,
+        'public_profile_token' => $userData['public_profile_token'] ?? null,
+        'public_profile_username' => $userData['public_profile_username'] ?? null,
+        'public_profile_enabled' => isset($userData['public_profile_enabled']) ? (int)$userData['public_profile_enabled'] : 1,
+        'learning_streak_started_at' => $userData['learning_streak_started_at'] ?? null
     ]);
     exit();
 }
@@ -228,6 +232,104 @@ if ($action === 'preferences' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         echo json_encode(['success' => false, 'message' => 'Failed to update preferences']);
     }
+    exit();
+}
+
+// ----------- PUBLIC PROFILE SETTINGS UPDATE -----------
+if ($action === 'public_profile' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $usernameRaw = trim($_POST['username'] ?? '');
+    $closeProfile = isset($_POST['close_public_profile']) ? (int)$_POST['close_public_profile'] : 0;
+    $publicEnabled = $closeProfile ? 0 : 1;
+
+    $username = $usernameRaw === '' ? null : strtolower($usernameRaw);
+
+    if ($username !== null) {
+        if (preg_match('/\s/', $usernameRaw)) {
+            echo json_encode(['success' => false, 'message' => 'Username cannot contain spaces.']);
+            exit();
+        }
+        if (!preg_match('/^[a-z0-9_-]{3,30}$/i', $usernameRaw)) {
+            echo json_encode(['success' => false, 'message' => 'Use 3-30 characters: letters, numbers, underscores, or dashes.']);
+            exit();
+        }
+
+        $reserved = [
+            'app', 'auth', 'about', 'about-us', 'images', 'dashboard', 'pay', 'apilage-admin', 'admin',
+            'privacypolicy', 'termsofservice', 'termsconditions', 'data-deletion', 'api', 'uploads',
+            'assets', 'robots.txt', 'sitemap', 'public', 'public-profile'
+        ];
+        if (in_array($username, $reserved, true)) {
+            echo json_encode(['success' => false, 'message' => 'That username is reserved.']);
+            exit();
+        }
+
+        $stmt = $db->prepare(
+            "SELECT id FROM users WHERE (public_profile_username = ? OR public_profile_token = ?) AND id <> ? LIMIT 1"
+        );
+        $stmt->bind_param("ssi", $username, $username, $user_id);
+        $stmt->execute();
+        $exists = $stmt->get_result()->num_rows > 0;
+        $stmt->close();
+
+        if ($exists) {
+            echo json_encode(['success' => false, 'message' => 'Username already taken.']);
+            exit();
+        }
+    }
+
+    if ($username === null) {
+        $stmt = $db->prepare("UPDATE users SET public_profile_username = NULL, public_profile_enabled = ? WHERE id = ?");
+        $stmt->bind_param("ii", $publicEnabled, $user_id);
+    } else {
+        $stmt = $db->prepare("UPDATE users SET public_profile_username = ?, public_profile_enabled = ? WHERE id = ?");
+        $stmt->bind_param("sii", $username, $publicEnabled, $user_id);
+    }
+
+    if (!$stmt->execute()) {
+        echo json_encode(['success' => false, 'message' => 'Failed to update public profile']);
+        exit();
+    }
+    $stmt->close();
+
+    $stmt = $db->prepare("SELECT public_profile_token, public_profile_username, public_profile_enabled, learning_streak_started_at FROM users WHERE id=?");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $updated = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    echo json_encode([
+        'success' => true,
+        'public_profile_token' => $updated['public_profile_token'] ?? null,
+        'public_profile_username' => $updated['public_profile_username'] ?? null,
+        'public_profile_enabled' => isset($updated['public_profile_enabled']) ? (int)$updated['public_profile_enabled'] : 1,
+        'learning_streak_started_at' => $updated['learning_streak_started_at'] ?? null
+    ]);
+    exit();
+}
+
+// ----------- START LEARNING STREAK -----------
+if ($action === 'start_streak' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $now = date('Y-m-d H:i:s');
+    $stmt = $db->prepare("UPDATE users SET learning_streak_started_at = COALESCE(learning_streak_started_at, ?) WHERE id = ?");
+    $stmt->bind_param("si", $now, $user_id);
+    $success = $stmt->execute();
+    $stmt->close();
+
+    if (!$success) {
+        echo json_encode(['success' => false, 'message' => 'Failed to start learning streak']);
+        exit();
+    }
+
+    $stmt = $db->prepare("SELECT learning_streak_started_at FROM users WHERE id=?");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    echo json_encode([
+        'success' => true,
+        'learning_streak_started_at' => $row['learning_streak_started_at'] ?? $now
+    ]);
     exit();
 }
 

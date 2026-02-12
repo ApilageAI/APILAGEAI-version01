@@ -395,6 +395,9 @@
                 <nav>
                     <ul>
                         <li><a href="#" class="preferencebox-tab-link active" data-tab="general"><i class="fa fa-cog"></i> General</a></li>
+                        {if !$is_guest}
+                        <li><a href="#" class="preferencebox-tab-link" data-tab="public-profile"><i class="fa fa-user-circle"></i> Public Profile</a></li>
+                        {/if}
                         <li><a href="#" class="preferencebox-tab-link" data-tab="ai"><i class="fa fa-robot"></i>Preference</a></li>
                         <li><a href="#" class="preferencebox-tab-link" data-tab="billing"><i class="fa fa-credit-card"></i> Billing</a></li>
                         <li><a href="#" class="preferencebox-tab-link" data-tab="app"><i class="fa fa-cogs"></i> Account</a></li>
@@ -465,6 +468,55 @@
                 <div id="generalAlertBox" style="display:none; margin-top:10px;"></div>
                 </div>
                 </div>
+
+                {if !$is_guest}
+                <!-- Public Profile Tab Content -->
+                <div id="public-profile" class="preferencebox-tab-content">
+                    <h2>Public Profile</h2>
+                    <div class="form-section">
+                        <h3>Profile Link</h3>
+                        <div class="form-group">
+                            <label for="publicProfileUrl">Public Profile URL</label>
+                            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                                <input type="text" id="publicProfileUrl" readonly style="flex:1; min-width:220px;">
+                                <a id="seePublicProfileBtn" class="btn btn-secondary" href="#" target="_blank" rel="noopener">See Public Profile</a>
+                                <button class="btn btn-secondary" id="copyPublicProfileLinkBtn" type="button">Copy Link</button>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 6px;">
+                                Default link uses a random token until you set a username.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-section">
+                        <h3>Username</h3>
+                        <div class="form-group">
+                            <label for="publicProfileUsername">User name</label>
+                            <input type="text" id="publicProfileUsername" placeholder="yourname">
+                            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                                No spaces. Letters, numbers, underscores, and dashes only. Must be unique.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-section">
+                        <h3>Visibility</h3>
+                        <div class="onboard-checkbox-container" style="margin-bottom: 12px;">
+                            <input id="closePublicProfile" type="checkbox" name="close_public_profile">
+                            <label for="closePublicProfile">Close public profile</label>
+                        </div>
+                    </div>
+                    <div class="form-section">
+                        <h3>Learning Streak</h3>
+                        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                            <button class="btn btn-secondary" id="startLearningStreakBtn" type="button">Start Learning Streak</button>
+                            <span id="learningStreakStatus" style="font-size: 12px; color: var(--text-secondary);"></span>
+                        </div>
+                    </div>
+                    <div class="form-section">
+                        <button class="btn btn-primary" id="savePublicProfileBtn" type="button">Save Public Profile</button>
+                        <div id="publicProfileAlertBox" style="display:none; margin-top:10px;"></div>
+                    </div>
+                </div>
+                {/if}
 
                 <!-- AI Preference Tab Content -->
                 <div id="ai" class="preferencebox-tab-content">

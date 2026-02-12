@@ -72,4 +72,7 @@ RedirectMatch 403 ^uploads/userdocs/
 
   # Payment routes (amount is parsed inside pay.php)
   RewriteRule ^pay/([0-9]+(?:\.[0-9]+)?)/?$ pay.php [L,QSA]
+
+  # Public profile routes (username or token)
+  RewriteRule ^([A-Za-z0-9][A-Za-z0-9_-]{2,63})/?$ public_profile.php?u=$1 [L,QSA]
 </IfModule>
