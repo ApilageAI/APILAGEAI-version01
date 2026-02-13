@@ -2593,6 +2593,9 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
         padding: 6px;
       }
     }
+    .sidebar-toggle-btn {
+      display: none;
+    }
     @media (max-width: 955px) {
       .page-layout.x-layout {
         --sidebar-width: 64px;
@@ -2607,12 +2610,10 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
         display: inline-flex;
       }
     }
-    .sidebar-toggle-btn {
-      display: none;
-    }
     @media (max-width: 768px) {
       .page-layout.x-layout {
         --sidebar-width: 56px;
+        padding-left: var(--sidebar-width);
       }
       body.sidebar-collapsed .page-layout.x-layout {
         --sidebar-width: 0px;
@@ -2624,7 +2625,7 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
         height: 100vh;
         height: 100dvh;
         transform: translateX(0);
-        z-index: 2000;
+        z-index: 400;
       }
       .sidebar.app-sidebar .sidebar-but-text,
       .sidebar.app-sidebar .sidebar-but-shortcut {
