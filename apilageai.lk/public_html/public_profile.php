@@ -2256,52 +2256,489 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
         display: none;
       }
     }
+
+    /* App-style sidebar override */
+    body {
+      overflow: hidden;
+    }
+    .page-layout.x-layout {
+      justify-content: flex-start;
+      max-width: 100%;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      --sidebar-width: 260px;
+    }
+    body.sidebar-collapsed .page-layout.x-layout {
+      --sidebar-width: 70px;
+    }
+    .profile-shell.x-main {
+      border-left: none;
+      height: 100vh;
+      overflow-y: auto;
+      margin-left: 0;
+      min-width: 0;
+    }
+    .right-rail {
+      height: 100vh;
+      overflow: hidden;
+    }
+    .sidebar.app-sidebar {
+      background: linear-gradient(180deg, var(--sidebar-bg) 0%, rgba(249, 250, 251, 0.98) 100%);
+      border-right: 1px solid rgba(0, 0, 0, 0.06);
+      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.03);
+      width: var(--sidebar-width);
+      min-width: var(--sidebar-width);
+      position: sticky;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      flex: 0 0 var(--sidebar-width);
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+        width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+        min-width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow: hidden;
+      z-index: 200;
+    }
+    [data-theme="dark"] .sidebar.app-sidebar {
+      background: linear-gradient(180deg, var(--sidebar-bg) 0%, rgba(26, 26, 26, 0.98) 100%);
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
+    }
+    .sidebar.app-sidebar .sidebar-header {
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      min-height: 56px;
+    }
+    .sidebar.app-sidebar .sidebar-logo {
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+      border-radius: 12px;
+      background: #ffffff;
+      border: 2px solid var(--border-color);
+    }
+    .sidebar.app-sidebar .sidebar-backn {
+      position: absolute;
+      right: 8px;
+    }
+    .sidebar.app-sidebar .sidebar-items {
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+      overflow-y: auto;
+    }
+    .sidebar.app-sidebar .sidebar-but {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 500;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-decoration: none;
+      outline: none;
+    }
+    .sidebar.app-sidebar .sidebar-but:hover {
+      background: var(--gray-light);
+      color: var(--text-primary);
+    }
+    .sidebar.app-sidebar .sidebar-but:active {
+      background: var(--border-color);
+    }
+    .sidebar.app-sidebar .sidebar-but.active {
+      background: var(--red-50);
+      color: var(--primary-red);
+      font-weight: 600;
+    }
+    .sidebar.app-sidebar .sidebar-but .sidebar-but-icon {
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: inherit;
+      transition: color 0.15s ease;
+    }
+    .sidebar.app-sidebar .sidebar-but:hover .sidebar-but-icon {
+      color: var(--primary-red);
+    }
+    .sidebar.app-sidebar .sidebar-but-shortcut {
+      margin-left: auto;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      background: var(--card-bg);
+    }
+    .sidebar.app-sidebar .sidebar-footer {
+      padding: 16px;
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+      margin-top: auto;
+      background: var(--sidebar-bg);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      border-top: 1px solid var(--border-color);
+    }
+    .sidebar.app-sidebar .sidebar-minimize-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: transparent;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .sidebar.app-sidebar .sidebar-minimize-btn:hover {
+      background: var(--sidebar-hover);
+      color: var(--primary-red);
+      border-color: var(--primary-red);
+    }
+    .sidebar.app-sidebar.hidden .sidebar-minimize-btn {
+      justify-content: center;
+    }
+    .sidebar.app-sidebar.hidden .sidebar-minimize-btn .minimize-text {
+      display: none;
+    }
+    .sidebar.app-sidebar .sidebar-footer-userinfo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      background-color: #f9fafb;
+      border-radius: 18px;
+    }
+    .sidebar.app-sidebar .sidebar-footer-userinfo:hover {
+      background: var(--gray-light);
+    }
+    [data-theme="dark"] .sidebar.app-sidebar .sidebar-footer-userinfo {
+      background: var(--sidebar-bg);
+    }
+    [data-theme="dark"] .sidebar.app-sidebar .sidebar-footer-userinfo:hover {
+      background: var(--sidebar-hover);
+    }
+    .sidebar.app-sidebar .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      overflow: hidden;
+      flex-shrink: 0;
+      border: 1px solid var(--border-color);
+      background: var(--container-bg);
+    }
+    .sidebar.app-sidebar .user-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .sidebar.app-sidebar .user-details {
+      flex: 1;
+      min-width: 0;
+    }
+    .sidebar.app-sidebar .user-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sidebar.app-sidebar .user-credit-text {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 400;
+      margin-top: 2px;
+    }
+    .sidebar.app-sidebar .credit-bar-container {
+      background: var(--border-color);
+      height: 4px;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .sidebar.app-sidebar .credit-bar-fill {
+      background: var(--primary-red);
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+    .sidebar.app-sidebar .sidebar-but.new-chat-btn {
+      background: var(--primary-red);
+      color: #ffffff;
+      border: none;
+      margin-bottom: 4px;
+    }
+    .sidebar.app-sidebar .sidebar-but.new-chat-btn .sidebar-but-icon,
+    .sidebar.app-sidebar .sidebar-but.new-chat-btn i {
+      color: #ffffff !important;
+    }
+    .sidebar.app-sidebar .sidebar-but.new-chat-btn:hover {
+      background: var(--primary-red-hover);
+    }
+    .sidebar.app-sidebar .sidebar-but.new-chat-btn .sidebar-but-shortcut {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.3);
+      color: #ffffff;
+    }
+    .sidebar-backn {
+      color: var(--text-primary);
+      background: transparent;
+      border: none;
+      font-size: 1.25rem;
+      cursor: pointer;
+      width: 40px;
+      height: 40px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: background 0.2s ease;
+    }
+    .sidebar-backn:hover {
+      background: var(--sidebar-hover);
+    }
+    [data-theme="dark"] .sidebar-backn {
+      color: #ffffff;
+    }
+    @media (min-width: 956px) {
+      .sidebar.app-sidebar.hidden {
+        width: 70px;
+        min-width: 70px;
+      }
+      .sidebar.app-sidebar.hidden .sidebar-but-text,
+      .sidebar.app-sidebar.hidden .sidebar-but-shortcut {
+        display: none;
+      }
+      .sidebar.app-sidebar.hidden .sidebar-but {
+        justify-content: center;
+        padding: 10px;
+        position: relative;
+      }
+      .sidebar.app-sidebar.hidden .sidebar-but:hover::after {
+        content: attr(title);
+        position: absolute;
+        left: calc(100% + 12px);
+        top: 50%;
+        transform: translateY(-50%);
+        padding: 8px 14px;
+        background: rgba(0, 0, 0, 0.9);
+        color: #ffffff;
+        border-radius: 8px;
+        white-space: nowrap;
+        font-size: 14px;
+        font-weight: 500;
+        z-index: 10000;
+        pointer-events: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        animation: tooltipFadeIn 0.2s ease;
+      }
+      .sidebar.app-sidebar.hidden .sidebar-but:hover::before {
+        content: '';
+        position: absolute;
+        left: 100%;
+        top: 50%;
+        transform: translateY(-50%);
+        margin-left: 6px;
+        width: 0;
+        height: 0;
+        border-style: solid;
+        border-width: 5px 6px 5px 0;
+        border-color: transparent rgba(0, 0, 0, 0.9) transparent transparent;
+        z-index: 10000;
+        pointer-events: none;
+      }
+      @keyframes tooltipFadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-50%) translateX(-5px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(-50%) translateX(0);
+        }
+      }
+      .sidebar.app-sidebar.hidden .user-details {
+        display: none;
+      }
+      .sidebar.app-sidebar.hidden .sidebar-footer-userinfo {
+        justify-content: center;
+        padding: 6px;
+      }
+    }
+    @media (max-width: 955px) {
+      .page-layout.x-layout {
+        --sidebar-width: 64px;
+      }
+      body.sidebar-collapsed .page-layout.x-layout {
+        --sidebar-width: 0px;
+      }
+      .sidebar.app-sidebar.hidden {
+        transform: translateX(-100%);
+      }
+      .sidebar-toggle-btn {
+        display: inline-flex;
+      }
+    }
+    .sidebar-toggle-btn {
+      display: none;
+    }
+    @media (max-width: 768px) {
+      .page-layout.x-layout {
+        --sidebar-width: 56px;
+      }
+      body.sidebar-collapsed .page-layout.x-layout {
+        --sidebar-width: 0px;
+      }
+      .sidebar.app-sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        height: 100dvh;
+        transform: translateX(0);
+        z-index: 2000;
+      }
+      .sidebar.app-sidebar .sidebar-but-text,
+      .sidebar.app-sidebar .sidebar-but-shortcut {
+        display: none;
+      }
+      .sidebar.app-sidebar .sidebar-but {
+        justify-content: center;
+        padding: 10px;
+      }
+      .sidebar.app-sidebar .sidebar-footer-userinfo {
+        justify-content: center;
+        padding: 6px;
+      }
+      .sidebar.app-sidebar .user-details {
+        display: none;
+      }
+      .sidebar.app-sidebar .sidebar-minimize-btn {
+        display: none;
+      }
+      .sidebar-backn {
+        display: none;
+      }
+      .sidebar-toggle-btn {
+        display: inline-flex;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="page-layout x-layout">
-    <aside class="sidebar x-nav">
-      <div class="x-nav-inner">
-        <a class="x-logo" href="<?php echo APP_URL; ?>/app" aria-label="Apilageai home">
-          <img src="<?php echo APP_URL; ?>/assets/images/icon.png" alt="Apilageai logo">
-          <span>Apilageai</span>
+    <aside class="sidebar app-sidebar" id="sidebar" aria-label="Main sidebar">
+      <div class="sidebar-header">
+        <img class="sidebar-logo" src="<?php echo APP_URL; ?>/assets/images/icon.png" alt="Apilageai logo">
+        <button id="sidebarback" class="sidebar-backn" type="button" aria-label="Toggle sidebar">
+          <i class="fa fa-chevron-left" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      <div class="sidebar-items">
+        <a class="sidebar-but new-chat-btn" href="<?php echo APP_URL; ?>/app" title="New chat">
+          <span class="sidebar-but-icon" aria-hidden="true">
+            <picture>
+              <source srcset="https://fonts.gstatic.com/s/e/notoemoji/latest/270f_fe0f/512.webp" type="image/webp">
+              <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/270f_fe0f/512.gif" alt="✏" width="20" height="20">
+            </picture>
+          </span>
+          <span class="sidebar-but-text">New chat</span>
+          <span class="sidebar-but-shortcut" aria-hidden="true">⇧⌘O</span>
         </a>
 
-        <nav class="x-menu" aria-label="Primary">
-          <a class="x-menu-item" href="<?php echo APP_URL; ?>/app">
-            <i class="fa-solid fa-house"></i>
-            <span>Home</span>
-          </a>
-          <button class="x-menu-item" type="button" data-open-user-search aria-haspopup="dialog" aria-controls="userSearchModal">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <span>Explore</span>
-          </button>
-          <a class="x-menu-item" href="<?php echo APP_URL; ?>/images">
-            <i class="fa-solid fa-image"></i>
-            <span>Images</span>
-          </a>
-          <a class="x-menu-item" href="<?php echo $profileUrlEscaped; ?>">
-            <i class="fa-solid fa-user"></i>
-            <span>Profile</span>
-          </a>
-        </nav>
-
-        <a class="x-post-btn" href="<?php echo APP_URL; ?>/app">Post</a>
-        <a class="x-post-mini" href="<?php echo APP_URL; ?>/app" aria-label="Post">
-          <i class="fa-solid fa-pen-nib"></i>
+        <a class="sidebar-but" href="<?php echo APP_URL; ?>/app" title="Conversations">
+          <span class="sidebar-but-icon" aria-hidden="true">💬</span>
+          <span class="sidebar-but-text">Conversations</span>
+          <span class="sidebar-but-shortcut" aria-hidden="true">⇧⌘K</span>
         </a>
 
-        <a class="x-nav-user" href="<?php echo $profileUrlEscaped; ?>">
-          <?php if ($imageUrlEscaped !== ''): ?>
-            <img class="x-user-avatar" src="<?php echo $imageUrlEscaped; ?>" alt="<?php echo $displayNameEscaped; ?>">
-          <?php else: ?>
-            <div class="x-user-avatar x-user-fallback"><?php echo $initialsEscaped; ?></div>
-          <?php endif; ?>
-          <div class="x-user-meta">
-            <div class="x-user-name"><?php echo $displayNameEscaped; ?></div>
-            <div class="x-user-handle"><?php echo $profileHandleEscaped; ?></div>
+        <a class="sidebar-but" href="<?php echo APP_URL; ?>/app" title="Share with friends">
+          <span class="sidebar-but-icon" aria-hidden="true">
+            <picture>
+              <source srcset="https://fonts.gstatic.com/s/e/notoemoji/latest/1f680/512.webp" type="image/webp">
+              <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f680/512.gif" alt="🚀" width="20" height="20">
+            </picture>
+          </span>
+          <span class="sidebar-but-text">Share with friends</span>
+          <span class="sidebar-but-shortcut" aria-hidden="true">⇧⌘S</span>
+        </a>
+
+        <a class="sidebar-but" href="<?php echo APP_URL; ?>/app" title="Mind map">
+          <span class="sidebar-but-icon" aria-hidden="true">🧠</span>
+          <span class="sidebar-but-text">Mind map</span>
+        </a>
+
+        <a class="sidebar-but" href="<?php echo APP_URL; ?>/app" title="MCQ game">
+          <span class="sidebar-but-icon" aria-hidden="true">🎮</span>
+          <span class="sidebar-but-text">MCQ game</span>
+        </a>
+
+        <a class="sidebar-but" href="<?php echo APP_URL; ?>/images" title="Image Gallery">
+          <span class="sidebar-but-icon" aria-hidden="true">
+            <picture>
+              <source srcset="https://fonts.gstatic.com/s/e/notoemoji/latest/1f4f8/512.webp" type="image/webp">
+              <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f4f8/512.gif" alt="📸" width="20" height="20">
+            </picture>
+          </span>
+          <span class="sidebar-but-text">Image Gallery</span>
+        </a>
+
+        <a class="sidebar-but active" href="<?php echo $profileUrlEscaped; ?>" title="Public Profile" aria-current="page">
+          <span class="sidebar-but-icon" aria-hidden="true">👤</span>
+          <span class="sidebar-but-text">Public Profile</span>
+        </a>
+      </div>
+
+      <div class="sidebar-footer">
+        <button id="sidebarMinimize" class="sidebar-minimize-btn" type="button" aria-label="Minimize sidebar">
+          <i class="fa fa-bullseye" aria-hidden="true"></i>
+          <span class="minimize-text">Focused</span>
+        </button>
+        <div class="sidebar-footer-userinfo" id="sidebarUserInfo">
+          <div class="user-avatar">
+            <img
+              src="<?php echo $imageUrlEscaped !== '' ? $imageUrlEscaped : (APP_URL . '/assets/images/user.png'); ?>"
+              alt="<?php echo $displayNameEscaped; ?> Avatar"
+              onerror="this.onerror=null;this.src='<?php echo APP_URL; ?>/assets/images/user.png';"
+            />
           </div>
-        </a>
+          <div class="user-details">
+            <div class="user-name"><?php echo $displayNameEscaped; ?></div>
+            <div class="user-credit-text">Public profile</div>
+            <div class="credit-bar-container">
+              <div class="credit-bar-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
       </div>
     </aside>
 
@@ -2309,6 +2746,9 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       <header class="profile-topbar">
         <button class="topbar-btn" type="button" onclick="history.back()" aria-label="Go back">
           <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <button id="toggleSidebar" class="topbar-btn sidebar-toggle-btn" type="button" aria-label="Toggle sidebar">
+          <i class="fa-solid fa-bars"></i>
         </button>
         <div class="topbar-title">
           <div class="topbar-name"><?php echo $displayNameEscaped; ?></div>
@@ -2717,6 +3157,31 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
     }
     if (sidebarShow) {
       sidebarShow.hidden = false;
+    }
+
+    const sidebarEl = document.getElementById('sidebar');
+    const sidebarMinimize = document.getElementById('sidebarMinimize');
+    const sidebarBack = document.getElementById('sidebarback');
+    const sidebarToggleBtn = document.getElementById('toggleSidebar');
+
+    const toggleSidebarHidden = () => {
+      if (!sidebarEl) return;
+      const isHidden = sidebarEl.classList.toggle('hidden');
+      document.body.classList.toggle('sidebar-collapsed', isHidden);
+    };
+
+    if (sidebarEl) {
+      document.body.classList.toggle('sidebar-collapsed', sidebarEl.classList.contains('hidden'));
+    }
+
+    if (sidebarMinimize) {
+      sidebarMinimize.addEventListener('click', toggleSidebarHidden);
+    }
+    if (sidebarBack) {
+      sidebarBack.addEventListener('click', toggleSidebarHidden);
+    }
+    if (sidebarToggleBtn) {
+      sidebarToggleBtn.addEventListener('click', toggleSidebarHidden);
     }
 
     function setSidebarHidden(hidden) {
