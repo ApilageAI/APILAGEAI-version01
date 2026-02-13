@@ -70,6 +70,12 @@ RedirectMatch 403 ^uploads/userdocs/
   RewriteRule ^about/?$ about.php [L,QSA]
   RewriteRule ^about-us/?$ about.php [L,QSA]
 
+  # Help routes
+  RewriteRule ^help/?$ help.php [L,QSA]
+
+  # Blog routes
+  RewriteRule ^blog/?$ blog.php [L,QSA]
+
   # Payment routes (amount is parsed inside pay.php)
   RewriteRule ^pay/([0-9]+(?:\.[0-9]+)?)/?$ pay.php [L,QSA]
 

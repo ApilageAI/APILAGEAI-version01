@@ -27,6 +27,8 @@
               <h4 class="font-bold text-brand-dark mb-6 uppercase tracking-wider font-display border-b-2 border-brand-dark inline-block">Product</h4>
               <ul class="space-y-4 text-sm font-bold text-brand-dark/60">
                 <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="#pricing">Pricing</a></li>
+                <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="{$smarty.const.APP_URL}/blog">Blog</a></li>
+                <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="{$smarty.const.APP_URL}/help">Help Center</a></li>
                 <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="https://api.apilageai.lk">API Docs</a></li>
                 <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="#mobile">Mobile App</a></li>
               </ul>

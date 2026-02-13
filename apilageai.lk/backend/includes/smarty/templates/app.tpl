@@ -1608,6 +1608,29 @@ body.guest-mode .main-content {
 [data-theme="dark"] .streak-progress {
   background: #2d3748;
 }
+[data-theme="dark"] .streak-checkin-card {
+  background: #111827;
+  color: #e2e8f0;
+  box-shadow: 0 22px 50px rgba(0, 0, 0, 0.55);
+}
+[data-theme="dark"] .streak-checkin-header h3 {
+  color: #f8fafc;
+}
+[data-theme="dark"] .streak-checkin-header p {
+  color: #94a3b8;
+}
+[data-theme="dark"] .streak-input {
+  color: #94a3b8;
+}
+[data-theme="dark"] .streak-input input,
+[data-theme="dark"] .streak-input textarea {
+  background: #0f172a;
+  border-color: #1f2937;
+  color: #e2e8f0;
+}
+[data-theme="dark"] .streak-checkin-message {
+  color: #fca5a5;
+}
 .streak-badge-title {
   font-size: 13px;
   font-weight: 600;

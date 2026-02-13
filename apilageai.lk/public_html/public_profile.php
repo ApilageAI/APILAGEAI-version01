@@ -33,6 +33,156 @@ if (!function_exists('normalize_public_image_url_profile')) {
     }
 }
 
+$badgeRegistry = [
+    'verified' => [
+        'title' => 'Verified user',
+        'icon' => [
+            'webp' => 'https://fonts.gstatic.com/s/e/notoemoji/latest/2705/512.webp',
+            'gif' => 'https://fonts.gstatic.com/s/e/notoemoji/latest/2705/512.gif',
+            'alt' => '✅'
+        ]
+    ],
+    'developer' => [
+        'title' => 'Official Developer of ApilageAI app',
+        'icon' => [
+            'webp' => 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f4a1/512.webp',
+            'gif' => 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f4a1/512.gif',
+            'alt' => '💡'
+        ]
+    ],
+    'streak_7' => [
+        'title' => '7-day streak',
+        'icon' => [
+            'webp' => 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f948/512.webp',
+            'gif' => 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f948/512.gif',
+            'alt' => '🥈'
+        ]
+    ],
+    'streak_30' => [
+        'title' => '30-day streak',
+        'icon' => [
+            'webp' => 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f947/512.webp',
+            'gif' => 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f947/512.gif',
+            'alt' => '🥇'
+        ]
+    ],
+    'streak_100' => [
+        'title' => '100-day streak',
+        'icon' => [
+            'webp' => 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f48e/512.webp',
+            'gif' => 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f48e/512.gif',
+            'alt' => '💎'
+        ]
+    ]
+];
+
+// Add user IDs to assign manual badges.
+$manualBadgeUsers = [
+    'verified' => [1197],
+    'developer' => [1197]
+];
+$manualBadgeLookup = [];
+foreach ($manualBadgeUsers as $badgeKey => $ids) {
+    $cleanIds = array_values(array_unique(array_map('intval', $ids)));
+    $manualBadgeUsers[$badgeKey] = $cleanIds;
+    $manualBadgeLookup[$badgeKey] = array_fill_keys($cleanIds, true);
+}
+
+function fetch_max_streak_days_for_users($db, array $userIds): array {
+    $userIds = array_values(array_unique(array_filter(array_map('intval', $userIds), function ($id) {
+        return $id > 0;
+    })));
+
+    if (empty($userIds)) {
+        return [];
+    }
+
+    $in = implode(',', array_fill(0, count($userIds), '?'));
+    $types = str_repeat('i', count($userIds));
+
+    $stmt = $db->prepare("
+        SELECT streaks.user_id, MAX(streaks.day_count) AS max_day_count
+        FROM (
+            SELECT s.user_id, s.id, COUNT(e.id) AS day_count
+            FROM learning_streaks s
+            LEFT JOIN learning_streak_entries e ON e.streak_id = s.id
+            WHERE s.user_id IN ($in)
+            GROUP BY s.id
+        ) AS streaks
+        GROUP BY streaks.user_id
+    ");
+    $stmt->bind_param($types, ...$userIds);
+    $stmt->execute();
+    $res = $stmt->get_result();
+
+    $maxDays = [];
+    while ($row = $res->fetch_assoc()) {
+        $maxDays[(int)$row['user_id']] = (int)$row['max_day_count'];
+    }
+    $stmt->close();
+
+    return $maxDays;
+}
+
+function compute_user_badge_keys($userId, array $manualBadgeLookup, array $streakMaxDaysByUser): array {
+    $userId = (int)$userId;
+    $badges = [];
+
+    if ($userId > 0) {
+        if (!empty($manualBadgeLookup['verified'][$userId])) {
+            $badges[] = 'verified';
+        }
+        if (!empty($manualBadgeLookup['developer'][$userId])) {
+            $badges[] = 'developer';
+        }
+    }
+
+    $maxDays = (int)($streakMaxDaysByUser[$userId] ?? 0);
+    if ($maxDays >= 7) {
+        $badges[] = 'streak_7';
+    }
+    if ($maxDays >= 30) {
+        $badges[] = 'streak_30';
+    }
+    if ($maxDays >= 100) {
+        $badges[] = 'streak_100';
+    }
+
+    return $badges;
+}
+
+function render_badges_html(array $badgeKeys, array $badgeRegistry): string {
+    if (empty($badgeKeys)) {
+        return '';
+    }
+
+    $html = '<span class="profile-badges" aria-label="Badges">';
+    foreach ($badgeKeys as $badgeKey) {
+        if (!isset($badgeRegistry[$badgeKey])) {
+            continue;
+        }
+        $badge = $badgeRegistry[$badgeKey];
+        $title = htmlspecialchars($badge['title'] ?? '', ENT_QUOTES, 'UTF-8');
+        $icon = $badge['icon'] ?? [];
+        $webp = htmlspecialchars($icon['webp'] ?? '', ENT_QUOTES, 'UTF-8');
+        $gif = htmlspecialchars($icon['gif'] ?? '', ENT_QUOTES, 'UTF-8');
+        $alt = htmlspecialchars($icon['alt'] ?? '', ENT_QUOTES, 'UTF-8');
+
+        $html .= '<span class="badge-icon" role="img" tabindex="0" data-tooltip="' . $title . '" aria-label="' . $title . '">';
+        $html .= '<picture aria-hidden="true">';
+        if ($webp !== '') {
+            $html .= '<source srcset="' . $webp . '" type="image/webp">';
+        }
+        if ($gif !== '') {
+            $html .= '<img src="' . $gif . '" alt="' . $alt . '" width="16" height="16" loading="lazy">';
+        }
+        $html .= '</picture></span>';
+    }
+    $html .= '</span>';
+
+    return $html;
+}
+
 if (isset($_GET['action']) && $_GET['action'] === 'search_users') {
     header('Content-Type: application/json; charset=utf-8');
 
@@ -84,6 +234,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'search_users') {
     $userIds = array_values(array_map(static function ($u) {
         return (int)$u['id'];
     }, $users));
+
+    $streakMaxDaysMap = fetch_max_streak_days_for_users($db, $userIds);
 
     $chatCounts = [];
     $imageCounts = [];
@@ -159,6 +311,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'search_users') {
         $profileImage = $hasImage ? user_image_url($rawImage) : '';
 
         $uid = (int)$u['id'];
+        $badgeKeys = compute_user_badge_keys($uid, $manualBadgeLookup, $streakMaxDaysMap);
         $images = [];
         if (!empty($imageSamples[$uid])) {
             foreach ($imageSamples[$uid] as $img) {
@@ -175,7 +328,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'search_users') {
             'not_student' => (int)($u['not_student'] ?? 0),
             'chat_count' => $chatCounts[$uid] ?? 0,
             'image_count' => $imageCounts[$uid] ?? 0,
-            'images' => $images
+            'images' => $images,
+            'badges' => $badgeKeys
         ];
     }
 
@@ -433,6 +587,17 @@ if ($schoolRaw !== '' && (int)($userRow['not_student'] ?? 0) !== 1) {
     }
 }
 
+$badgeUserIds = [(int)$userRow['id']];
+foreach ($exploreUsers as $row) {
+    $badgeUserIds[] = (int)$row['id'];
+}
+foreach ($similarUsers as $row) {
+    $badgeUserIds[] = (int)$row['id'];
+}
+$streakMaxDaysByUser = fetch_max_streak_days_for_users($db, $badgeUserIds);
+$profileBadgeKeys = compute_user_badge_keys($userRow['id'], $manualBadgeLookup, $streakMaxDaysByUser);
+$profileBadgesHtml = render_badges_html($profileBadgeKeys, $badgeRegistry);
+
 $headerSent = headers_sent();
 if (!$headerSent) {
     header('Content-Type: text/html; charset=utf-8');
@@ -498,6 +663,17 @@ $shareUrlEncoded = rawurlencode($profileUrl);
 $twitterShare = "https://twitter.com/intent/tweet?text={$shareText}&url={$shareUrlEncoded}";
 $facebookShare = "https://www.facebook.com/sharer/sharer.php?u={$shareUrlEncoded}";
 $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
+$badgeRegistryClient = [];
+foreach ($badgeRegistry as $badgeKey => $badge) {
+    $badgeRegistryClient[$badgeKey] = [
+        'title' => $badge['title'] ?? '',
+        'icon' => $badge['icon'] ?? []
+    ];
+}
+$badgeRegistryJson = json_encode(
+    $badgeRegistryClient,
+    JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+);
 ?><!doctype html>
 <html lang="en">
 <head>
@@ -1100,6 +1276,87 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       justify-content: center;
       margin-bottom: 22px;
     }
+    .name-line {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+      max-width: 100%;
+    }
+    .name-text {
+      min-width: 0;
+      flex: 0 1 auto;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .profile-badges {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+    .badge-icon {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1em;
+      height: 1em;
+      cursor: pointer;
+    }
+    .badge-icon picture {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .badge-icon img {
+      width: 1em;
+      height: 1em;
+      display: block;
+    }
+    .badge-icon::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 6px);
+      transform: translateX(-50%) translateY(4px);
+      background: rgba(15, 20, 25, 0.92);
+      color: #ffffff;
+      padding: 6px 8px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      z-index: 50;
+    }
+    .badge-icon::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 2px);
+      transform: translateX(-50%);
+      border-width: 6px 6px 0 6px;
+      border-style: solid;
+      border-color: rgba(15, 20, 25, 0.92) transparent transparent transparent;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+      z-index: 49;
+    }
+    .badge-icon:hover::after,
+    .badge-icon:focus::after,
+    .badge-icon:hover::before,
+    .badge-icon:focus::before {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .badge-icon:focus {
+      outline: none;
+    }
     .empty-state {
       border: 2px dashed var(--text-muted);
       border-radius: 16px;
@@ -1261,6 +1518,7 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       display: flex;
       flex-direction: column;
       gap: 4px;
+      min-width: 0;
     }
     .user-search-name {
       font-size: 16px;
@@ -1270,6 +1528,10 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       font-size: 13px;
       color: var(--text-muted);
       font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
     }
     .user-search-stats {
       font-size: 12px;
@@ -1415,14 +1677,14 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
     /* X-like layout overrides */
     :root {
       color-scheme: dark;
-      --x-bg: #000000;
+      --x-bg: #1a1a1a;
       --x-surface: #000000;
       --x-card: #16181c;
       --x-border: #2f3336;
       --x-text: #e7e9ea;
       --x-muted: #71767b;
-      --x-accent: #1d9bf0;
-      --x-accent-hover: #1a8cd8;
+      --x-accent: #ff0606;
+      --x-accent-hover: #9c1111;
       --x-success: #00ba7c;
       --page-bg: var(--x-bg);
       --surface: var(--x-surface);
@@ -1646,10 +1908,19 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
     [data-theme="light"] .topbar-btn:hover {
       background: rgba(15, 20, 25, 0.06);
     }
+    .topbar-search {
+      display: none;
+    }
+    @media (max-width: 1200px) {
+      .topbar-search {
+        display: inline-flex;
+      }
+    }
     .topbar-title {
       display: flex;
       flex-direction: column;
       gap: 2px;
+      min-width: 0;
     }
     .topbar-name {
       font-size: 16px;
@@ -1760,6 +2031,7 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       display: flex;
       flex-direction: column;
       gap: 8px;
+      min-width: 0;
     }
     .profile-name {
       margin: 0;
@@ -1770,7 +2042,11 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
     .profile-handle {
       color: var(--x-muted);
       font-size: 14px;
-      word-break: break-all;
+      word-break: normal;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
     }
     .profile-meta {
       display: flex;
@@ -2106,6 +2382,9 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       gap: 10px;
       min-width: 0;
     }
+    .x-card-user > div {
+      min-width: 0;
+    }
     .x-card-user img,
     .x-card-avatar {
       width: 40px;
@@ -2132,6 +2411,10 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
     .x-card-sub {
       font-size: 12px;
       color: var(--x-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
     }
     .x-follow-btn {
       border: 1px solid var(--x-border);
@@ -2295,6 +2578,8 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       background: linear-gradient(180deg, var(--sidebar-bg) 0%, rgba(249, 250, 251, 0.98) 100%);
       border-right: 1px solid rgba(0, 0, 0, 0.06);
       box-shadow: 4px 0 24px rgba(0, 0, 0, 0.03);
+      padding: 0;
+      gap: 0;
       width: var(--sidebar-width);
       min-width: var(--sidebar-width);
       position: sticky;
@@ -2310,6 +2595,7 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
         min-width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       overflow: hidden;
+      overflow-x: hidden;
       z-index: 200;
     }
     [data-theme="dark"] .sidebar.app-sidebar {
@@ -2343,6 +2629,7 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       gap: 4px;
       flex: 1;
       overflow-y: auto;
+      overflow-x: hidden;
     }
     .sidebar.app-sidebar .sidebar-but {
       display: flex;
@@ -2360,6 +2647,8 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       transition: all 0.15s ease;
       text-decoration: none;
       outline: none;
+      min-width: 0;
+      max-width: 100%;
     }
     .sidebar.app-sidebar .sidebar-but:hover {
       background: var(--gray-light);
@@ -2597,6 +2886,32 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
         padding: 6px;
       }
     }
+    @media (max-width: 1200px) {
+      .page-layout.x-layout {
+        --sidebar-width: 80px;
+      }
+      .sidebar.app-sidebar .sidebar-but-text,
+      .sidebar.app-sidebar .sidebar-but-shortcut {
+        display: none;
+      }
+      .sidebar.app-sidebar .sidebar-but {
+        justify-content: center;
+        padding: 10px;
+      }
+      .sidebar.app-sidebar .sidebar-footer-userinfo {
+        justify-content: center;
+        padding: 6px;
+      }
+      .sidebar.app-sidebar .user-details {
+        display: none;
+      }
+      .sidebar.app-sidebar .sidebar-minimize-btn {
+        justify-content: center;
+      }
+      .sidebar.app-sidebar .sidebar-minimize-btn .minimize-text {
+        display: none;
+      }
+    }
     .sidebar-toggle-btn {
       display: none;
     }
@@ -2677,13 +2992,11 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
             </picture>
           </span>
           <span class="sidebar-but-text">New chat</span>
-          <span class="sidebar-but-shortcut" aria-hidden="true">⇧⌘O</span>
         </a>
 
         <a class="sidebar-but" href="<?php echo APP_URL; ?>/app" title="Conversations">
           <span class="sidebar-but-icon" aria-hidden="true">💬</span>
           <span class="sidebar-but-text">Conversations</span>
-          <span class="sidebar-but-shortcut" aria-hidden="true">⇧⌘K</span>
         </a>
 
         <a class="sidebar-but" href="<?php echo APP_URL; ?>/app" title="Share with friends">
@@ -2694,7 +3007,6 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
             </picture>
           </span>
           <span class="sidebar-but-text">Share with friends</span>
-          <span class="sidebar-but-shortcut" aria-hidden="true">⇧⌘S</span>
         </a>
 
         <a class="sidebar-but" href="<?php echo APP_URL; ?>/app" title="Mind map">
@@ -2737,7 +3049,10 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
             />
           </div>
           <div class="user-details">
-            <div class="user-name"><?php echo $displayNameEscaped; ?></div>
+            <div class="user-name name-line">
+              <span class="name-text"><?php echo $displayNameEscaped; ?></span>
+              <?php echo $profileBadgesHtml; ?>
+            </div>
             <div class="user-credit-text">Public profile</div>
             <div class="credit-bar-container">
               <div class="credit-bar-fill" style="width: 0%;"></div>
@@ -2755,8 +3070,14 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
         <button id="toggleSidebar" class="topbar-btn sidebar-toggle-btn" type="button" aria-label="Toggle sidebar">
           <i class="fa-solid fa-bars"></i>
         </button>
+        <button class="topbar-btn topbar-search" type="button" data-open-user-search aria-label="Search users">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </button>
         <div class="topbar-title">
-          <div class="topbar-name"><?php echo $displayNameEscaped; ?></div>
+          <div class="topbar-name name-line">
+            <span class="name-text"><?php echo $displayNameEscaped; ?></span>
+            <?php echo $profileBadgesHtml; ?>
+          </div>
           <div class="topbar-meta"><?php echo $postCount; ?> posts</div>
         </div>
       </header>
@@ -2788,7 +3109,10 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
         </div>
 
         <div class="profile-details">
-          <h1 class="profile-name"><?php echo $displayNameEscaped; ?></h1>
+          <h1 class="profile-name name-line">
+            <span class="name-text"><?php echo $displayNameEscaped; ?></span>
+            <?php echo $profileBadgesHtml; ?>
+          </h1>
           <div class="profile-handle"><?php echo $profileHandleEscaped; ?></div>
           <div class="profile-meta">
             <span><i class="fa-solid fa-school"></i><?php echo $schoolEscaped; ?></span>
@@ -2952,6 +3276,8 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
               $avatarUrl = $hasAvatar ? user_image_url($rawAvatar) : '';
               $avatarEscaped = htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8');
               $avatarInitials = htmlspecialchars($getInitials($name), ENT_QUOTES, 'UTF-8');
+              $badgeKeys = compute_user_badge_keys($row['id'], $manualBadgeLookup, $streakMaxDaysByUser);
+              $badgesHtml = render_badges_html($badgeKeys, $badgeRegistry);
             ?>
             <div class="x-card-item">
               <div class="x-card-user">
@@ -2961,7 +3287,10 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
                   <div class="x-card-avatar"><?php echo $avatarInitials; ?></div>
                 <?php endif; ?>
                 <div>
-                  <div class="x-card-name"><?php echo $nameEscaped; ?></div>
+                  <div class="x-card-name name-line">
+                    <span class="name-text"><?php echo $nameEscaped; ?></span>
+                    <?php echo $badgesHtml; ?>
+                  </div>
                   <div class="x-card-sub"><?php echo $handleEscaped; ?></div>
                 </div>
               </div>
@@ -2994,6 +3323,8 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
               $avatarUrl = $hasAvatar ? user_image_url($rawAvatar) : '';
               $avatarEscaped = htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8');
               $avatarInitials = htmlspecialchars($getInitials($name), ENT_QUOTES, 'UTF-8');
+              $badgeKeys = compute_user_badge_keys($row['id'], $manualBadgeLookup, $streakMaxDaysByUser);
+              $badgesHtml = render_badges_html($badgeKeys, $badgeRegistry);
             ?>
             <div class="x-card-item">
               <div class="x-card-user">
@@ -3003,7 +3334,10 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
                   <div class="x-card-avatar"><?php echo $avatarInitials; ?></div>
                 <?php endif; ?>
                 <div>
-                  <div class="x-card-name"><?php echo $nameEscaped; ?></div>
+                  <div class="x-card-name name-line">
+                    <span class="name-text"><?php echo $nameEscaped; ?></span>
+                    <?php echo $badgesHtml; ?>
+                  </div>
                   <div class="x-card-sub"><?php echo $schoolRowEscaped; ?></div>
                 </div>
               </div>
@@ -3084,6 +3418,55 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
   </div>
 
   <script>
+    const badgeRegistry = <?php echo $badgeRegistryJson ?: '{}'; ?>;
+
+    function renderBadges(badgeKeys) {
+      if (!Array.isArray(badgeKeys) || badgeKeys.length === 0) {
+        return null;
+      }
+      const wrap = document.createElement('span');
+      wrap.className = 'profile-badges';
+
+      badgeKeys.forEach((badgeKey) => {
+        const badge = badgeRegistry[badgeKey];
+        if (!badge) return;
+        const icon = badge.icon || {};
+        const span = document.createElement('span');
+        span.className = 'badge-icon';
+        span.setAttribute('role', 'img');
+        span.setAttribute('tabindex', '0');
+        span.setAttribute('aria-label', badge.title || '');
+        if (badge.title) {
+          span.dataset.tooltip = badge.title;
+        }
+
+        const picture = document.createElement('picture');
+        picture.setAttribute('aria-hidden', 'true');
+
+        if (icon.webp) {
+          const source = document.createElement('source');
+          source.srcset = icon.webp;
+          source.type = 'image/webp';
+          picture.appendChild(source);
+        }
+
+        if (icon.gif) {
+          const img = document.createElement('img');
+          img.src = icon.gif;
+          img.alt = icon.alt || '';
+          img.width = 16;
+          img.height = 16;
+          img.loading = 'lazy';
+          picture.appendChild(img);
+        }
+
+        span.appendChild(picture);
+        wrap.appendChild(span);
+      });
+
+      return wrap.childNodes.length ? wrap : null;
+    }
+
     const copyBtn = document.getElementById('copyProfileLink');
     if (copyBtn) {
       const originalCopyHtml = copyBtn.innerHTML;
@@ -3255,8 +3638,15 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
         info.className = 'user-search-info';
 
         const name = document.createElement('div');
-        name.className = 'user-search-name';
-        name.textContent = user.name || 'ApilageAI User';
+        name.className = 'user-search-name name-line';
+        const nameText = document.createElement('span');
+        nameText.className = 'name-text';
+        nameText.textContent = user.name || 'ApilageAI User';
+        name.appendChild(nameText);
+        const badgesEl = renderBadges(user.badges);
+        if (badgesEl) {
+          name.appendChild(badgesEl);
+        }
 
         const meta = document.createElement('div');
         meta.className = 'user-search-meta';
@@ -3451,9 +3841,29 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       }
 
       if (Array.isArray(streakData) && streakData.length) {
+        const clampNumber = (value, min, max) => {
+          const num = Number(value);
+          if (Number.isNaN(num)) return min;
+          return Math.min(Math.max(num, min), max);
+        };
+
+        const sanitizeSummaryText = (text) => {
+          let safe = String(text || '').trim();
+          if (!safe) return '';
+          try {
+            safe = safe.replace(/[^\p{L}\p{N}\s]/gu, '');
+          } catch (err) {
+            safe = safe.replace(/[^A-Za-z0-9\s]/g, '');
+          }
+          safe = safe.replace(/\s+/g, ' ').trim();
+          if (!safe) return '';
+          const words = safe.split(' ').filter(Boolean).slice(0, 25);
+          return words.join(' ');
+        };
+
         const totals = streakData.map((item) => {
-          const hours = Number(item.hours) || 0;
-          const minutes = Number(item.minutes) || 0;
+          const hours = clampNumber(item.hours, 0, 23);
+          const minutes = clampNumber(item.minutes, 0, 59);
           return (hours * 60) + minutes;
         });
         const maxMinutes = Math.max(...totals, 1);
@@ -3461,8 +3871,8 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
         const buttons = [];
 
         const formatDuration = (hours, minutes) => {
-          const safeHours = Number(hours) || 0;
-          const safeMinutes = Number(minutes) || 0;
+          const safeHours = clampNumber(hours, 0, 23);
+          const safeMinutes = clampNumber(minutes, 0, 59);
           if (safeHours === 0 && safeMinutes === 0) {
             return 'No time logged';
           }
@@ -3501,7 +3911,7 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
             streakSummaryMeta.textContent = formatDuration(item.hours, item.minutes);
           }
           if (streakSummaryText) {
-            const summary = (item.summary || '').trim();
+            const summary = sanitizeSummaryText(item.summary || '');
             streakSummaryText.textContent = summary || 'No summary logged for this day.';
           }
         };
