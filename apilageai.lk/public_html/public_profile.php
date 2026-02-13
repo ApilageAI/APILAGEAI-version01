@@ -2270,6 +2270,7 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       width: 100%;
       height: 100vh;
       overflow: hidden;
+      align-items: stretch;
       --sidebar-width: 260px;
     }
     body.sidebar-collapsed .page-layout.x-layout {
@@ -2281,10 +2282,14 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       overflow-y: auto;
       margin-left: 0;
       min-width: 0;
+      max-width: 100%;
+      width: 100%;
+      flex: 1 1 0%;
     }
     .right-rail {
       height: 100vh;
       overflow: hidden;
+      flex: 0 0 340px;
     }
     .sidebar.app-sidebar {
       background: linear-gradient(180deg, var(--sidebar-bg) 0%, rgba(249, 250, 251, 0.98) 100%);
@@ -2325,8 +2330,7 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       height: 44px;
       object-fit: contain;
       border-radius: 12px;
-      background: #ffffff;
-      border: 2px solid var(--border-color);
+      background: none;
     }
     .sidebar.app-sidebar .sidebar-backn {
       position: absolute;
