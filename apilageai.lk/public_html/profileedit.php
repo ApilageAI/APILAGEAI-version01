@@ -28,6 +28,178 @@ function build_in_clause($count) {
     ];
 }
 
+function fetch_active_learning_streak($db, $user_id) {
+    $stmt = $db->prepare("SELECT id, name, status, started_at, ended_at, ended_reason FROM learning_streaks WHERE user_id=? AND status='active' ORDER BY started_at DESC LIMIT 1");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    return $row ?: null;
+}
+
+function fetch_learning_streak_stats($db, $streak_id) {
+    $stmt = $db->prepare("SELECT COUNT(*) AS day_count, MAX(entry_date) AS last_entry_date FROM learning_streak_entries WHERE streak_id=?");
+    $stmt->bind_param("i", $streak_id);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    return [
+        'day_count' => (int)($row['day_count'] ?? 0),
+        'last_entry_date' => $row['last_entry_date'] ?? null
+    ];
+}
+
+function evaluate_learning_streak_state($started_at, $last_entry_date) {
+    $todayStr = date('Y-m-d');
+    $todayTs = strtotime($todayStr);
+    $startDate = $started_at ? substr($started_at, 0, 10) : $todayStr;
+    $startTs = strtotime($startDate);
+
+    if (empty($last_entry_date)) {
+        if ($todayTs > $startTs) {
+            return ['needs_check_in' => false, 'missed' => true];
+        }
+        return ['needs_check_in' => true, 'missed' => false];
+    }
+
+    $lastTs = strtotime($last_entry_date);
+    if ($todayTs === $lastTs) {
+        return ['needs_check_in' => false, 'missed' => false];
+    }
+
+    $nextTs = strtotime($last_entry_date . ' +1 day');
+    if ($todayTs === $nextTs) {
+        return ['needs_check_in' => true, 'missed' => false];
+    }
+
+    if ($todayTs > $nextTs) {
+        return ['needs_check_in' => false, 'missed' => true];
+    }
+
+    return ['needs_check_in' => false, 'missed' => false];
+}
+
+function end_learning_streak($db, $user_id, $streak_id, $reason) {
+    $stmt = $db->prepare("UPDATE learning_streaks SET status='ended', ended_at=NOW(), ended_reason=?, updated_at=NOW() WHERE id=? AND user_id=? AND status='active'");
+    $stmt->bind_param("sii", $reason, $streak_id, $user_id);
+    $stmt->execute();
+    $success = $stmt->affected_rows > 0;
+    $stmt->close();
+
+    $stmt = $db->prepare("UPDATE users SET learning_streak_started_at = NULL WHERE id=?");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $stmt->close();
+
+    return $success;
+}
+
+function fetch_learning_streak_history($db, $user_id, $limit = 10) {
+    $stmt = $db->prepare("
+        SELECT s.id, s.name, s.status, s.started_at, s.ended_at, s.ended_reason,
+               COUNT(e.id) AS day_count
+        FROM learning_streaks s
+        LEFT JOIN learning_streak_entries e ON e.streak_id = s.id
+        WHERE s.user_id = ?
+        GROUP BY s.id, s.name, s.status, s.started_at, s.ended_at, s.ended_reason
+        ORDER BY s.started_at DESC
+        LIMIT ?
+    ");
+    $stmt->bind_param("ii", $user_id, $limit);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $rows = [];
+    while ($row = $res->fetch_assoc()) {
+        $rows[] = $row;
+    }
+    $stmt->close();
+    return $rows;
+}
+
+function fetch_learning_streak_max_days($db, $user_id) {
+    $stmt = $db->prepare("
+        SELECT MAX(day_count) AS max_day_count FROM (
+            SELECT s.id, COUNT(e.id) AS day_count
+            FROM learning_streaks s
+            LEFT JOIN learning_streak_entries e ON e.streak_id = s.id
+            WHERE s.user_id = ?
+            GROUP BY s.id
+        ) AS streak_days
+    ");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    return isset($row['max_day_count']) ? (int)$row['max_day_count'] : 0;
+}
+
+function build_learning_streak_payload($db, $user_id, $history_limit = 10, $auto_end = true) {
+    $active = fetch_active_learning_streak($db, $user_id);
+    $needsCheckIn = false;
+    $autoEnded = false;
+    $dayCount = 0;
+    $lastEntryDate = null;
+
+    if ($active) {
+        $stats = fetch_learning_streak_stats($db, $active['id']);
+        $dayCount = $stats['day_count'];
+        $lastEntryDate = $stats['last_entry_date'];
+        $state = evaluate_learning_streak_state($active['started_at'], $lastEntryDate);
+        $needsCheckIn = $state['needs_check_in'];
+
+        if ($state['missed'] && $auto_end) {
+            end_learning_streak($db, $user_id, $active['id'], 'missed');
+            $active = null;
+            $needsCheckIn = false;
+            $autoEnded = true;
+            $dayCount = 0;
+            $lastEntryDate = null;
+        }
+    }
+
+    $history = fetch_learning_streak_history($db, $user_id, $history_limit);
+    $maxDays = fetch_learning_streak_max_days($db, $user_id);
+    $currentDays = $active ? $dayCount : 0;
+
+    $thresholds = [
+        'silver' => 7,
+        'gold' => 30,
+        'diamond' => 100
+    ];
+    $badges = [];
+    $progress = ['current_days' => $currentDays];
+
+    foreach ($thresholds as $key => $target) {
+        $earned = $maxDays >= $target;
+        $currentForProgress = $earned ? $target : min($currentDays, $target);
+        $percent = $target > 0 ? (int)round(($currentForProgress / $target) * 100) : 0;
+        $badges[$key] = $earned;
+        $progress[$key] = [
+            'target' => $target,
+            'remaining' => $earned ? 0 : max(0, $target - $currentDays),
+            'percent' => $earned ? 100 : $percent,
+            'earned' => $earned
+        ];
+    }
+
+    return [
+        'active' => (bool)$active,
+        'active_streak' => $active ? [
+            'id' => (int)$active['id'],
+            'name' => $active['name'],
+            'started_at' => $active['started_at'],
+            'day_count' => $dayCount,
+            'last_entry_date' => $lastEntryDate
+        ] : null,
+        'needs_check_in' => $needsCheckIn,
+        'auto_ended' => $autoEnded,
+        'history' => $history,
+        'badges' => $badges,
+        'progress' => $progress,
+        'max_days' => $maxDays
+    ];
+}
+
 // ----------- LOAD ACTION -----------
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'load') {
     // Fetch user general info
@@ -74,6 +246,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'load') {
     $googleEmail = $googleRow['google_email'] ?? null;
     $stmt->close();
 
+    $streakSummary = build_learning_streak_payload($db, $user_id);
+    if (!empty($streakSummary['active']) && !empty($streakSummary['active_streak']['started_at'])) {
+        $userData['learning_streak_started_at'] = $streakSummary['active_streak']['started_at'];
+    } else {
+        $userData['learning_streak_started_at'] = null;
+    }
+
     echo json_encode([
         'success' => true,
         'user' => $userData,
@@ -87,7 +266,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'load') {
         'public_profile_token' => $userData['public_profile_token'] ?? null,
         'public_profile_username' => $userData['public_profile_username'] ?? null,
         'public_profile_enabled' => isset($userData['public_profile_enabled']) ? (int)$userData['public_profile_enabled'] : 1,
-        'learning_streak_started_at' => $userData['learning_streak_started_at'] ?? null
+        'learning_streak_started_at' => $userData['learning_streak_started_at'] ?? null,
+        'learning_streak' => $streakSummary
     ]);
     exit();
 }
@@ -297,21 +477,42 @@ if ($action === 'public_profile' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $updated = $stmt->get_result()->fetch_assoc();
     $stmt->close();
 
+    $streakSummary = build_learning_streak_payload($db, $user_id);
+    $learningStreakStarted = $streakSummary['active_streak']['started_at'] ?? null;
     echo json_encode([
         'success' => true,
         'public_profile_token' => $updated['public_profile_token'] ?? null,
         'public_profile_username' => $updated['public_profile_username'] ?? null,
         'public_profile_enabled' => isset($updated['public_profile_enabled']) ? (int)$updated['public_profile_enabled'] : 1,
-        'learning_streak_started_at' => $updated['learning_streak_started_at'] ?? null
+        'learning_streak_started_at' => $learningStreakStarted,
+        'learning_streak' => $streakSummary
     ]);
     exit();
 }
 
 // ----------- START LEARNING STREAK -----------
 if ($action === 'start_streak' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $now = date('Y-m-d H:i:s');
-    $stmt = $db->prepare("UPDATE users SET learning_streak_started_at = COALESCE(learning_streak_started_at, ?) WHERE id = ?");
-    $stmt->bind_param("si", $now, $user_id);
+    $nameRaw = trim($_POST['streak_name'] ?? '');
+    $nameRaw = preg_replace('/\s+/', ' ', $nameRaw);
+    $name = trim(strip_tags($nameRaw));
+    if ($name === '') {
+        echo json_encode(['success' => false, 'message' => 'Please provide a streak name.']);
+        exit();
+    }
+    $nameLength = function_exists('mb_strlen') ? mb_strlen($name) : strlen($name);
+    if ($nameLength > 80) {
+        echo json_encode(['success' => false, 'message' => 'Streak name must be 80 characters or less.']);
+        exit();
+    }
+
+    $existing = fetch_active_learning_streak($db, $user_id);
+    if ($existing) {
+        echo json_encode(['success' => false, 'message' => 'You already have an active streak.']);
+        exit();
+    }
+
+    $stmt = $db->prepare("INSERT INTO learning_streaks (user_id, name, status, started_at, created_at, updated_at) VALUES (?, ?, 'active', NOW(), NOW(), NOW())");
+    $stmt->bind_param("is", $user_id, $name);
     $success = $stmt->execute();
     $stmt->close();
 
@@ -320,15 +521,107 @@ if ($action === 'start_streak' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
-    $stmt = $db->prepare("SELECT learning_streak_started_at FROM users WHERE id=?");
+    $stmt = $db->prepare("UPDATE users SET learning_streak_started_at = NOW() WHERE id = ?");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
-    $row = $stmt->get_result()->fetch_assoc();
     $stmt->close();
 
+    $streakSummary = build_learning_streak_payload($db, $user_id);
     echo json_encode([
         'success' => true,
-        'learning_streak_started_at' => $row['learning_streak_started_at'] ?? $now
+        'learning_streak' => $streakSummary,
+        'learning_streak_started_at' => $streakSummary['active_streak']['started_at'] ?? null
+    ]);
+    exit();
+}
+
+// ----------- END LEARNING STREAK -----------
+if ($action === 'end_streak' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $active = fetch_active_learning_streak($db, $user_id);
+    if (!$active) {
+        echo json_encode(['success' => false, 'message' => 'No active streak to end.']);
+        exit();
+    }
+
+    end_learning_streak($db, $user_id, $active['id'], 'manual');
+    $streakSummary = build_learning_streak_payload($db, $user_id);
+    echo json_encode([
+        'success' => true,
+        'learning_streak' => $streakSummary,
+        'learning_streak_started_at' => null
+    ]);
+    exit();
+}
+
+// ----------- LOG LEARNING STREAK CHECK-IN -----------
+if ($action === 'log_streak' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $hours = isset($_POST['hours']) ? (int)$_POST['hours'] : 0;
+    $minutes = isset($_POST['minutes']) ? (int)$_POST['minutes'] : 0;
+    if ($hours < 0 || $hours > 23 || $minutes < 0 || $minutes > 59) {
+        echo json_encode(['success' => false, 'message' => 'Invalid time values.']);
+        exit();
+    }
+    if ($hours === 0 && $minutes === 0) {
+        echo json_encode(['success' => false, 'message' => 'Please enter at least 1 minute of study time.']);
+        exit();
+    }
+
+    $summaryRaw = trim($_POST['summary'] ?? '');
+    $summaryClean = trim(strip_tags($summaryRaw));
+    if ($summaryClean === '') {
+        echo json_encode(['success' => false, 'message' => 'Please add a short note about what you studied.']);
+        exit();
+    }
+    $summary = function_exists('mb_substr') ? mb_substr($summaryClean, 0, 140) : substr($summaryClean, 0, 140);
+
+    $active = fetch_active_learning_streak($db, $user_id);
+    if (!$active) {
+        echo json_encode(['success' => false, 'message' => 'No active streak found.']);
+        exit();
+    }
+
+    $stats = fetch_learning_streak_stats($db, $active['id']);
+    $state = evaluate_learning_streak_state($active['started_at'], $stats['last_entry_date']);
+    if ($state['missed']) {
+        end_learning_streak($db, $user_id, $active['id'], 'missed');
+        echo json_encode(['success' => false, 'message' => 'Your streak ended because a day was missed.']);
+        exit();
+    }
+    if (!$state['needs_check_in']) {
+        echo json_encode(['success' => false, 'message' => 'Today has already been logged.']);
+        exit();
+    }
+
+    $today = date('Y-m-d');
+    $stmt = $db->prepare("INSERT INTO learning_streak_entries (streak_id, user_id, entry_date, hours, minutes, summary) VALUES (?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("iisiis", $active['id'], $user_id, $today, $hours, $minutes, $summary);
+    $success = $stmt->execute();
+    $errorCode = $stmt->errno;
+    $stmt->close();
+
+    if (!$success) {
+        if ($errorCode === 1062) {
+            echo json_encode(['success' => false, 'message' => 'Today has already been logged.']);
+            exit();
+        }
+        echo json_encode(['success' => false, 'message' => 'Failed to log streak check-in.']);
+        exit();
+    }
+
+    $streakSummary = build_learning_streak_payload($db, $user_id);
+    echo json_encode([
+        'success' => true,
+        'learning_streak' => $streakSummary
+    ]);
+    exit();
+}
+
+// ----------- LEARNING STREAK STATUS -----------
+if ($action === 'streak_status' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    $streakSummary = build_learning_streak_payload($db, $user_id);
+    echo json_encode([
+        'success' => true,
+        'learning_streak' => $streakSummary
     ]);
     exit();
 }

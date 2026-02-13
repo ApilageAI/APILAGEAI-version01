@@ -26,6 +26,34 @@
 </div>
 {/if}
 
+<div id="streak-checkin-overlay" class="streak-checkin-overlay" aria-hidden="true">
+    <div class="streak-checkin-card" role="dialog" aria-modal="true" aria-labelledby="streakCheckinTitle">
+        <div class="streak-checkin-header">
+            <h3 id="streakCheckinTitle">Continue your learning streak</h3>
+            <p>How much time did you study today?</p>
+        </div>
+        <div class="streak-checkin-time">
+            <div class="streak-input">
+                <label for="streakHours">Hours</label>
+                <input id="streakHours" type="number" min="0" max="23" placeholder="0">
+            </div>
+            <div class="streak-input">
+                <label for="streakMinutes">Minutes</label>
+                <input id="streakMinutes" type="number" min="0" max="59" placeholder="0">
+            </div>
+        </div>
+        <div class="streak-input">
+            <label for="streakSummary">What did you learn?</label>
+            <textarea id="streakSummary" rows="3" maxlength="140" placeholder="Short note about what you studied"></textarea>
+        </div>
+        <div id="streakCheckinMessage" class="streak-checkin-message" aria-live="polite"></div>
+        <div class="streak-checkin-actions">
+            <button id="streakSubmitBtn" class="btn btn-primary" type="button">Submit &amp; Continue Streak</button>
+            <button id="streakEndBtn" class="btn btn-secondary" type="button">End Streak</button>
+        </div>
+    </div>
+</div>
+
 <div class="app-container">
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
@@ -38,7 +66,12 @@
 
     <div class="sidebar-items" style="padding: 16px; display: flex; flex-direction: column; gap: 12px;">
         <button class="sidebar-but new-chat-btn" id="sidebar-new-chat" type="button" title="New chat">
-            <span class="sidebar-but-icon" aria-hidden="true">✏️</span>
+            <span class="sidebar-but-icon" aria-hidden="true">
+                <picture>
+                    <source srcset="https://fonts.gstatic.com/s/e/notoemoji/latest/270f_fe0f/512.webp" type="image/webp">
+                    <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/270f_fe0f/512.gif" alt="✏" width="20" height="20">
+                </picture>
+            </span>
             <span class="sidebar-but-text">New chat</span>
             <span class="sidebar-but-shortcut" aria-hidden="true">⇧⌘O</span>
         </button>
@@ -48,7 +81,12 @@
             <span class="sidebar-but-shortcut" aria-hidden="true">⇧⌘K</span>
         </button>
         <button class="sidebar-but" id="open-share-modal" type="button" title="Share with friends">
-            <span class="sidebar-but-icon" aria-hidden="true">🚀</span>
+            <span class="sidebar-but-icon" aria-hidden="true">
+                <picture>
+                    <source srcset="https://fonts.gstatic.com/s/e/notoemoji/latest/1f680/512.webp" type="image/webp">
+                    <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f680/512.gif" alt="🚀" width="20" height="20">
+                </picture>
+            </span>
             <span class="sidebar-but-text">Share with friends</span>
             <span class="sidebar-but-shortcut" aria-hidden="true">⇧⌘S</span>
         </button>
@@ -67,7 +105,12 @@
             <span class="sidebar-but-text">MCQ game</span>
         </button>
         <button class="sidebar-but" type="button" onclick="window.open('{$smarty.const.APP_URL}/images', '_self');" title="Image Gallery">
-            <span class="sidebar-but-icon" aria-hidden="true">📷</span>
+            <span class="sidebar-but-icon" aria-hidden="true">
+                <picture>
+                    <source srcset="https://fonts.gstatic.com/s/e/notoemoji/latest/1f4f8/512.webp" type="image/webp">
+                    <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f4f8/512.gif" alt="📸" width="20" height="20">
+                </picture>
+            </span>
             <span class="sidebar-but-text">Image Gallery</span>
         </button>
         {assign var=profileSlug value=$user->_data.public_profile_username}
@@ -514,10 +557,28 @@
                     </div>
                     <div class="form-section">
                         <h3>Learning Streak</h3>
-                        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                        <div class="streak-about">
+                            <h4>About Streaks</h4>
+                            <p>If you fail to log in to Apilageai every day, your streak is canceled and 50 credits are reduced.</p>
+                            <p>Streak is a challenge that tracks daily study progress. Students log what they studied and hours spent, earning badges like Gold, Silver, and Diamond for consistency.</p>
+                            <p>Badges can convert to credits after proven success. The system also predicts results, analyzes performance, finds weak areas, and creates personalized study plans.</p>
+                        </div>
+                        <div class="form-group">
+                            <label for="learningStreakName">Streak name</label>
+                            <input type="text" id="learningStreakName" placeholder="e.g., Exam prep">
+                            <div class="streak-help">Give your streak a short name to show in your profile.</div>
+                        </div>
+                        <div class="streak-actions">
                             <button class="btn btn-secondary" id="startLearningStreakBtn" type="button">Start Learning Streak</button>
+                            <button class="btn btn-secondary" id="endLearningStreakBtn" type="button" style="display:none;">End Streak</button>
                             <span id="learningStreakStatus" style="font-size: 12px; color: var(--text-secondary);"></span>
                         </div>
+                        <div id="learningStreakActive" class="streak-active-card" style="display:none;"></div>
+                        <div id="learningStreakHistory" class="streak-history" style="display:none;">
+                            <h4>Streak History</h4>
+                            <ul id="learningStreakHistoryList" class="streak-history-list"></ul>
+                        </div>
+                        <div id="learningStreakBadges" class="streak-badges"></div>
                     </div>
                     <div class="form-section">
                         <button class="btn btn-primary" id="savePublicProfileBtn" type="button">Save Public Profile</button>
@@ -904,6 +965,21 @@
 
     <!-- Right side: Notification Bell -->
     <div class="navbar-right">
+        <button id="streakIndicator" class="streak-indicator" type="button" aria-label="Learning streak" aria-haspopup="dialog" aria-expanded="false">
+            <span class="streak-emoji" aria-hidden="true">
+                <picture>
+                    <source srcset="https://fonts.gstatic.com/s/e/notoemoji/latest/1f525/512.webp" type="image/webp">
+                    <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f525/512.gif" alt="🔥" width="18" height="18">
+                </picture>
+            </span>
+            <span id="streakDayCount" class="streak-day-count">0</span>
+        </button>
+        <div id="streakInfoPopover" class="streak-popover" role="dialog" aria-hidden="true" aria-labelledby="streakPopoverTitle">
+            <button id="streakPopoverClose" class="streak-popover-close" type="button" aria-label="Close streak info">&times;</button>
+            <h4 id="streakPopoverTitle">Learning Streak</h4>
+            <p>Track your daily study time, keep your streak alive, and earn badges as you grow.</p>
+            <button id="streakPopoverGo" class="btn btn-primary" type="button">Go to Streak</button>
+        </div>
         <div class="notification-wrapper">
           <button id="notificationBell" class="notification-btn">
             <i class="fa fa-bell"></i>
@@ -1103,6 +1179,7 @@
 <script src="{$smarty.const.APP_URL}/assets/scripts/mp.min.js?V=01.22.22.2025"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/app.min.js?V=1.30.01.2026{get_hash_token()}"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/prefrence.min.js?V=1.25.2.2026{get_hash_token()}"></script>
+<script src="{$smarty.const.APP_URL}/assets/scripts/learning-streak.js?V=1.00.00.2026{get_hash_token()}"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/notifications.js?V=03.01.10.2025"></script>
 <script type="module" src="{$smarty.const.APP_URL}/assets/scripts/gm.min.js?V=12.20.10.2025"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/ob.js?V=10.26.09.2025"></script>
@@ -1118,6 +1195,7 @@ body.guest-mode #rightsidebar2,
 body.guest-mode .sidebar2,
 body.guest-mode #rightSidebar,
 body.guest-mode .right-sidebar,
+body.guest-mode .streak-indicator,
 body.guest-mode .notification-wrapper,
 body.guest-mode #modelSwitcher,
 body.guest-mode #button-drop,
@@ -1260,6 +1338,297 @@ body.guest-mode .main-content {
 }
 .guest-login-btn:hover {
   border-color: #111827;
+}
+.navbar-right {
+  position: relative;
+}
+.streak-indicator {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  margin-right: 10px;
+  border-radius: 999px;
+  background: #fff2e6;
+  border: 1px solid #f6c79f;
+  color: #9a3412;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+.streak-indicator.is-idle {
+  background: #fff7ed;
+}
+.streak-day-count {
+  min-width: 14px;
+  text-align: center;
+  display: none;
+}
+.streak-emoji img {
+  display: block;
+}
+.streak-popover {
+  position: absolute;
+  right: 0;
+  top: 42px;
+  width: min(260px, 85vw);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.18);
+  display: none;
+  z-index: 10000;
+}
+.streak-popover.is-visible {
+  display: block;
+}
+.streak-popover h4 {
+  margin: 0 22px 6px 0;
+  font-size: 14px;
+  color: #0f172a;
+}
+.streak-popover p {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: #475569;
+}
+.streak-popover-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  line-height: 1;
+  color: #94a3b8;
+  cursor: pointer;
+}
+.streak-popover-close:hover {
+  color: #475569;
+}
+.streak-checkin-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.6);
+  z-index: 1000002;
+}
+.streak-checkin-overlay.is-visible {
+  display: flex;
+}
+.streak-checkin-card {
+  width: min(520px, 94vw);
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 22px 50px rgba(15, 23, 42, 0.25);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.streak-checkin-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #0f172a;
+}
+.streak-checkin-header p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: #475569;
+}
+.streak-checkin-time {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.streak-input {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: #475569;
+}
+.streak-input input,
+.streak-input textarea {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 14px;
+  color: #0f172a;
+}
+.streak-input textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+.streak-checkin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+.streak-checkin-message {
+  font-size: 12px;
+  color: #b91c1c;
+  min-height: 16px;
+}
+.streak-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.streak-about {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fff7ed;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.streak-about h4 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: #7c2d12;
+}
+.streak-about p {
+  margin: 0 0 6px;
+}
+.streak-about p:last-child {
+  margin-bottom: 0;
+}
+.streak-help {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+.streak-active-card {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 13px;
+  color: #0f172a;
+}
+.streak-history {
+  margin-top: 12px;
+}
+.streak-history h4 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: #1f2937;
+}
+.streak-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: #334155;
+}
+.streak-badges {
+  margin-top: 14px;
+  display: grid;
+  gap: 12px;
+}
+.streak-badge {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+.streak-badge img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+.streak-badge-emoji img {
+  width: 32px;
+  height: 32px;
+  display: block;
+}
+[data-theme="dark"] .streak-indicator {
+  background: var(--red-50);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+[data-theme="dark"] .streak-indicator.is-idle {
+  background: #2a1c14;
+}
+[data-theme="dark"] .streak-popover {
+  background: var(--card-bg);
+  border-color: var(--border-color);
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.4);
+}
+[data-theme="dark"] .streak-about {
+  background: #2a1c14;
+  border-color: #3b2f26;
+  color: #f5e6d3;
+}
+[data-theme="dark"] .streak-about h4 {
+  color: #f2c685;
+}
+[data-theme="dark"] .streak-popover h4 {
+  color: var(--text-primary);
+}
+[data-theme="dark"] .streak-popover p {
+  color: var(--text-secondary);
+}
+[data-theme="dark"] .streak-popover-close {
+  color: #94a3b8;
+}
+[data-theme="dark"] .streak-active-card {
+  background: var(--card-bg);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+[data-theme="dark"] .streak-badge {
+  background: var(--card-bg);
+  border-color: var(--border-color);
+}
+[data-theme="dark"] .streak-badge-title {
+  color: var(--text-primary);
+}
+[data-theme="dark"] .streak-badge-meta {
+  color: var(--text-secondary);
+}
+[data-theme="dark"] .streak-progress {
+  background: #2d3748;
+}
+.streak-badge-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+.streak-badge-meta {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 4px;
+}
+.streak-progress {
+  margin-top: 6px;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.streak-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #f97316, #f59e0b);
+  width: 0%;
 }
 </style>
 

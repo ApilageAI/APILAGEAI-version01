@@ -687,6 +687,7 @@ td {
     width: 260px;
     min-width: 260px;
     height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
@@ -952,19 +953,22 @@ td {
 }
 
 .sidebar-footer {
-    position: absolute;
-    bottom: 0;
+    position: relative;
     width: 100%;
     padding: 16px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    margin-top: auto;
     background-color: var(--sidebar-bg);
     transition: opacity 0.3s ease, padding 0.25s ease;
     display: flex;
     flex-direction: column;
     gap: 12px;
+    flex-shrink: 0;
 }
 
 .sidebar.hidden .sidebar-footer {
     padding: 16px 8px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
 }
 
 .sidebar-minimize-btn {
@@ -4970,6 +4974,7 @@ pre[class*=language-].line-numbers {
         left: 0;
         width: 10vw;
         height: 100vh;
+        height: 100dvh;
         transform: translateX(0);
         z-index: 2000;
     }

@@ -238,6 +238,93 @@ if ((int)($userRow['not_student'] ?? 0) === 1) {
     $schoolText = $userRow['school'];
 }
 
+$activeStreak = null;
+$streakStats = ['day_count' => 0, 'last_entry_date' => null];
+$streakGraphData = [];
+$streakGraphWindow = 14;
+$streakGraphDays = $streakGraphWindow;
+$streakGraphJson = '[]';
+
+$activeStmt = $db->prepare(
+    "SELECT id, name, started_at
+     FROM learning_streaks
+     WHERE user_id = ? AND status = 'active'
+     ORDER BY started_at DESC
+     LIMIT 1"
+);
+$activeStmt->bind_param('i', $userRow['id']);
+$activeStmt->execute();
+$activeStreak = $activeStmt->get_result()->fetch_assoc() ?: null;
+$activeStmt->close();
+
+if ($activeStreak) {
+    $statsStmt = $db->prepare(
+        "SELECT COUNT(*) AS day_count, MAX(entry_date) AS last_entry_date
+         FROM learning_streak_entries
+         WHERE streak_id = ?"
+    );
+    $statsStmt->bind_param('i', $activeStreak['id']);
+    $statsStmt->execute();
+    $statsRow = $statsStmt->get_result()->fetch_assoc();
+    $statsStmt->close();
+
+    $streakStats = [
+        'day_count' => (int)($statsRow['day_count'] ?? 0),
+        'last_entry_date' => $statsRow['last_entry_date'] ?? null
+    ];
+
+    $today = new DateTimeImmutable('today');
+    $windowStart = $today->sub(new DateInterval('P' . ($streakGraphWindow - 1) . 'D'));
+    $streakStart = !empty($activeStreak['started_at'])
+        ? new DateTimeImmutable(substr($activeStreak['started_at'], 0, 10))
+        : $windowStart;
+    $startDate = $streakStart > $windowStart ? $streakStart : $windowStart;
+    $streakGraphDays = (int)$today->diff($startDate)->days + 1;
+    $startDateStr = $startDate->format('Y-m-d');
+    $endDateStr = $today->format('Y-m-d');
+
+    $entriesStmt = $db->prepare(
+        "SELECT entry_date, hours, minutes, summary
+         FROM learning_streak_entries
+         WHERE streak_id = ? AND entry_date BETWEEN ? AND ?
+         ORDER BY entry_date ASC"
+    );
+    $entriesStmt->bind_param('iss', $activeStreak['id'], $startDateStr, $endDateStr);
+    $entriesStmt->execute();
+    $entriesResult = $entriesStmt->get_result();
+
+    $entryMap = [];
+    while ($row = $entriesResult->fetch_assoc()) {
+        $entryDate = $row['entry_date'] ?? null;
+        if (!$entryDate) {
+            continue;
+        }
+        $entryMap[$entryDate] = [
+            'hours' => (int)($row['hours'] ?? 0),
+            'minutes' => (int)($row['minutes'] ?? 0),
+            'summary' => $row['summary'] ?? ''
+        ];
+    }
+    $entriesStmt->close();
+
+    for ($i = 0; $i < $streakGraphDays; $i++) {
+        $day = $startDate->add(new DateInterval('P' . $i . 'D'));
+        $dateKey = $day->format('Y-m-d');
+        $entry = $entryMap[$dateKey] ?? ['hours' => 0, 'minutes' => 0, 'summary' => ''];
+        $streakGraphData[] = [
+            'date' => $dateKey,
+            'hours' => (int)$entry['hours'],
+            'minutes' => (int)$entry['minutes'],
+            'summary' => (string)$entry['summary']
+        ];
+    }
+
+    $streakGraphJson = json_encode(
+        $streakGraphData,
+        JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+    );
+}
+
 $coverGradients = [
     'linear-gradient(135deg, #38BDF8 0%, #FF3B30 100%)',
     'linear-gradient(135deg, #0EA5E9 0%, #9333EA 100%)',
@@ -356,11 +443,35 @@ $displayNameEscaped = htmlspecialchars($displayName, ENT_QUOTES, 'UTF-8');
 $profileUrlEscaped = htmlspecialchars($profileUrl, ENT_QUOTES, 'UTF-8');
 $imageUrlEscaped = htmlspecialchars($imageUrl, ENT_QUOTES, 'UTF-8');
 $streakEscaped = $streakStarted ? htmlspecialchars($streakStarted, ENT_QUOTES, 'UTF-8') : '';
+$hasActiveStreak = (bool)$activeStreak;
+$streakName = $activeStreak['name'] ?? '';
+$streakNameEscaped = htmlspecialchars($streakName, ENT_QUOTES, 'UTF-8');
+$streakDayCount = (int)($streakStats['day_count'] ?? 0);
+$streakDayLabel = $streakDayCount > 0 ? "Day {$streakDayCount}" : 'Just started';
+$streakDayLabelEscaped = htmlspecialchars($streakDayLabel, ENT_QUOTES, 'UTF-8');
+$streakDayTotalLabel = $streakDayCount . ' day' . ($streakDayCount === 1 ? '' : 's') . ' logged';
+$streakDayTotalLabelEscaped = htmlspecialchars($streakDayTotalLabel, ENT_QUOTES, 'UTF-8');
+$streakStartedLabel = $activeStreak && !empty($activeStreak['started_at'])
+    ? date('M d, Y', strtotime($activeStreak['started_at']))
+    : '';
+$streakStartedLabelEscaped = htmlspecialchars($streakStartedLabel, ENT_QUOTES, 'UTF-8');
+$streakLastEntryLabel = !empty($streakStats['last_entry_date'])
+    ? date('M d, Y', strtotime($streakStats['last_entry_date']))
+    : 'No check-in yet';
+$streakLastEntryLabelEscaped = htmlspecialchars($streakLastEntryLabel, ENT_QUOTES, 'UTF-8');
+$streakGraphDaysLabel = htmlspecialchars((string)$streakGraphDays, ENT_QUOTES, 'UTF-8');
+$streakGraphRangeLabel = 'Last ' . $streakGraphDays . ' day' . ($streakGraphDays === 1 ? '' : 's');
+$streakGraphRangeLabelEscaped = htmlspecialchars($streakGraphRangeLabel, ENT_QUOTES, 'UTF-8');
 $memberSinceEscaped = htmlspecialchars($memberSince, ENT_QUOTES, 'UTF-8');
 $schoolEscaped = htmlspecialchars($schoolText, ENT_QUOTES, 'UTF-8');
 $coverStyleEscaped = htmlspecialchars($coverStyle, ENT_QUOTES, 'UTF-8');
 $shareImage = $imageUrl !== '' ? $imageUrl : (APP_URL . '/assets/images/logo.png');
 $shareImageEscaped = htmlspecialchars($shareImage, ENT_QUOTES, 'UTF-8');
+$chatCount = count($publishedChats);
+$imageCount = count($publishedImages);
+$postCount = $chatCount + $imageCount;
+$profileHandle = '@' . $profileSlug;
+$profileHandleEscaped = htmlspecialchars($profileHandle, ENT_QUOTES, 'UTF-8');
 $getSub = function ($str, $length) {
     if (function_exists('mb_substr')) {
         return mb_substr($str, 0, $length, 'UTF-8');
@@ -407,7 +518,7 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
   <link rel="shortcut icon" type="image/png" href="<?php echo APP_URL; ?>/assets/images/icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=STIX+Two+Text:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
   <script>
     (function () {
@@ -423,38 +534,59 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
   <style>
     :root {
       color-scheme: light;
-      --brand-red: #e53e3e;
-      --brand-blue: #3b82f6;
-      --brand-blueLight: #eff6ff;
-      --brand-dark: #1a202c;
-      --brand-gray: #f9fafb;
-      --page-bg: #ffffff;
-      --surface: #f9fafb;
-      --card-bg: #ffffff;
-      --border-color: #d1d5db;
+      --primary-red: #e53e3e;
+      --primary-red-hover: #c53030;
+      --blue-50: #eff6ff;
+      --blue-500: #3b82f6;
       --text-primary: #1a202c;
-      --text-muted: #4a5568;
-      --meta-bg: #eff6ff;
-      --badge-bg: #e53e3e;
+      --text-secondary: #4a5568;
+      --bg-color: #ffffff;
+      --sidebar-bg: #F9FAFB;
+      --card-bg: #ffffff;
+      --input-bg: #ffffff;
+      --border-color: #ccc;
+      --page-bg: var(--bg-color);
+      --surface: var(--sidebar-bg);
+      --text-muted: var(--text-secondary);
+      --meta-bg: var(--blue-50);
+      --badge-bg: var(--primary-red);
       --badge-text: #ffffff;
-      --pattern-color: rgba(15, 23, 42, 0.05);
-      --shadow-hard: 0 8px 24px rgba(15, 23, 42, 0.08);
-      --shadow-hard-lg: 0 18px 38px rgba(15, 23, 42, 0.12);
+      --brand-red: var(--primary-red);
+      --brand-blue: var(--blue-500);
+      --brand-blueLight: var(--blue-50);
+      --brand-dark: var(--text-primary);
+      --brand-gray: var(--sidebar-bg);
+      --pattern-color: transparent;
+      --shadow-hard: none;
+      --shadow-hard-lg: none;
     }
     [data-theme="dark"] {
       color-scheme: dark;
-      --page-bg: #1a1a1a;
-      --surface: #1a1a1a;
-      --card-bg: #1e1e1e;
-      --border-color: #444444;
+      --primary-red: #e53e3e;
+      --primary-red-hover: #c53030;
+      --blue-50: #1a2a3a;
+      --blue-500: #3b82f6;
       --text-primary: #f7fafc;
-      --text-muted: #a0aec0;
-      --meta-bg: #1a2a3a;
-      --badge-bg: #e53e3e;
+      --text-secondary: #a0aec0;
+      --bg-color: #1a1a1a;
+      --sidebar-bg: #1a1a1a;
+      --card-bg: #1e1e1e;
+      --input-bg: #333;
+      --border-color: #444444;
+      --page-bg: var(--bg-color);
+      --surface: var(--sidebar-bg);
+      --text-muted: var(--text-secondary);
+      --meta-bg: var(--blue-50);
+      --badge-bg: var(--primary-red);
       --badge-text: #ffffff;
-      --pattern-color: rgba(255, 255, 255, 0.06);
-      --shadow-hard: 0 10px 26px rgba(0, 0, 0, 0.35);
-      --shadow-hard-lg: 0 18px 40px rgba(0, 0, 0, 0.45);
+      --brand-red: var(--primary-red);
+      --brand-blue: var(--blue-500);
+      --brand-blueLight: var(--blue-50);
+      --brand-dark: var(--text-primary);
+      --brand-gray: var(--sidebar-bg);
+      --pattern-color: transparent;
+      --shadow-hard: none;
+      --shadow-hard-lg: none;
     }
     body {
       margin: 0;
@@ -465,15 +597,6 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       display: block;
       padding: 0;
       box-sizing: border-box;
-    }
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      background-image: radial-gradient(var(--pattern-color) 1px, transparent 1px);
-      background-size: 26px 26px;
-      opacity: 0.5;
-      pointer-events: none;
     }
     .page-layout {
       position: relative;
@@ -692,28 +815,20 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
     }
     .cover {
       height: 280px;
-      background: <?php echo $coverStyleEscaped; ?>;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border-color);
       position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
     }
-    .cover::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background-image: radial-gradient(rgba(255,255,255,0.2) 1px, transparent 1px);
-      background-size: 18px 18px;
-      opacity: 0.6;
-      pointer-events: none;
-    }
     .cover-title {
-      font-family: "STIX Two Text", serif;
-      font-size: 32px;
-      letter-spacing: 0.4em;
+      font-family: "Inter", "Segoe UI", Arial, sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: #ffffff;
-      text-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      color: var(--text-primary);
       z-index: 1;
     }
     .profile-body {
@@ -737,9 +852,8 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       height: 160px;
       border-radius: 50%;
       object-fit: cover;
-      border: 6px solid #ffffff;
-      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.2);
-      background: #ffffff;
+      border: 2px solid var(--border-color);
+      background: var(--card-bg);
       position: relative;
       z-index: 6;
     }
@@ -749,31 +863,30 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       height: 160px;
       border-radius: 50%;
       background: var(--meta-bg);
-      border: 6px solid #ffffff;
-      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.2);
+      border: 2px solid var(--border-color);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: "STIX Two Text", serif;
-      font-weight: 800;
+      font-family: "Inter", "Segoe UI", Arial, sans-serif;
+      font-weight: 700;
       font-size: 40px;
       color: var(--text-primary);
       letter-spacing: 0.06em;
       z-index: 5;
     }
     [data-theme="dark"] .profile-avatar {
-      border-color: var(--surface);
-      background: var(--surface);
+      border-color: var(--border-color);
+      background: var(--card-bg);
     }
     [data-theme="dark"] .avatar-fallback {
-      border-color: var(--surface);
+      border-color: var(--border-color);
       background: var(--meta-bg);
       color: var(--text-primary);
     }
     .profile-name {
-      font-family: "STIX Two Text", serif;
+      font-family: "Inter", "Segoe UI", Arial, sans-serif;
       font-size: 30px;
-      font-weight: 800;
+      font-weight: 700;
       margin: 18px 0 6px;
       text-align: center;
     }
@@ -858,9 +971,9 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
       border-color: var(--border-color);
     }
     .section-title {
-      font-family: "STIX Two Text", serif;
+      font-family: "Inter", "Segoe UI", Arial, sans-serif;
       font-size: 22px;
-      font-weight: 800;
+      font-weight: 700;
       margin: 0 0 16px;
     }
     .search-row {
@@ -1038,7 +1151,7 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
     }
     .user-search-header h2 {
       margin: 0;
-      font-family: "STIX Two Text", serif;
+      font-family: "Inter", "Segoe UI", Arial, sans-serif;
       font-size: 22px;
       font-weight: 700;
     }
@@ -1298,275 +1411,1209 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
         border-radius: 0;
       }
     }
+
+    /* X-like layout overrides */
+    :root {
+      color-scheme: dark;
+      --x-bg: #000000;
+      --x-surface: #000000;
+      --x-card: #16181c;
+      --x-border: #2f3336;
+      --x-text: #e7e9ea;
+      --x-muted: #71767b;
+      --x-accent: #1d9bf0;
+      --x-accent-hover: #1a8cd8;
+      --x-success: #00ba7c;
+      --page-bg: var(--x-bg);
+      --surface: var(--x-surface);
+      --card-bg: var(--x-card);
+      --border-color: var(--x-border);
+      --text-primary: var(--x-text);
+      --text-muted: var(--x-muted);
+    }
+    [data-theme="light"] {
+      color-scheme: light;
+      --x-bg: #ffffff;
+      --x-surface: #ffffff;
+      --x-card: #f7f9f9;
+      --x-border: #e6e6e6;
+      --x-text: #0f1419;
+      --x-muted: #536471;
+      --x-accent: #1d9bf0;
+      --x-accent-hover: #1a8cd8;
+      --x-success: #00ba7c;
+      --page-bg: var(--x-bg);
+      --surface: var(--x-surface);
+      --card-bg: var(--x-card);
+      --border-color: var(--x-border);
+      --text-primary: var(--x-text);
+      --text-muted: var(--x-muted);
+    }
+    body {
+      background: var(--x-bg);
+      color: var(--x-text);
+    }
+    .page-layout.x-layout {
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      width: 100%;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 12px;
+      background: var(--x-bg);
+    }
+    .sidebar.x-nav {
+      width: 250px;
+      padding: 12px 12px 20px;
+      border-right: 1px solid var(--x-border);
+      background: var(--x-bg);
+      box-shadow: none;
+      gap: 16px;
+    }
+    .x-nav-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      height: 100%;
+    }
+    .x-logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--x-text);
+      text-decoration: none;
+      padding: 8px 10px;
+      border-radius: 999px;
+    }
+    .x-logo img {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--x-border);
+      background: var(--x-card);
+    }
+    .x-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .x-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      color: var(--x-text);
+      text-decoration: none;
+      font-size: 16px;
+      font-weight: 600;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+      text-align: left;
+    }
+    .x-menu-item i {
+      font-size: 18px;
+      width: 22px;
+      text-align: center;
+    }
+    .x-menu-item:hover {
+      background: rgba(231, 233, 234, 0.1);
+    }
+    [data-theme="light"] .x-menu-item:hover {
+      background: rgba(15, 20, 25, 0.06);
+    }
+    .x-post-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--x-accent);
+      color: #ffffff;
+      text-decoration: none;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+    .x-post-btn:hover {
+      background: var(--x-accent-hover);
+    }
+    .x-post-mini {
+      display: none;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      align-items: center;
+      justify-content: center;
+      background: var(--x-accent);
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 18px;
+      margin-top: 6px;
+    }
+    .x-post-mini:hover {
+      background: var(--x-accent-hover);
+    }
+    .x-nav-user {
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      color: var(--x-text);
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .x-nav-user:hover {
+      background: rgba(231, 233, 234, 0.1);
+    }
+    [data-theme="light"] .x-nav-user:hover {
+      background: rgba(15, 20, 25, 0.06);
+    }
+    .x-user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid var(--x-border);
+      background: var(--x-card);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .x-user-fallback {
+      background: var(--x-card);
+      color: var(--x-text);
+    }
+    .x-user-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .x-user-name {
+      font-size: 14px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .x-user-handle {
+      font-size: 12px;
+      color: var(--x-muted);
+    }
+    .profile-shell.x-main {
+      flex: 1;
+      max-width: 720px;
+      border-left: 1px solid var(--x-border);
+      border-right: 1px solid var(--x-border);
+      background: var(--x-bg);
+      box-shadow: none;
+    }
+    .profile-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--x-bg);
+      border-bottom: 1px solid var(--x-border);
+    }
+    .topbar-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: none;
+      background: transparent;
+      color: var(--x-text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .topbar-btn:hover {
+      background: rgba(231, 233, 234, 0.1);
+    }
+    [data-theme="light"] .topbar-btn:hover {
+      background: rgba(15, 20, 25, 0.06);
+    }
+    .topbar-title {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .topbar-name {
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .topbar-meta {
+      font-size: 12px;
+      color: var(--x-muted);
+      font-weight: 600;
+    }
+    .profile-hero {
+      display: flex;
+      flex-direction: column;
+      border-bottom: 1px solid var(--x-border);
+    }
+    .profile-cover {
+      height: 200px;
+      background: var(--x-card);
+      border-bottom: 1px solid var(--x-border);
+    }
+    .profile-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 16px;
+      margin-top: -56px;
+    }
+    .profile-avatar-wrap {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 4px solid var(--x-bg);
+      background: var(--x-bg);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .profile-avatar {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid var(--x-border);
+      background: var(--x-card);
+    }
+    .avatar-fallback {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: var(--x-card);
+      border: 1px solid var(--x-border);
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--x-text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      inset: 0;
+    }
+    .profile-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding-bottom: 10px;
+    }
+    .action-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--x-border);
+      background: transparent;
+      color: var(--x-text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+    .action-icon:hover {
+      background: rgba(231, 233, 234, 0.1);
+    }
+    [data-theme="light"] .action-icon:hover {
+      background: rgba(15, 20, 25, 0.06);
+    }
+    .action-btn {
+      border: 1px solid var(--x-border);
+      background: transparent;
+      color: var(--x-text);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    .action-btn:hover {
+      background: rgba(231, 233, 234, 0.1);
+    }
+    [data-theme="light"] .action-btn:hover {
+      background: rgba(15, 20, 25, 0.06);
+    }
+    .profile-details {
+      padding: 12px 16px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .profile-name {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 800;
+      text-align: left;
+    }
+    .profile-handle {
+      color: var(--x-muted);
+      font-size: 14px;
+      word-break: break-all;
+    }
+    .profile-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--x-muted);
+    }
+    .profile-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .profile-meta a {
+      color: var(--x-accent);
+      text-decoration: none;
+      word-break: break-all;
+    }
+    .profile-stats {
+      display: flex;
+      gap: 16px;
+      font-size: 13px;
+      color: var(--x-muted);
+    }
+    .profile-stats strong {
+      color: var(--x-text);
+    }
+    .profile-highlight {
+      padding: 12px 16px 16px;
+      border-bottom: 1px solid var(--x-border);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .highlight-card {
+      border: 1px solid var(--x-border);
+      background: var(--x-card);
+      border-radius: 16px;
+      padding: 14px 16px;
+      font-weight: 600;
+      color: var(--x-text);
+    }
+    .streak-header-card,
+    .streak-graph-card {
+      border: 1px solid var(--x-border);
+      background: var(--x-card);
+      border-radius: 16px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .streak-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .streak-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .streak-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 186, 124, 0.18);
+      color: var(--x-text);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .streak-name {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--x-text);
+    }
+    .streak-sub {
+      font-size: 12px;
+      color: var(--x-muted);
+      font-weight: 600;
+    }
+    .streak-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: 12px;
+      color: var(--x-muted);
+      font-weight: 600;
+    }
+    .streak-stat strong {
+      color: var(--x-text);
+      font-size: 14px;
+    }
+    .streak-graph-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .streak-graph-title {
+      font-weight: 700;
+      font-size: 15px;
+    }
+    .streak-graph-subtitle {
+      font-size: 12px;
+      color: var(--x-muted);
+      font-weight: 600;
+    }
+    .streak-graph-total {
+      font-size: 12px;
+      color: var(--x-muted);
+      font-weight: 600;
+    }
+    .streak-graph {
+      display: grid;
+      grid-template-columns: repeat(var(--streak-graph-days, 14), minmax(18px, 1fr));
+      align-items: end;
+      gap: 8px;
+      height: 150px;
+      padding-top: 6px;
+      overflow-x: auto;
+    }
+    .streak-bar {
+      border: none;
+      background: transparent;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      color: var(--x-muted);
+    }
+    .streak-bar-fill {
+      width: 100%;
+      max-width: 18px;
+      border-radius: 999px;
+      background: var(--x-accent);
+      transition: height 0.2s ease, background 0.2s ease;
+      min-height: 6px;
+    }
+    .streak-bar.is-zero .streak-bar-fill {
+      background: rgba(29, 155, 240, 0.25);
+    }
+    .streak-bar.is-active .streak-bar-fill {
+      background: var(--x-success);
+    }
+    .streak-bar-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .streak-summary {
+      border-top: 1px dashed var(--x-border);
+      padding-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .streak-summary-title {
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .streak-summary-meta {
+      font-size: 12px;
+      color: var(--x-muted);
+      font-weight: 600;
+    }
+    .streak-summary-text {
+      margin: 0;
+      font-size: 13px;
+      color: var(--x-text);
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+    @media (max-width: 640px) {
+      .streak-graph {
+        height: 120px;
+        gap: 6px;
+      }
+    }
+    .profile-tabs {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      border-bottom: 1px solid var(--x-border);
+    }
+    .profile-tab {
+      background: transparent;
+      border: none;
+      color: var(--x-muted);
+      font-weight: 700;
+      padding: 14px 16px;
+      cursor: pointer;
+      text-align: center;
+    }
+    .profile-tab.is-active {
+      color: var(--x-text);
+      border-bottom: 3px solid var(--x-accent);
+    }
+    .tab-panel {
+      padding: 12px 0 0;
+    }
+    .tab-panel:not(.is-active) {
+      display: none;
+    }
+    .search-row {
+      padding: 0 16px 8px;
+    }
+    .search-input-wrap {
+      border: 1px solid var(--x-border);
+      background: var(--x-card);
+      box-shadow: none;
+      border-radius: 999px;
+    }
+    .search-input {
+      color: var(--x-text);
+    }
+    .search-status {
+      color: var(--x-muted);
+    }
+    .chat-grid {
+      display: flex;
+      flex-direction: column;
+    }
+    .chat-card {
+      border: none;
+      border-bottom: 1px solid var(--x-border);
+      border-radius: 0;
+      padding: 14px 16px;
+      background: transparent;
+      box-shadow: none;
+      transition: background 0.15s ease;
+    }
+    .chat-card:hover {
+      transform: none;
+      background: rgba(231, 233, 234, 0.06);
+    }
+    [data-theme="light"] .chat-card:hover {
+      background: rgba(15, 20, 25, 0.04);
+    }
+    .chat-title {
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .chat-date {
+      font-size: 12px;
+      color: var(--x-muted);
+      font-weight: 600;
+    }
+    .image-grid {
+      padding: 8px 16px 16px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .image-card {
+      border: 1px solid var(--x-border);
+      border-radius: 14px;
+      box-shadow: none;
+      background: var(--x-card);
+    }
+    .image-card img {
+      background: var(--x-surface);
+    }
+    .image-caption {
+      color: var(--x-muted);
+    }
+    .empty-state {
+      border: 1px dashed var(--x-border);
+      background: var(--x-card);
+      color: var(--x-muted);
+      margin: 12px 16px 16px;
+    }
+    .right-rail {
+      width: 340px;
+      padding: 12px 16px 20px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      background: var(--x-bg);
+    }
+    .x-search {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border: 1px solid var(--x-border);
+      border-radius: 999px;
+      background: var(--x-card);
+      color: var(--x-muted);
+      cursor: pointer;
+      margin-bottom: 16px;
+    }
+    .x-search input {
+      border: none;
+      background: transparent;
+      color: var(--x-muted);
+      width: 100%;
+      font-size: 14px;
+      outline: none;
+      cursor: pointer;
+    }
+    .x-card {
+      border: 1px solid var(--x-border);
+      background: var(--x-card);
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .x-card-title {
+      font-size: 16px;
+      font-weight: 800;
+    }
+    .x-card-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .x-card-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .x-card-user img,
+    .x-card-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid var(--x-border);
+      background: var(--x-card);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+    }
+    .x-card-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--x-text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .x-card-sub {
+      font-size: 12px;
+      color: var(--x-muted);
+    }
+    .x-follow-btn {
+      border: 1px solid var(--x-border);
+      background: transparent;
+      color: var(--x-text);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .x-follow-btn:hover {
+      background: rgba(231, 233, 234, 0.1);
+    }
+    [data-theme="light"] .x-follow-btn:hover {
+      background: rgba(15, 20, 25, 0.06);
+    }
+    .x-trend-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      text-decoration: none;
+      color: var(--x-text);
+      padding: 8px 0;
+      border-top: 1px solid var(--x-border);
+    }
+    .x-trend-item:first-of-type {
+      border-top: none;
+    }
+    .x-trend-meta {
+      font-size: 12px;
+      color: var(--x-muted);
+    }
+    .mobile-dock {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 10px 24px;
+      border-top: 1px solid var(--x-border);
+      background: var(--x-bg);
+      display: none;
+      justify-content: space-between;
+      z-index: 50;
+    }
+    .dock-item {
+      color: var(--x-text);
+      font-size: 18px;
+      min-width: 44px;
+    }
+    @media (max-width: 1200px) {
+      .right-rail {
+        display: none;
+      }
+    }
+    @media (max-width: 900px) {
+      body {
+        padding-bottom: 0;
+      }
+      .sidebar.x-nav {
+        width: 72px;
+        align-items: center;
+        display: flex;
+      }
+      .x-nav-inner {
+        align-items: center;
+      }
+      .x-menu {
+        align-items: center;
+      }
+      .x-logo span,
+      .x-menu-item span,
+      .x-post-btn,
+      .x-user-meta {
+        display: none;
+      }
+      .x-post-mini {
+        display: inline-flex;
+      }
+      .x-logo {
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+      }
+      .x-menu-item {
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        margin: 0;
+      }
+      .x-menu-item i {
+        width: auto;
+      }
+    }
+    @media (max-width: 700px) {
+      .page-layout.x-layout {
+        padding: 0;
+      }
+      .sidebar.x-nav {
+        display: flex;
+        width: 64px;
+        padding: 10px 6px 16px;
+      }
+      .profile-shell.x-main {
+        border-right: none;
+      }
+      .profile-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .profile-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+      .profile-cover {
+        height: 160px;
+      }
+      .mobile-dock {
+        display: none;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="page-layout">
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <div class="sidebar-brand">
+  <div class="page-layout x-layout">
+    <aside class="sidebar x-nav">
+      <div class="x-nav-inner">
+        <a class="x-logo" href="<?php echo APP_URL; ?>/app" aria-label="Apilageai home">
           <img src="<?php echo APP_URL; ?>/assets/images/icon.png" alt="Apilageai logo">
           <span>Apilageai</span>
-        </div>
-        <button class="sidebar-toggle" type="button" id="sidebarToggle" aria-label="Hide sidebar" aria-pressed="false">
-          <i class="fa-solid fa-angles-left"></i>
-        </button>
-      </div>
-      <div class="sidebar-actions">
-        <a href="<?php echo APP_URL; ?>/app" aria-label="Open chat app">
-          <i class="fa-solid fa-comments"></i>
-          <span>Chat</span>
         </a>
-        <a href="<?php echo APP_URL; ?>/images" aria-label="Open image gallery">
-          <i class="fa-solid fa-image"></i>
-          <span>Images</span>
+
+        <nav class="x-menu" aria-label="Primary">
+          <a class="x-menu-item" href="<?php echo APP_URL; ?>/app">
+            <i class="fa-solid fa-house"></i>
+            <span>Home</span>
+          </a>
+          <button class="x-menu-item" type="button" data-open-user-search aria-haspopup="dialog" aria-controls="userSearchModal">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <span>Explore</span>
+          </button>
+          <a class="x-menu-item" href="<?php echo APP_URL; ?>/images">
+            <i class="fa-solid fa-image"></i>
+            <span>Images</span>
+          </a>
+          <a class="x-menu-item" href="<?php echo $profileUrlEscaped; ?>">
+            <i class="fa-solid fa-user"></i>
+            <span>Profile</span>
+          </a>
+        </nav>
+
+        <a class="x-post-btn" href="<?php echo APP_URL; ?>/app">Post</a>
+        <a class="x-post-mini" href="<?php echo APP_URL; ?>/app" aria-label="Post">
+          <i class="fa-solid fa-pen-nib"></i>
         </a>
-      </div>
 
-      <div class="sidebar-section">
-        <div class="sidebar-title">Explore Users</div>
-        <button class="sidebar-search" type="button" id="openUserSearch" data-open-user-search aria-haspopup="dialog" aria-controls="userSearchModal">
-          <i class="fa-solid fa-magnifying-glass"></i>
-          <span>Search users</span>
-        </button>
-        <div id="exploreStatus" class="search-status" role="status" aria-live="polite">Search all public profiles.</div>
-        <div class="user-list" id="exploreList">
-          <?php if (!empty($exploreUsers)): ?>
-            <?php foreach ($exploreUsers as $row): ?>
-              <?php
-                $name = trim(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? ''));
-                if ($name === '') {
-                    $name = 'ApilageAI User';
-                }
-                $nameEscaped = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
-                $nameData = htmlspecialchars(strtolower($name), ENT_QUOTES, 'UTF-8');
-                $slugValue = !empty($row['public_profile_username']) ? $row['public_profile_username'] : $row['public_profile_token'];
-                $profileLink = APP_URL . '/' . $slugValue;
-                $profileLinkEscaped = htmlspecialchars($profileLink, ENT_QUOTES, 'UTF-8');
-                $rawAvatar = trim((string)($row['image'] ?? ''));
-                $hasAvatar = $rawAvatar !== '' && stripos($rawAvatar, 'array') === false;
-                $avatarUrl = $hasAvatar ? user_image_url($rawAvatar) : '';
-                $avatarEscaped = htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8');
-                $avatarInitials = htmlspecialchars($getInitials($name), ENT_QUOTES, 'UTF-8');
-              ?>
-              <a class="user-row" href="<?php echo $profileLinkEscaped; ?>" data-user-name="<?php echo $nameData; ?>">
-                <?php if ($avatarEscaped !== ''): ?>
-                  <img src="<?php echo $avatarEscaped; ?>" alt="<?php echo $nameEscaped; ?>">
-                <?php else: ?>
-                  <div class="user-avatar-fallback" aria-hidden="true"><?php echo $avatarInitials; ?></div>
-                <?php endif; ?>
-                <div>
-                  <div class="user-name"><?php echo $nameEscaped; ?></div>
-                  <div class="user-sub">View profile</div>
-                </div>
-              </a>
-            <?php endforeach; ?>
+        <a class="x-nav-user" href="<?php echo $profileUrlEscaped; ?>">
+          <?php if ($imageUrlEscaped !== ''): ?>
+            <img class="x-user-avatar" src="<?php echo $imageUrlEscaped; ?>" alt="<?php echo $displayNameEscaped; ?>">
           <?php else: ?>
-            <div class="sidebar-empty">No public profiles yet.</div>
+            <div class="x-user-avatar x-user-fallback"><?php echo $initialsEscaped; ?></div>
           <?php endif; ?>
-        </div>
-      </div>
-
-      <div class="sidebar-section">
-        <div class="sidebar-title">Similar Schools</div>
-        <div class="user-list">
-          <?php if (!empty($similarUsers)): ?>
-            <?php foreach ($similarUsers as $row): ?>
-              <?php
-                $name = trim(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? ''));
-                if ($name === '') {
-                    $name = 'ApilageAI User';
-                }
-                $nameEscaped = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
-                $schoolRow = trim((string)($row['school'] ?? ''));
-                $schoolRowEscaped = htmlspecialchars($schoolRow !== '' ? $schoolRow : 'School not set', ENT_QUOTES, 'UTF-8');
-                $slugValue = !empty($row['public_profile_username']) ? $row['public_profile_username'] : $row['public_profile_token'];
-                $profileLink = APP_URL . '/' . $slugValue;
-                $profileLinkEscaped = htmlspecialchars($profileLink, ENT_QUOTES, 'UTF-8');
-                $rawAvatar = trim((string)($row['image'] ?? ''));
-                $hasAvatar = $rawAvatar !== '' && stripos($rawAvatar, 'array') === false;
-                $avatarUrl = $hasAvatar ? user_image_url($rawAvatar) : '';
-                $avatarEscaped = htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8');
-                $avatarInitials = htmlspecialchars($getInitials($name), ENT_QUOTES, 'UTF-8');
-              ?>
-              <a class="user-row" href="<?php echo $profileLinkEscaped; ?>">
-                <?php if ($avatarEscaped !== ''): ?>
-                  <img src="<?php echo $avatarEscaped; ?>" alt="<?php echo $nameEscaped; ?>">
-                <?php else: ?>
-                  <div class="user-avatar-fallback" aria-hidden="true"><?php echo $avatarInitials; ?></div>
-                <?php endif; ?>
-                <div>
-                  <div class="user-name"><?php echo $nameEscaped; ?></div>
-                  <div class="user-sub"><?php echo $schoolRowEscaped; ?></div>
-                </div>
-              </a>
-            <?php endforeach; ?>
-          <?php else: ?>
-            <div class="sidebar-empty">
-              <?php echo ($schoolRaw === '' || (int)($userRow['not_student'] ?? 0) === 1) ? 'No similar school matches.' : 'No similar school matches yet.'; ?>
-            </div>
-          <?php endif; ?>
-        </div>
+          <div class="x-user-meta">
+            <div class="x-user-name"><?php echo $displayNameEscaped; ?></div>
+            <div class="x-user-handle"><?php echo $profileHandleEscaped; ?></div>
+          </div>
+        </a>
       </div>
     </aside>
 
-    <main class="profile-shell">
-      <div class="cover">
-        <div class="cover-title">Apilageai</div>
-      </div>
-      <div class="profile-body">
-        <div class="content-inner">
-          <div class="avatar-wrap">
-          <div class="avatar-fallback" aria-hidden="true"><?php echo $initialsEscaped; ?></div>
-          <?php if ($imageUrlEscaped !== ''): ?>
-            <img class="profile-avatar" src="<?php echo $imageUrlEscaped; ?>" alt="<?php echo $displayNameEscaped; ?>" onerror="this.style.display='none';">
-          <?php endif; ?>
-          </div>
-        <h1 class="profile-name"><?php echo $displayNameEscaped; ?></h1>
-        <div class="profile-link">
-          <a href="<?php echo $profileUrlEscaped; ?>"><?php echo $profileUrlEscaped; ?></a>
+    <main class="profile-shell x-main">
+      <header class="profile-topbar">
+        <button class="topbar-btn" type="button" onclick="history.back()" aria-label="Go back">
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <div class="topbar-title">
+          <div class="topbar-name"><?php echo $displayNameEscaped; ?></div>
+          <div class="topbar-meta"><?php echo $postCount; ?> posts</div>
         </div>
-        <div class="mobile-search">
-          <button class="share-btn" type="button" data-open-user-search aria-haspopup="dialog" aria-controls="userSearchModal">
-            <i class="fa-solid fa-magnifying-glass"></i> Search users
-          </button>
-        </div>
+      </header>
 
-        <div class="meta-grid">
-          <div class="meta-card">
-            <i class="fa-solid fa-school"></i>
-            <div>
-              <div class="meta-label">School</div>
-              <div class="meta-value"><?php echo $schoolEscaped; ?></div>
-            </div>
+      <section class="profile-hero">
+        <div class="profile-cover"></div>
+        <div class="profile-header">
+          <div class="profile-avatar-wrap">
+            <div class="avatar-fallback" aria-hidden="true"><?php echo $initialsEscaped; ?></div>
+            <?php if ($imageUrlEscaped !== ''): ?>
+              <img class="profile-avatar" src="<?php echo $imageUrlEscaped; ?>" alt="<?php echo $displayNameEscaped; ?>" onerror="this.style.display='none';">
+            <?php endif; ?>
           </div>
-          <div class="meta-card">
-            <i class="fa-solid fa-calendar-days"></i>
-            <div>
-              <div class="meta-label">Member Since</div>
-              <div class="meta-value"><?php echo $memberSinceEscaped; ?></div>
-            </div>
+          <div class="profile-actions">
+            <a class="action-icon" href="<?php echo htmlspecialchars($twitterShare, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener" aria-label="Share on X">
+              <i class="fa-brands fa-x-twitter"></i>
+            </a>
+            <a class="action-icon" href="<?php echo htmlspecialchars($facebookShare, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener" aria-label="Share on Facebook">
+              <i class="fa-brands fa-facebook"></i>
+            </a>
+            <a class="action-icon" href="<?php echo htmlspecialchars($whatsappShare, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener" aria-label="Share on WhatsApp">
+              <i class="fa-brands fa-whatsapp"></i>
+            </a>
+            <button class="action-btn" type="button" id="copyProfileLink">
+              <i class="fa-solid fa-link"></i>
+              Copy link
+            </button>
           </div>
         </div>
 
-        <div class="badge-row">
-          <?php if ($streakStarted): ?>
-            <div class="badge">Learning streak started on <?php echo $streakEscaped; ?></div>
-          <?php else: ?>
-            <div class="badge">Learning streak not started</div>
-          <?php endif; ?>
+        <div class="profile-details">
+          <h1 class="profile-name"><?php echo $displayNameEscaped; ?></h1>
+          <div class="profile-handle"><?php echo $profileHandleEscaped; ?></div>
+          <div class="profile-meta">
+            <span><i class="fa-solid fa-school"></i><?php echo $schoolEscaped; ?></span>
+            <span><i class="fa-solid fa-calendar-days"></i>Joined <?php echo $memberSinceEscaped; ?></span>
+            <span><i class="fa-solid fa-link"></i><a href="<?php echo $profileUrlEscaped; ?>"><?php echo $profileUrlEscaped; ?></a></span>
+          </div>
+          <div class="profile-stats">
+            <span><strong><?php echo $chatCount; ?></strong> Chats</span>
+            <span><strong><?php echo $imageCount; ?></strong> Images</span>
+            <span><strong><?php echo $postCount; ?></strong> Posts</span>
+          </div>
         </div>
+      </section>
 
-        <div class="share-row">
-          <a class="share-btn" href="<?php echo htmlspecialchars($twitterShare, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener">
-            <i class="fa-brands fa-x-twitter"></i> Share
-          </a>
-          <a class="share-btn" href="<?php echo htmlspecialchars($facebookShare, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener">
-            <i class="fa-brands fa-facebook"></i> Share
-          </a>
-          <a class="share-btn" href="<?php echo htmlspecialchars($whatsappShare, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener">
-            <i class="fa-brands fa-whatsapp"></i> Share
-          </a>
-          <button class="share-btn copy" type="button" id="copyProfileLink">
-            <i class="fa-solid fa-link"></i> Copy Link
-          </button>
-        </div>
-
-        <section>
-          <h2 class="section-title">Published Chats</h2>
-          <?php if (!empty($publishedChats)): ?>
-            <div class="search-row" role="search">
-              <label class="search-label" for="chatSearch">Search Published Chats</label>
-              <div class="search-input-wrap">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input class="search-input" id="chatSearch" type="search" placeholder="Search chats by title" aria-describedby="chatSearchStatus">
-              </div>
-              <div id="chatSearchStatus" class="search-status" role="status" aria-live="polite"></div>
-            </div>
-            <div class="chat-grid" id="chatGrid">
-              <?php foreach ($publishedChats as $chat): ?>
-                <?php
-                  $chatTitle = trim((string)($chat['title'] ?? ''));
-                  if ($chatTitle === '') {
-                      $chatTitle = 'Untitled Chat';
-                  }
-                  $chatTitleEscaped = htmlspecialchars($chatTitle, ENT_QUOTES, 'UTF-8');
-                  $chatTitleData = htmlspecialchars(strtolower($chatTitle), ENT_QUOTES, 'UTF-8');
-                  $chatDate = $chat['published_at'] ?? $chat['created_at'] ?? null;
-                  $chatDateLabel = $chatDate ? date('M d, Y', strtotime($chatDate)) : 'Date unknown';
-                  $chatDateEscaped = htmlspecialchars($chatDateLabel, ENT_QUOTES, 'UTF-8');
-                  $chatUrl = APP_URL . '/app/chat/' . (int)$chat['conversation_id'];
-                  $chatUrlEscaped = htmlspecialchars($chatUrl, ENT_QUOTES, 'UTF-8');
-                ?>
-                <a class="chat-card" data-chat-title="<?php echo $chatTitleData; ?>" href="<?php echo $chatUrlEscaped; ?>">
-                  <div class="chat-title"><?php echo $chatTitleEscaped; ?></div>
-                  <div class="chat-date">Published on <?php echo $chatDateEscaped; ?></div>
-                </a>
-              <?php endforeach; ?>
-            </div>
-            <div id="chatEmptyState" class="empty-state" hidden>No chats match your search.</div>
-          <?php else: ?>
-            <div class="empty-state">No published chats yet.</div>
-          <?php endif; ?>
-        </section>
-
-        <section style="margin-top: 28px;">
-          <h2 class="section-title">Published Images</h2>
-          <?php if (!empty($publishedImages)): ?>
-            <div class="image-grid">
-              <?php foreach ($publishedImages as $img): ?>
-                <?php
-                  $imgUrlRaw = trim((string)($img['image_url'] ?? ''));
-                  $imgUrl = normalize_public_image_url_profile($imgUrlRaw);
-                  $imgUrlEscaped = htmlspecialchars($imgUrl ?? '', ENT_QUOTES, 'UTF-8');
-                  $prompt = trim((string)($img['prompt'] ?? ''));
-                  if ($prompt === '') {
-                      $prompt = 'Published image';
-                  }
-                  if (function_exists('mb_strlen')) {
-                      if (mb_strlen($prompt, 'UTF-8') > 80) {
-                          $prompt = mb_substr($prompt, 0, 77, 'UTF-8') . '...';
-                      }
-                  } elseif (strlen($prompt) > 80) {
-                      $prompt = substr($prompt, 0, 77) . '...';
-                  }
-                  $promptEscaped = htmlspecialchars($prompt, ENT_QUOTES, 'UTF-8');
-                ?>
-                <?php if ($imgUrlEscaped !== ''): ?>
-                  <div class="image-card">
-                    <img src="<?php echo $imgUrlEscaped; ?>" alt="<?php echo $promptEscaped; ?>">
-                    <div class="image-caption"><?php echo $promptEscaped; ?></div>
-                  </div>
+      <section class="profile-highlight">
+        <?php if ($hasActiveStreak): ?>
+          <div class="streak-header-card">
+            <div class="streak-header">
+              <div>
+                <div class="streak-title-row">
+                  <span class="streak-badge"><i class="fa-solid fa-fire"></i> Active streak</span>
+                  <?php if ($streakNameEscaped !== ''): ?>
+                    <span class="streak-name"><?php echo $streakNameEscaped; ?></span>
+                  <?php endif; ?>
+                </div>
+                <?php if ($streakStartedLabelEscaped !== ''): ?>
+                  <div class="streak-sub"><?php echo $streakDayLabelEscaped; ?> · Started <?php echo $streakStartedLabelEscaped; ?></div>
+                <?php else: ?>
+                  <div class="streak-sub"><?php echo $streakDayLabelEscaped; ?></div>
                 <?php endif; ?>
-              <?php endforeach; ?>
+              </div>
+              <div class="streak-stat">
+                <span>Last check-in</span>
+                <strong><?php echo $streakLastEntryLabelEscaped; ?></strong>
+              </div>
             </div>
-          <?php else: ?>
-            <div class="empty-state">No published images yet.</div>
-          <?php endif; ?>
-        </section>
+          </div>
+
+          <div class="streak-graph-card">
+            <div class="streak-graph-header">
+              <div>
+                <div class="streak-graph-title">Study Hours</div>
+                <div class="streak-graph-subtitle"><?php echo $streakGraphRangeLabelEscaped; ?></div>
+              </div>
+              <div class="streak-graph-total"><?php echo $streakDayTotalLabelEscaped; ?></div>
+            </div>
+            <div class="streak-graph" id="streakGraph" role="list" aria-label="Study hours by day" style="--streak-graph-days: <?php echo $streakGraphDaysLabel; ?>"></div>
+            <div class="streak-summary" id="streakSummaryPanel">
+              <div class="streak-summary-title" id="streakSummaryTitle">Select a day</div>
+              <div class="streak-summary-meta" id="streakSummaryMeta"></div>
+              <p class="streak-summary-text" id="streakSummaryText">Click a bar to see what <?php echo $displayNameEscaped; ?> studied.</p>
+            </div>
+            <script id="streakGraphData" type="application/json"><?php echo $streakGraphJson; ?></script>
+          </div>
+        <?php else: ?>
+          <div class="highlight-card">Learning streak not started</div>
+        <?php endif; ?>
+      </section>
+
+      <div class="profile-tabs" role="tablist">
+        <button class="profile-tab is-active" type="button" data-tab="chats" role="tab" aria-controls="tab-chats" aria-selected="true">Posts</button>
+        <button class="profile-tab" type="button" data-tab="images" role="tab" aria-controls="tab-images" aria-selected="false">Media</button>
       </div>
-        </div>
-      </div>
+
+      <section class="tab-panel is-active" id="tab-chats" role="tabpanel">
+        <?php if (!empty($publishedChats)): ?>
+          <div class="search-row" role="search">
+            <label class="search-label" for="chatSearch">Search Published Chats</label>
+            <div class="search-input-wrap">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input class="search-input" id="chatSearch" type="search" placeholder="Search chats by title" aria-describedby="chatSearchStatus">
+            </div>
+            <div id="chatSearchStatus" class="search-status" role="status" aria-live="polite"></div>
+          </div>
+          <div class="chat-grid" id="chatGrid">
+            <?php foreach ($publishedChats as $chat): ?>
+              <?php
+                $chatTitle = trim((string)($chat['title'] ?? ''));
+                if ($chatTitle === '') {
+                    $chatTitle = 'Untitled Chat';
+                }
+                $chatTitleEscaped = htmlspecialchars($chatTitle, ENT_QUOTES, 'UTF-8');
+                $chatTitleData = htmlspecialchars(strtolower($chatTitle), ENT_QUOTES, 'UTF-8');
+                $chatDate = $chat['published_at'] ?? $chat['created_at'] ?? null;
+                $chatDateLabel = $chatDate ? date('M d, Y', strtotime($chatDate)) : 'Date unknown';
+                $chatDateEscaped = htmlspecialchars($chatDateLabel, ENT_QUOTES, 'UTF-8');
+                $chatUrl = APP_URL . '/app/chat/' . (int)$chat['conversation_id'];
+                $chatUrlEscaped = htmlspecialchars($chatUrl, ENT_QUOTES, 'UTF-8');
+              ?>
+              <a class="chat-card" data-chat-title="<?php echo $chatTitleData; ?>" href="<?php echo $chatUrlEscaped; ?>">
+                <div class="chat-title"><?php echo $chatTitleEscaped; ?></div>
+                <div class="chat-date">Published on <?php echo $chatDateEscaped; ?></div>
+              </a>
+            <?php endforeach; ?>
+          </div>
+          <div id="chatEmptyState" class="empty-state" hidden>No chats match your search.</div>
+        <?php else: ?>
+          <div class="empty-state">No published chats yet.</div>
+        <?php endif; ?>
+      </section>
+
+      <section class="tab-panel" id="tab-images" role="tabpanel">
+        <?php if (!empty($publishedImages)): ?>
+          <div class="image-grid">
+            <?php foreach ($publishedImages as $img): ?>
+              <?php
+                $imgUrlRaw = trim((string)($img['image_url'] ?? ''));
+                $imgUrl = normalize_public_image_url_profile($imgUrlRaw);
+                $imgUrlEscaped = htmlspecialchars($imgUrl ?? '', ENT_QUOTES, 'UTF-8');
+                $prompt = trim((string)($img['prompt'] ?? ''));
+                if ($prompt === '') {
+                    $prompt = 'Published image';
+                }
+                if (function_exists('mb_strlen')) {
+                    if (mb_strlen($prompt, 'UTF-8') > 80) {
+                        $prompt = mb_substr($prompt, 0, 77, 'UTF-8') . '...';
+                    }
+                } elseif (strlen($prompt) > 80) {
+                    $prompt = substr($prompt, 0, 77) . '...';
+                }
+                $promptEscaped = htmlspecialchars($prompt, ENT_QUOTES, 'UTF-8');
+              ?>
+              <?php if ($imgUrlEscaped !== ''): ?>
+                <div class="image-card">
+                  <img src="<?php echo $imgUrlEscaped; ?>" alt="<?php echo $promptEscaped; ?>">
+                  <div class="image-caption"><?php echo $promptEscaped; ?></div>
+                </div>
+              <?php endif; ?>
+            <?php endforeach; ?>
+          </div>
+        <?php else: ?>
+          <div class="empty-state">No published images yet.</div>
+        <?php endif; ?>
+      </section>
     </main>
+
+    <aside class="right-rail">
+      <div class="x-search" data-open-user-search role="button" tabindex="0" aria-haspopup="dialog" aria-controls="userSearchModal">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" placeholder="Search" aria-label="Search public profiles" readonly>
+      </div>
+
+      <div class="x-card">
+        <div class="x-card-title">You might like</div>
+        <?php if (!empty($exploreUsers)): ?>
+          <?php $exploreShort = array_slice($exploreUsers, 0, 3); ?>
+          <?php foreach ($exploreShort as $row): ?>
+            <?php
+              $name = trim(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? ''));
+              if ($name === '') {
+                  $name = 'ApilageAI User';
+              }
+              $nameEscaped = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+              $slugValue = !empty($row['public_profile_username']) ? $row['public_profile_username'] : $row['public_profile_token'];
+              $profileLink = APP_URL . '/' . $slugValue;
+              $profileLinkEscaped = htmlspecialchars($profileLink, ENT_QUOTES, 'UTF-8');
+              $handleValue = '@' . $slugValue;
+              $handleEscaped = htmlspecialchars($handleValue, ENT_QUOTES, 'UTF-8');
+              $rawAvatar = trim((string)($row['image'] ?? ''));
+              $hasAvatar = $rawAvatar !== '' && stripos($rawAvatar, 'array') === false;
+              $avatarUrl = $hasAvatar ? user_image_url($rawAvatar) : '';
+              $avatarEscaped = htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8');
+              $avatarInitials = htmlspecialchars($getInitials($name), ENT_QUOTES, 'UTF-8');
+            ?>
+            <div class="x-card-item">
+              <div class="x-card-user">
+                <?php if ($avatarEscaped !== ''): ?>
+                  <img src="<?php echo $avatarEscaped; ?>" alt="<?php echo $nameEscaped; ?>">
+                <?php else: ?>
+                  <div class="x-card-avatar"><?php echo $avatarInitials; ?></div>
+                <?php endif; ?>
+                <div>
+                  <div class="x-card-name"><?php echo $nameEscaped; ?></div>
+                  <div class="x-card-sub"><?php echo $handleEscaped; ?></div>
+                </div>
+              </div>
+              <a class="x-follow-btn" href="<?php echo $profileLinkEscaped; ?>">View</a>
+            </div>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <div class="x-card-sub">No public profiles yet.</div>
+        <?php endif; ?>
+      </div>
+
+      <div class="x-card">
+        <div class="x-card-title">Similar Schools</div>
+        <?php if (!empty($similarUsers)): ?>
+          <?php $similarShort = array_slice($similarUsers, 0, 3); ?>
+          <?php foreach ($similarShort as $row): ?>
+            <?php
+              $name = trim(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? ''));
+              if ($name === '') {
+                  $name = 'ApilageAI User';
+              }
+              $nameEscaped = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+              $schoolRow = trim((string)($row['school'] ?? ''));
+              $schoolRowEscaped = htmlspecialchars($schoolRow !== '' ? $schoolRow : 'School not set', ENT_QUOTES, 'UTF-8');
+              $slugValue = !empty($row['public_profile_username']) ? $row['public_profile_username'] : $row['public_profile_token'];
+              $profileLink = APP_URL . '/' . $slugValue;
+              $profileLinkEscaped = htmlspecialchars($profileLink, ENT_QUOTES, 'UTF-8');
+              $rawAvatar = trim((string)($row['image'] ?? ''));
+              $hasAvatar = $rawAvatar !== '' && stripos($rawAvatar, 'array') === false;
+              $avatarUrl = $hasAvatar ? user_image_url($rawAvatar) : '';
+              $avatarEscaped = htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8');
+              $avatarInitials = htmlspecialchars($getInitials($name), ENT_QUOTES, 'UTF-8');
+            ?>
+            <div class="x-card-item">
+              <div class="x-card-user">
+                <?php if ($avatarEscaped !== ''): ?>
+                  <img src="<?php echo $avatarEscaped; ?>" alt="<?php echo $nameEscaped; ?>">
+                <?php else: ?>
+                  <div class="x-card-avatar"><?php echo $avatarInitials; ?></div>
+                <?php endif; ?>
+                <div>
+                  <div class="x-card-name"><?php echo $nameEscaped; ?></div>
+                  <div class="x-card-sub"><?php echo $schoolRowEscaped; ?></div>
+                </div>
+              </div>
+              <a class="x-follow-btn" href="<?php echo $profileLinkEscaped; ?>">View</a>
+            </div>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <div class="x-card-sub">
+            <?php echo ($schoolRaw === '' || (int)($userRow['not_student'] ?? 0) === 1) ? 'No similar school matches.' : 'No similar school matches yet.'; ?>
+          </div>
+        <?php endif; ?>
+      </div>
+
+      <div class="x-card">
+        <div class="x-card-title">What's happening</div>
+        <?php if (!empty($publishedChats)): ?>
+          <?php $chatShort = array_slice($publishedChats, 0, 3); ?>
+          <?php foreach ($chatShort as $chat): ?>
+            <?php
+              $chatTitle = trim((string)($chat['title'] ?? ''));
+              if ($chatTitle === '') {
+                  $chatTitle = 'Untitled Chat';
+              }
+              $chatTitleEscaped = htmlspecialchars($chatTitle, ENT_QUOTES, 'UTF-8');
+              $chatDate = $chat['published_at'] ?? $chat['created_at'] ?? null;
+              $chatDateLabel = $chatDate ? date('M d, Y', strtotime($chatDate)) : 'Date unknown';
+              $chatDateEscaped = htmlspecialchars($chatDateLabel, ENT_QUOTES, 'UTF-8');
+              $chatUrl = APP_URL . '/app/chat/' . (int)$chat['conversation_id'];
+              $chatUrlEscaped = htmlspecialchars($chatUrl, ENT_QUOTES, 'UTF-8');
+            ?>
+            <a class="x-trend-item" href="<?php echo $chatUrlEscaped; ?>">
+              <div class="x-card-name"><?php echo $chatTitleEscaped; ?></div>
+              <div class="x-trend-meta">Published <?php echo $chatDateEscaped; ?></div>
+            </a>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <div class="x-card-sub">No published chats yet.</div>
+        <?php endif; ?>
+      </div>
+    </aside>
   </div>
 
-  <button class="sidebar-show" type="button" id="sidebarShow" aria-label="Show sidebar">
-    <i class="fa-solid fa-angles-right"></i>
-  </button>
-
-  <nav class="mobile-dock" aria-label="Quick actions">
-    <a class="dock-item" href="<?php echo APP_URL; ?>/app" aria-label="Open chat app">
-      <i class="fa-solid fa-comments"></i>
-      <span>Chat</span>
+  <nav class="mobile-dock" aria-label="Primary">
+    <a class="dock-item" href="<?php echo APP_URL; ?>/app" aria-label="Home">
+      <i class="fa-solid fa-house"></i>
     </a>
-    <a class="dock-item" href="<?php echo APP_URL; ?>/images" aria-label="Open image gallery">
-      <i class="fa-solid fa-image"></i>
-      <span>Images</span>
-    </a>
-    <button class="dock-item" type="button" data-open-user-search aria-haspopup="dialog" aria-controls="userSearchModal">
+    <button class="dock-item" type="button" data-open-user-search aria-haspopup="dialog" aria-controls="userSearchModal" aria-label="Explore">
       <i class="fa-solid fa-magnifying-glass"></i>
-      <span>Search</span>
     </button>
+    <a class="dock-item" href="<?php echo APP_URL; ?>/images" aria-label="Images">
+      <i class="fa-solid fa-image"></i>
+    </a>
+    <a class="dock-item" href="<?php echo $profileUrlEscaped; ?>" aria-label="Profile">
+      <i class="fa-solid fa-user"></i>
+    </a>
   </nav>
 
   <div class="user-search-backdrop" id="userSearchModal" hidden aria-hidden="true">
@@ -1594,6 +2641,7 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
   <script>
     const copyBtn = document.getElementById('copyProfileLink');
     if (copyBtn) {
+      const originalCopyHtml = copyBtn.innerHTML;
       copyBtn.addEventListener('click', async () => {
         const url = "<?php echo $profileUrlEscaped; ?>";
         try {
@@ -1607,11 +2655,11 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
             document.execCommand('copy');
             tempInput.remove();
           }
-          copyBtn.textContent = 'Link Copied!';
-          setTimeout(() => { copyBtn.innerHTML = '<i class="fa-solid fa-link"></i> Copy Link'; }, 1600);
+          copyBtn.textContent = 'Copied';
+          setTimeout(() => { copyBtn.innerHTML = originalCopyHtml; }, 1600);
         } catch (e) {
-          copyBtn.textContent = 'Copy Failed';
-          setTimeout(() => { copyBtn.innerHTML = '<i class="fa-solid fa-link"></i> Copy Link'; }, 1600);
+          copyBtn.textContent = 'Copy failed';
+          setTimeout(() => { copyBtn.innerHTML = originalCopyHtml; }, 1600);
         }
       });
     }
@@ -1842,6 +2890,12 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
           event.preventDefault();
           openSearchModal();
         });
+        btn.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openSearchModal();
+          }
+        });
       });
     }
 
@@ -1891,6 +2945,136 @@ $whatsappShare = "https://wa.me/?text={$shareText}%20{$shareUrlEncoded}";
         searchInput.focus();
         runUserSearch('');
       });
+    }
+
+    const tabButtons = Array.from(document.querySelectorAll('.profile-tab'));
+    const tabPanels = Array.from(document.querySelectorAll('.tab-panel'));
+    if (tabButtons.length && tabPanels.length) {
+      tabButtons.forEach((tab) => {
+        tab.addEventListener('click', () => {
+          const target = tab.getAttribute('data-tab');
+          tabButtons.forEach((btn) => {
+            const active = btn === tab;
+            btn.classList.toggle('is-active', active);
+            btn.setAttribute('aria-selected', active ? 'true' : 'false');
+          });
+          tabPanels.forEach((panel) => {
+            const isMatch = panel.id === `tab-${target}`;
+            panel.classList.toggle('is-active', isMatch);
+          });
+        });
+      });
+    }
+
+    const streakDataEl = document.getElementById('streakGraphData');
+    const streakGraph = document.getElementById('streakGraph');
+    const streakSummaryTitle = document.getElementById('streakSummaryTitle');
+    const streakSummaryMeta = document.getElementById('streakSummaryMeta');
+    const streakSummaryText = document.getElementById('streakSummaryText');
+
+    if (streakDataEl && streakGraph) {
+      let streakData = [];
+      try {
+        streakData = JSON.parse(streakDataEl.textContent || '[]');
+      } catch (err) {
+        streakData = [];
+      }
+
+      if (Array.isArray(streakData) && streakData.length) {
+        const totals = streakData.map((item) => {
+          const hours = Number(item.hours) || 0;
+          const minutes = Number(item.minutes) || 0;
+          return (hours * 60) + minutes;
+        });
+        const maxMinutes = Math.max(...totals, 1);
+
+        const buttons = [];
+
+        const formatDuration = (hours, minutes) => {
+          const safeHours = Number(hours) || 0;
+          const safeMinutes = Number(minutes) || 0;
+          if (safeHours === 0 && safeMinutes === 0) {
+            return 'No time logged';
+          }
+          if (safeHours > 0 && safeMinutes > 0) {
+            return `${safeHours}h ${safeMinutes}m`;
+          }
+          if (safeHours > 0) {
+            return `${safeHours}h`;
+          }
+          return `${safeMinutes}m`;
+        };
+
+        const formatDayLabel = (dateStr) => {
+          const date = new Date(`${dateStr}T00:00:00`);
+          if (Number.isNaN(date.getTime())) return '';
+          return date.toLocaleDateString(undefined, { weekday: 'short' });
+        };
+
+        const formatFullDate = (dateStr) => {
+          const date = new Date(`${dateStr}T00:00:00`);
+          if (Number.isNaN(date.getTime())) return dateStr;
+          return date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+        };
+
+        const updateSummary = (item, button) => {
+          if (buttons.length) {
+            buttons.forEach((btn) => btn.classList.remove('is-active'));
+          }
+          if (button) {
+            button.classList.add('is-active');
+          }
+          if (streakSummaryTitle) {
+            streakSummaryTitle.textContent = formatFullDate(item.date);
+          }
+          if (streakSummaryMeta) {
+            streakSummaryMeta.textContent = formatDuration(item.hours, item.minutes);
+          }
+          if (streakSummaryText) {
+            const summary = (item.summary || '').trim();
+            streakSummaryText.textContent = summary || 'No summary logged for this day.';
+          }
+        };
+
+        streakData.forEach((item, index) => {
+          const minutes = totals[index];
+          const heightPercent = Math.max(6, Math.round((minutes / maxMinutes) * 100));
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = `streak-bar${minutes === 0 ? ' is-zero' : ''}`;
+          button.setAttribute('role', 'listitem');
+          button.setAttribute(
+            'aria-label',
+            `${formatFullDate(item.date)} · ${formatDuration(item.hours, item.minutes)}`
+          );
+
+          const fill = document.createElement('span');
+          fill.className = 'streak-bar-fill';
+          fill.style.height = `${heightPercent}%`;
+
+          const label = document.createElement('span');
+          label.className = 'streak-bar-label';
+          label.textContent = formatDayLabel(item.date);
+
+          button.appendChild(fill);
+          button.appendChild(label);
+          button.addEventListener('click', () => updateSummary(item, button));
+
+          streakGraph.appendChild(button);
+          buttons.push(button);
+        });
+
+        const defaultIndex = (() => {
+          for (let i = totals.length - 1; i >= 0; i -= 1) {
+            if (totals[i] > 0) return i;
+          }
+          return totals.length - 1;
+        })();
+
+        if (streakData[defaultIndex]) {
+          updateSummary(streakData[defaultIndex], buttons[defaultIndex]);
+        }
+      }
     }
   </script>
 </body>
