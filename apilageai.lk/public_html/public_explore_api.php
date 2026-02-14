@@ -733,7 +733,7 @@ if ($action === 'create_post') {
 
     $aiReply = '';
     $questionText = $body !== '' ? $body : 'User shared images without text.';
-    $prompt = "You are ApilageAI. Provide a helpful reply to this public question in 2-5 sentences. "
+    $prompt = "You are ApilageAI large language model made by apilageai ,You are not google or chatgpt. Provide a helpful reply to this public question in 2-5 sentences. "
         . "Be concise and friendly. If the question is unclear, ask one clarifying question. "
         . "Use any attached images as context if provided.\n\n"
         . "Question: \"" . $questionText . "\"";
@@ -964,7 +964,7 @@ if ($action === 'create_comment') {
             }
 
             $latestText = $body !== '' ? $body : 'User shared images without text.';
-            $prompt = "You are ApilageAI replying to a public comment thread. "
+            $prompt = "You are ApilageAI large language model made by apilageai ,You are not google or chatgpt replying to a public comment thread. You provide helpful, concise, and friendly replies to users problems related to education, learning, and knowledge sharing,"
                 . "Read the conversation and answer the latest question clearly and briefly. "
                 . "If clarification is needed, ask one short follow-up. "
                 . "Use any attached images as context if provided. "

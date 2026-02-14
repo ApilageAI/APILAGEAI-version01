@@ -33,6 +33,19 @@ $title = 'Explore | ApilageAI';
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
   <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  <script>
     (function () {
       const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
       const savedTheme = localStorage.getItem('theme');
@@ -226,13 +239,18 @@ $title = 'Explore | ApilageAI';
       font-weight: 600;
     }
     .sidebar.app-sidebar .sidebar-but .sidebar-but-icon {
-      width: 18px;
-      height: 18px;
+      width: 32px;
+      height: 32px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 14px;
       color: inherit;
+    }
+    .sidebar.app-sidebar .sidebar-but .sidebar-but-icon img {
+      width: 32px;
+      height: 32px;
+      display: block;
     }
     .sidebar.app-sidebar .sidebar-but.new-chat-btn {
       background: var(--primary-red);
@@ -694,6 +712,20 @@ $title = 'Explore | ApilageAI';
       height: 100%;
       object-fit: cover;
     }
+    .upload-loader {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.35);
+      opacity: 1;
+      transition: opacity 0.2s ease;
+    }
+    .upload-item.is-preview-loaded .upload-loader {
+      opacity: 0;
+      pointer-events: none;
+    }
     .upload-progress {
       position: absolute;
       inset: 8px;
@@ -741,9 +773,43 @@ $title = 'Explore | ApilageAI';
       opacity: 0.6;
       cursor: not-allowed;
     }
+    .x-post-btn.is-loading {
+      gap: 8px;
+    }
+    .thread-form .form-actions button.is-loading {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .thread-form .form-actions button.is-loading .loader-spin,
+    .x-post-btn.is-loading .loader-spin {
+      width: 14px;
+      height: 14px;
+      border-width: 2px;
+    }
     .x-helper {
       font-size: 12px;
       color: var(--x-muted);
+    }
+    .feed-loader {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 16px;
+      color: var(--x-muted);
+      font-size: 13px;
+    }
+    .loader-spin {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-top-color: var(--x-accent);
+      animation: spin 0.9s linear infinite;
+    }
+    [data-theme="light"] .loader-spin {
+      border-color: rgba(15, 20, 25, 0.15);
     }
 
     .x-thread {
@@ -815,6 +881,21 @@ $title = 'Explore | ApilageAI';
       font-size: 14px;
       line-height: 1.5;
       color: var(--x-text);
+    }
+    .x-post-body p,
+    .thread-body p {
+      margin: 0 0 0.6em;
+    }
+    .x-post-body p:last-child,
+    .thread-body p:last-child {
+      margin-bottom: 0;
+    }
+    .x-post-body ul,
+    .x-post-body ol,
+    .thread-body ul,
+    .thread-body ol {
+      margin: 0.4em 0 0.4em 1.2em;
+      padding: 0;
     }
     .thread-media {
       margin-top: 8px;
@@ -1111,11 +1192,24 @@ $title = 'Explore | ApilageAI';
       }
     }
     @media (max-width: 900px) {
+      body {
+        overflow: auto;
+      }
       .page-layout.x-layout {
-        grid-template-columns: 0 minmax(0, 1fr);
+        display: block;
+        grid-template-columns: none;
+        height: auto;
+        min-height: 100vh;
       }
       body.sidebar-collapsed .page-layout.x-layout {
         --sidebar-width: 0px;
+      }
+      .explore-main {
+        height: auto;
+        min-height: 100vh;
+        overflow: visible;
+        border-left: none;
+        border-right: none;
       }
       .sidebar.app-sidebar {
         position: fixed;
@@ -1143,28 +1237,23 @@ $title = 'Explore | ApilageAI';
 
       <div class="sidebar-items">
         <a class="sidebar-but new-chat-btn" href="<?php echo APP_URL; ?>/app" title="New chat">
-          <span class="sidebar-but-icon" aria-hidden="true"><i class="fa-solid fa-pen"></i></span>
+          <span class="sidebar-but-icon" aria-hidden="true">
+            <picture>
+              <source srcset="https://fonts.gstatic.com/s/e/notoemoji/latest/270f_fe0f/512.webp" type="image/webp">
+              <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/270f_fe0f/512.gif" alt="✏" width="32" height="32">
+            </picture>
+          </span>
           <span class="sidebar-but-text">New chat</span>
         </a>
 
-        <a class="sidebar-but" href="<?php echo APP_URL; ?>/app" title="Conversations">
-          <span class="sidebar-but-icon" aria-hidden="true"><i class="fa-regular fa-message"></i></span>
-          <span class="sidebar-but-text">Conversations</span>
-        </a>
-
-        <a class="sidebar-but" href="<?php echo APP_URL; ?>/images" title="Image Gallery">
-          <span class="sidebar-but-icon" aria-hidden="true"><i class="fa-regular fa-image"></i></span>
-          <span class="sidebar-but-text">Image Gallery</span>
-        </a>
-
         <a class="sidebar-but active" href="<?php echo APP_URL; ?>/explore" title="Explore" aria-current="page">
-          <span class="sidebar-but-icon" aria-hidden="true"><i class="fa-solid fa-hashtag"></i></span>
+          <span class="sidebar-but-icon" aria-hidden="true">
+            <picture>
+              <source srcset="https://fonts.gstatic.com/s/e/notoemoji/latest/1f30e/512.webp" type="image/webp">
+              <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f30e/512.gif" alt="🌎" width="32" height="32">
+            </picture>
+          </span>
           <span class="sidebar-but-text">Explore</span>
-        </a>
-
-        <a class="sidebar-but" href="<?php echo $userProfileUrl !== '' ? htmlspecialchars($userProfileUrl, ENT_QUOTES, 'UTF-8') : (APP_URL . '/auth'); ?>" title="Public Profile">
-          <span class="sidebar-but-icon" aria-hidden="true"><i class="fa-regular fa-user"></i></span>
-          <span class="sidebar-but-text">Public Profile</span>
         </a>
       </div>
 
@@ -1173,15 +1262,14 @@ $title = 'Explore | ApilageAI';
           <i class="fa fa-bullseye" aria-hidden="true"></i>
           <span class="minimize-text">Focused</span>
         </button>
-        <div class="sidebar-footer-userinfo" id="sidebarUserInfo">
+        <a class="sidebar-footer-userinfo" id="sidebarUserInfo" href="<?php echo APP_URL; ?>/app?open=preferences">
           <div class="user-avatar">
             <img src="<?php echo htmlspecialchars($userImage, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($userName, ENT_QUOTES, 'UTF-8'); ?> Avatar">
           </div>
           <div class="user-details">
             <div class="user-name"><?php echo htmlspecialchars($userName, ENT_QUOTES, 'UTF-8'); ?></div>
-            <div class="user-credit-text"><?php echo htmlspecialchars($userHandle, ENT_QUOTES, 'UTF-8'); ?></div>
           </div>
-        </div>
+        </a>
       </div>
     </aside>
 
@@ -1227,7 +1315,12 @@ $title = 'Explore | ApilageAI';
       <section>
         <div class="x-feed" id="feedList"></div>
         <div id="feedEmpty" class="empty-state" hidden>No published items yet.</div>
-        <button class="load-more" id="loadMoreFeed" type="button">Load more</button>
+        <div id="feedLoader" class="feed-loader" hidden>
+          <span class="loader-spin" aria-hidden="true"></span>
+          Loading...
+        </div>
+        <div id="feedEnd" class="empty-state" hidden>You're all caught up.</div>
+        <button class="load-more" id="loadMoreFeed" type="button" hidden>Load more</button>
       </section>
     </main>
 
@@ -1243,10 +1336,6 @@ $title = 'Explore | ApilageAI';
       <div class="x-card">
         <div class="x-card-title">Top questions</div>
         <div id="questionList"></div>
-      </div>
-      <div class="x-card">
-        <div class="x-card-title">Suggested images</div>
-        <div class="x-card-images" id="imagePicks"></div>
       </div>
     </aside>
   </div>
@@ -1279,6 +1368,10 @@ $title = 'Explore | ApilageAI';
       const sidebarToggleBtn = document.getElementById('toggleSidebar');
 
       function toggleSidebarHidden() {
+        if (window.innerWidth <= 900) {
+          document.body.classList.remove('sidebar-open');
+          return;
+        }
         document.body.classList.toggle('sidebar-collapsed');
       }
 
@@ -1300,10 +1393,11 @@ $title = 'Explore | ApilageAI';
 
       const feedList = document.getElementById('feedList');
       const feedEmpty = document.getElementById('feedEmpty');
+      const feedLoader = document.getElementById('feedLoader');
+      const feedEnd = document.getElementById('feedEnd');
       const loadMoreFeed = document.getElementById('loadMoreFeed');
       const trendList = document.getElementById('trendList');
       const questionList = document.getElementById('questionList');
-      const imagePicks = document.getElementById('imagePicks');
 
       const postBody = document.getElementById('postBody');
       const postImages = document.getElementById('postImages');
@@ -1327,6 +1421,28 @@ $title = 'Explore | ApilageAI';
       const mentionPalette = ['mention-color-1', 'mention-color-2', 'mention-color-3', 'mention-color-4', 'mention-color-5'];
       const mentionIndex = new Map();
       const currentUserId = window.userData ? Number(window.userData.id) : 0;
+      const shuffleEnabled = currentUserId > 0;
+      const shuffleSeed = (() => {
+        const key = `explore_shuffle_seed_${shuffleEnabled ? currentUserId : 'guest'}`;
+        try {
+          let seed = sessionStorage.getItem(key);
+          if (!seed) {
+            if (window.crypto && window.crypto.getRandomValues) {
+              const buf = new Uint32Array(1);
+              window.crypto.getRandomValues(buf);
+              seed = String(buf[0]);
+            } else {
+              seed = String(Math.floor(Math.random() * 1e9));
+            }
+            sessionStorage.setItem(key, seed);
+          }
+          return seed;
+        } catch (err) {
+          return String(Date.now());
+        }
+      })();
+      const SHUFFLE_JITTER_MS = 6 * 60 * 60 * 1000;
+      const MAX_FEED_ITEMS = 120;
       const MAX_WORDS = 1000;
       const MAX_FILE_BYTES = 60 * 1024 * 1024;
       const ALLOWED_TYPES = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/gif']);
@@ -1362,6 +1478,21 @@ $title = 'Explore | ApilageAI';
         `;
       }
 
+      function setButtonLoading(button, isLoading, label) {
+        if (!button) return;
+        if (isLoading) {
+          button.dataset.originalText = button.textContent;
+          button.innerHTML = `<span class="loader-spin" aria-hidden="true"></span>${escapeHtml(label || 'Loading...')}`;
+          button.classList.add('is-loading');
+          button.disabled = true;
+          return;
+        }
+        const original = button.dataset.originalText || '';
+        button.textContent = original || 'Submit';
+        button.classList.remove('is-loading');
+        button.disabled = false;
+      }
+
       function hashHandle(handle) {
         let hash = 0;
         for (let i = 0; i < handle.length; i += 1) {
@@ -1369,6 +1500,29 @@ $title = 'Explore | ApilageAI';
           hash |= 0;
         }
         return Math.abs(hash);
+      }
+
+      function itemShuffleKey(item) {
+        if (!item) return 'unknown';
+        if (item.type === 'chat') return `chat_${item.data?.conversation_id ?? ''}`;
+        if (item.type === 'post') return `post_${item.data?.id ?? ''}`;
+        return `${item.type || 'item'}_${item.time || 0}`;
+      }
+
+      function itemShuffleScore(item) {
+        const key = itemShuffleKey(item);
+        const hash = hashHandle(`${shuffleSeed}:${key}`);
+        const ratio = (hash % 1000000) / 1000000;
+        const jitter = (ratio - 0.5) * SHUFFLE_JITTER_MS;
+        return (item.time || 0) + jitter;
+      }
+
+      function sortFeedItems(items) {
+        if (!Array.isArray(items)) return [];
+        if (!shuffleEnabled) {
+          return items.sort((a, b) => b.time - a.time);
+        }
+        return items.sort((a, b) => itemShuffleScore(b) - itemShuffleScore(a));
       }
 
       function mentionClass(handle) {
@@ -1384,6 +1538,110 @@ $title = 'Explore | ApilageAI';
           const cls = mentionClass(handle);
           return `${prefix}<span class="mention ${cls}">@${handle}</span>`;
         });
+      }
+
+      let markedConfigured = false;
+      const mathJaxQueue = new Set();
+      let mathJaxScheduled = false;
+
+      function configureMarked() {
+        if (!window.marked || markedConfigured) return;
+        if (typeof window.marked.setOptions === 'function') {
+          window.marked.setOptions({ breaks: true, gfm: true, headerIds: false, mangle: false });
+        }
+        markedConfigured = true;
+      }
+
+      function queueMathTypeset(targets) {
+        if (!window.MathJax || !window.MathJax.typesetPromise) return;
+        const list = Array.isArray(targets) ? targets : [targets];
+        list.forEach((el) => {
+          if (el) mathJaxQueue.add(el);
+        });
+        if (mathJaxScheduled) return;
+        mathJaxScheduled = true;
+        requestAnimationFrame(() => {
+          const items = Array.from(mathJaxQueue);
+          mathJaxQueue.clear();
+          mathJaxScheduled = false;
+          if (items.length) {
+            window.MathJax.typesetPromise(items);
+          }
+        });
+      }
+
+      function applyMentionHighlight(root) {
+        if (!root) return;
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+        const nodes = [];
+        while (walker.nextNode()) nodes.push(walker.currentNode);
+
+        nodes.forEach((node) => {
+          if (!node.nodeValue || !node.parentNode) return;
+          const text = node.nodeValue;
+          if (!text.includes('@')) return;
+          const parentTag = node.parentNode.tagName;
+          if (parentTag === 'CODE' || parentTag === 'PRE') return;
+
+          const regex = /@([a-z0-9_.]+)/gi;
+          let match;
+          let lastIndex = 0;
+          const fragment = document.createDocumentFragment();
+          let changed = false;
+
+          while ((match = regex.exec(text)) !== null) {
+            const start = match.index;
+            const beforeChar = start === 0 ? '' : text[start - 1];
+            if (start !== 0 && !/\s/.test(beforeChar)) {
+              continue;
+            }
+            fragment.appendChild(document.createTextNode(text.slice(lastIndex, start)));
+            const span = document.createElement('span');
+            span.className = `mention ${mentionClass(match[1])}`;
+            span.textContent = `@${match[1]}`;
+            fragment.appendChild(span);
+            lastIndex = start + match[0].length;
+            changed = true;
+          }
+
+          if (!changed) return;
+          fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
+          node.parentNode.replaceChild(fragment, node);
+        });
+      }
+
+      function formatAiTextIn(root, options = {}) {
+        if (!root) return;
+        const elements = Array.from(root.querySelectorAll('[data-format-ai="true"]'));
+        if (!elements.length) return;
+        const ready = !!(window.marked && window.DOMPurify);
+        if (ready) configureMarked();
+
+        elements.forEach((el) => {
+          const raw = el.dataset.raw ?? el.textContent ?? '';
+          const state = el.dataset.formatState || '';
+          if (options.onlyFallback && state && state !== 'fallback' && !options.force) return;
+          if (!options.force) {
+            if (ready && state === 'rendered') return;
+            if (!ready && state === 'fallback') return;
+          }
+
+          if (ready) {
+            const html = window.DOMPurify.sanitize(window.marked.parse(raw || ''));
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = html;
+            applyMentionHighlight(wrapper);
+            el.innerHTML = wrapper.innerHTML;
+            el.dataset.formatState = 'rendered';
+          } else {
+            el.innerHTML = formatText(raw || '');
+            el.dataset.formatState = 'fallback';
+          }
+        });
+
+        if (ready) {
+          queueMathTypeset(elements);
+        }
       }
 
       function formatDate(raw) {
@@ -1604,12 +1862,18 @@ $title = 'Explore | ApilageAI';
           const img = document.createElement('img');
           img.src = URL.createObjectURL(file);
           img.alt = file.name;
+          const loader = document.createElement('div');
+          loader.className = 'upload-loader';
+          loader.innerHTML = '<span class="loader-spin" aria-hidden="true"></span>';
+          img.addEventListener('load', () => item.classList.add('is-preview-loaded'));
+          img.addEventListener('error', () => item.classList.add('is-preview-loaded'));
           const progress = document.createElement('div');
           progress.className = 'upload-progress';
           const size = document.createElement('div');
           size.className = 'upload-size';
           size.textContent = formatBytes(file.size);
           item.appendChild(img);
+          item.appendChild(loader);
           item.appendChild(progress);
           item.appendChild(size);
           container.appendChild(item);
@@ -1753,7 +2017,7 @@ $title = 'Explore | ApilageAI';
                 <span class="x-time">- ${escapeHtml(formatDate(chat.published_at))}</span>
                 <span class="x-badge"><i class="fa-solid fa-comment-dots"></i> Chat</span>
               </div>
-              <div class="x-post-body">${escapeHtml(chat.title)}</div>
+              <div class="x-post-body" data-format-ai="true"></div>
             </div>
           </div>
           <div class="x-post-actions">
@@ -1767,6 +2031,12 @@ $title = 'Explore | ApilageAI';
             </button>
           </div>
         `;
+        const chatBody = card.querySelector('.x-post-body');
+        if (chatBody) {
+          chatBody.dataset.raw = chat.title || '';
+          chatBody.textContent = chat.title || '';
+        }
+        formatAiTextIn(card);
         return card;
       }
 
@@ -1797,7 +2067,7 @@ $title = 'Explore | ApilageAI';
                 <span class="x-time">- ${escapeHtml(formatDate(post.created_at))}</span>
                 <span class="x-badge"><i class="fa-regular fa-circle-question"></i> Question</span>
               </div>
-              <div class="x-post-body">${formatText(post.body)}</div>
+              <div class="x-post-body" data-format-ai="true"></div>
               ${imagesHtml ? `<div class="x-post-media">${imagesHtml}</div>` : ''}
             </div>
           </div>
@@ -1836,6 +2106,12 @@ $title = 'Explore | ApilageAI';
             </div>
           </div>
         `;
+        const postBody = wrapper.querySelector('.x-post-body');
+        if (postBody) {
+          postBody.dataset.raw = post.body || '';
+          postBody.textContent = post.body || '';
+        }
+        formatAiTextIn(wrapper);
         return wrapper;
       }
 
@@ -1877,7 +2153,7 @@ $title = 'Explore | ApilageAI';
               ${handleHtml}
               <span class="thread-time">- ${escapeHtml(formatDate(comment.created_at))}</span>
             </div>
-            <div class="thread-body">${formatText(comment.body)}</div>
+            <div class="thread-body" data-format-ai="true"></div>
             ${imagesHtml ? `<div class="thread-media">${imagesHtml}</div>` : ''}
             <div class="thread-actions">
               <button type="button" class="thread-reply-btn" data-comment-id="${comment.id}">Reply</button>
@@ -1886,6 +2162,12 @@ $title = 'Explore | ApilageAI';
             <div class="thread-replies" hidden></div>
           </div>
         `;
+        const bodyEl = card.querySelector('.thread-body');
+        if (bodyEl) {
+          bodyEl.dataset.raw = comment.body || '';
+          bodyEl.textContent = comment.body || '';
+        }
+        formatAiTextIn(card);
         return card;
       }
 
@@ -1992,6 +2274,22 @@ $title = 'Explore | ApilageAI';
         return arr;
       }
 
+      function getTotalLoaded() {
+        return cachedChats.length + cachedPosts.length;
+      }
+
+      function updateLoadMoreVisibility() {
+        const total = getTotalLoaded();
+        const limitReached = total >= MAX_FEED_ITEMS;
+        const canLoadMore = (hasMoreChats || hasMorePosts) && !limitReached;
+        if (loadMoreFeed) {
+          loadMoreFeed.hidden = !canLoadMore;
+        }
+        if (feedEnd) {
+          feedEnd.hidden = !(total > 0 && !canLoadMore);
+        }
+      }
+
       function updateRightRail() {
         if (trendList && cachedChats.length) {
           const ranked = cachedChats.map((chat) => ({
@@ -2021,41 +2319,6 @@ $title = 'Explore | ApilageAI';
           `).join('');
         }
 
-        if (imagePicks) {
-          const picks = [];
-          const usedUsers = new Set();
-          const usedImages = new Set();
-          const usedSnippets = new Set();
-          const minReplies = 2;
-
-          const sorted = cachedPosts
-            .filter((post) => Array.isArray(post.images) && post.images.length > 0)
-            .filter((post) => post.comment_count >= minReplies)
-            .sort((a, b) => (b.comment_count - a.comment_count) || (new Date(b.created_at) - new Date(a.created_at)));
-
-          for (const post of sorted) {
-            if (usedUsers.has(post.user.id)) continue;
-            const bodyKey = String(post.body || '')
-              .toLowerCase()
-              .replace(/[^a-z0-9]+/g, ' ')
-              .trim()
-              .split(/\s+/)
-              .slice(0, 3)
-              .join(' ');
-            if (bodyKey && usedSnippets.has(bodyKey)) continue;
-            const img = post.images.find((url) => url && !usedImages.has(url));
-            if (!img) continue;
-            picks.push(img);
-            usedUsers.add(post.user.id);
-            usedImages.add(img);
-            if (bodyKey) usedSnippets.add(bodyKey);
-            if (picks.length >= 4) break;
-          }
-
-          imagePicks.innerHTML = picks
-            .map((url) => `<img src="${escapeHtml(url)}" alt="Image pick" data-image-preview="${escapeHtml(url)}">`)
-            .join('');
-        }
       }
 
       function closeAllMenus(except) {
@@ -2198,9 +2461,23 @@ $title = 'Explore | ApilageAI';
 
       async function loadFeed() {
         if (feedLoading) return;
-        if (!hasMoreChats && !hasMorePosts) return;
+        if (!hasMoreChats && !hasMorePosts) {
+          updateLoadMoreVisibility();
+          return;
+        }
+        if (getTotalLoaded() >= MAX_FEED_ITEMS) {
+          hasMoreChats = false;
+          hasMorePosts = false;
+          updateLoadMoreVisibility();
+          return;
+        }
         feedLoading = true;
-        if (loadMoreFeed) loadMoreFeed.disabled = true;
+        if (feedLoader) feedLoader.hidden = false;
+        const loadMoreLabel = loadMoreFeed ? loadMoreFeed.textContent : '';
+        if (loadMoreFeed) {
+          loadMoreFeed.disabled = true;
+          loadMoreFeed.textContent = 'Loading...';
+        }
 
         try {
           const [chatRes, postRes] = await Promise.all([
@@ -2253,25 +2530,24 @@ $title = 'Explore | ApilageAI';
             feedEmpty.hidden = false;
           }
 
-          newItems
-            .sort((a, b) => b.time - a.time)
-            .forEach((item) => {
-              const node = item.type === 'chat' ? renderChatCard(item.data) : renderPostCard(item.data);
-              if (item.type === 'post') {
-                initPostCard(node);
-              }
-              feedList.appendChild(node);
-            });
+          sortFeedItems(newItems).forEach((item) => {
+            const node = item.type === 'chat' ? renderChatCard(item.data) : renderPostCard(item.data);
+            if (item.type === 'post') {
+              initPostCard(node);
+            }
+            feedList.appendChild(node);
+          });
 
           updateRightRail();
-          if (loadMoreFeed) {
-            loadMoreFeed.hidden = !(hasMoreChats || hasMorePosts);
-          }
+          updateLoadMoreVisibility();
         } catch (err) {
           console.error(err);
         } finally {
           feedLoading = false;
+          if (feedLoader) feedLoader.hidden = true;
           if (loadMoreFeed) loadMoreFeed.disabled = false;
+          if (loadMoreFeed) loadMoreFeed.textContent = loadMoreLabel || 'Load more';
+          updateLoadMoreVisibility();
         }
       }
 
@@ -2284,6 +2560,14 @@ $title = 'Explore | ApilageAI';
         if (form) form.hidden = window.IS_GUEST;
         if (list.dataset.loaded === '1') return;
         list.dataset.loaded = '1';
+        if (list) {
+          list.innerHTML = `
+            <div class="feed-loader">
+              <span class="loader-spin" aria-hidden="true"></span>
+              Loading replies...
+            </div>
+          `;
+        }
 
         try {
           const res = await fetch(`${apiBase}?action=list_comments&post_id=${postId}`, { credentials: 'include' });
@@ -2314,7 +2598,7 @@ $title = 'Explore | ApilageAI';
           return;
         }
         postStatus.textContent = 'Posting...';
-        postSubmit.disabled = true;
+        setButtonLoading(postSubmit, true, 'Posting...');
         try {
           const uploaded = await uploadImages(files, postImagePreview);
           const res = await fetch(`${apiBase}?action=create_post`, {
@@ -2354,7 +2638,7 @@ $title = 'Explore | ApilageAI';
           console.error(err);
           postStatus.textContent = 'Failed to post. Please try again.';
         } finally {
-          postSubmit.disabled = false;
+          setButtonLoading(postSubmit, false, 'Post');
         }
       }
 
@@ -2384,7 +2668,7 @@ $title = 'Explore | ApilageAI';
           alert('Reply is too long. Maximum is 1000 words.');
           return;
         }
-        button.disabled = true;
+        setButtonLoading(button, true, 'Replying...');
         try {
           const preview = form ? form.querySelector('.upload-preview') : null;
           const uploaded = await uploadImages(files, preview);
@@ -2471,7 +2755,7 @@ $title = 'Explore | ApilageAI';
           console.error(err);
           alert('Failed to reply. Please try again.');
         } finally {
-          button.disabled = false;
+          setButtonLoading(button, false, 'Reply');
         }
       }
 
@@ -2645,6 +2929,15 @@ $title = 'Explore | ApilageAI';
             card.style.display = text.includes(query) ? '' : 'none';
           });
         });
+      }
+
+      const refreshAiFormatting = () => {
+        formatAiTextIn(document, { onlyFallback: true });
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', refreshAiFormatting);
+      } else {
+        refreshAiFormatting();
       }
 
       loadFeed();

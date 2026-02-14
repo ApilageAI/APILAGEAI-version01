@@ -104,14 +104,14 @@
             <span class="sidebar-but-icon" aria-hidden="true">🎮</span>
             <span class="sidebar-but-text">MCQ game</span>
         </button>
-        <button class="sidebar-but" type="button" onclick="window.open('{$smarty.const.APP_URL}/images', '_self');" title="Image Gallery">
+        <button class="sidebar-but" type="button" onclick="window.open('{$smarty.const.APP_URL}/explore', '_self');" title="Explore">
             <span class="sidebar-but-icon" aria-hidden="true">
                 <picture>
-                    <source srcset="https://fonts.gstatic.com/s/e/notoemoji/latest/1f4f8/512.webp" type="image/webp">
-                    <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f4f8/512.gif" alt="📸" width="20" height="20">
+                    <source srcset="https://fonts.gstatic.com/s/e/notoemoji/latest/1f30e/512.webp" type="image/webp">
+                    <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f30e/512.gif" alt="🌎" width="20" height="20">
                 </picture>
             </span>
-            <span class="sidebar-but-text">Image Gallery</span>
+            <span class="sidebar-but-text">Explore</span>
         </button>
         {assign var=profileSlug value=$user->_data.public_profile_username}
         {if !$profileSlug}
@@ -1185,6 +1185,23 @@
 <script src="{$smarty.const.APP_URL}/assets/scripts/ob.js?V=10.26.09.2025"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/report-data.js?V=1.25.01.2026{get_hash_token()}"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/canvo.min.js?V=1.25.01.2026{get_hash_token()}"></script>
+<script>
+  (function () {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('open') !== 'preferences') return;
+    const trigger = () => {
+      const userInfo = document.getElementById('sidebarUserInfo');
+      if (userInfo) {
+        userInfo.click();
+      }
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => setTimeout(trigger, 0));
+    } else {
+      setTimeout(trigger, 0);
+    }
+  })();
+</script>
 
 <style>
 body.guest-mode .sidebar,

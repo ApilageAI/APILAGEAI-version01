@@ -793,6 +793,19 @@ $badgeRegistryJson = json_encode(
       }
     })();
   </script>
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
   <style>
     :root {
       color-scheme: light;
@@ -1350,7 +1363,7 @@ $badgeRegistryJson = json_encode(
     }
     .question-images {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
       gap: 8px;
     }
     .question-images img {
@@ -1360,10 +1373,11 @@ $badgeRegistryJson = json_encode(
       border-radius: 12px;
       border: 1px solid var(--border-color);
       background: var(--surface);
+      cursor: pointer;
     }
     .image-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 200px));
+      grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
       gap: 16px;
       justify-content: center;
     }
@@ -1387,12 +1401,62 @@ $badgeRegistryJson = json_encode(
       object-fit: cover;
       display: block;
       background: var(--surface);
+      cursor: pointer;
     }
     .image-caption {
       padding: 10px 12px 12px;
       font-size: 12px;
       font-weight: 600;
       color: var(--text-muted);
+    }
+    .image-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: none;
+      padding: 24px;
+    }
+    .image-modal.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .image-modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+    }
+    .image-modal-content {
+      position: relative;
+      z-index: 1;
+      max-width: 90vw;
+      max-height: 90vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .image-modal-content img {
+      max-width: 90vw;
+      max-height: 90vh;
+      border-radius: 18px;
+      border: 1px solid var(--border-color);
+      object-fit: contain;
+      background: var(--card-bg);
+    }
+    .image-modal-close {
+      position: absolute;
+      top: -18px;
+      right: -18px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: var(--card-bg);
+      color: var(--text-primary);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     .item-menu {
       position: absolute;
@@ -2872,14 +2936,19 @@ $badgeRegistryJson = json_encode(
       font-weight: 600;
     }
     .sidebar.app-sidebar .sidebar-but .sidebar-but-icon {
-      width: 18px;
-      height: 18px;
+      width: 32px;
+      height: 32px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 14px;
       color: inherit;
       transition: color 0.15s ease;
+    }
+    .sidebar.app-sidebar .sidebar-but .sidebar-but-icon img {
+      width: 32px;
+      height: 32px;
+      display: block;
     }
     .sidebar.app-sidebar .sidebar-but:hover .sidebar-but-icon {
       color: var(--primary-red);
@@ -2937,6 +3006,8 @@ $badgeRegistryJson = json_encode(
       transition: background 0.15s ease;
       background-color: #f9fafb;
       border-radius: 18px;
+      text-decoration: none;
+      color: inherit;
     }
     .sidebar.app-sidebar .sidebar-footer-userinfo:hover {
       background: var(--gray-light);
@@ -3197,50 +3268,20 @@ $badgeRegistryJson = json_encode(
           <span class="sidebar-but-icon" aria-hidden="true">
             <picture>
               <source srcset="https://fonts.gstatic.com/s/e/notoemoji/latest/270f_fe0f/512.webp" type="image/webp">
-              <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/270f_fe0f/512.gif" alt="✏" width="20" height="20">
+              <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/270f_fe0f/512.gif" alt="✏" width="32" height="32">
             </picture>
           </span>
           <span class="sidebar-but-text">New chat</span>
         </a>
 
-        <a class="sidebar-but" href="<?php echo APP_URL; ?>/app" title="Conversations">
-          <span class="sidebar-but-icon" aria-hidden="true">💬</span>
-          <span class="sidebar-but-text">Conversations</span>
-        </a>
-
-        <a class="sidebar-but" href="<?php echo APP_URL; ?>/app" title="Share with friends">
+        <a class="sidebar-but" href="<?php echo APP_URL; ?>/explore" title="Explore">
           <span class="sidebar-but-icon" aria-hidden="true">
             <picture>
-              <source srcset="https://fonts.gstatic.com/s/e/notoemoji/latest/1f680/512.webp" type="image/webp">
-              <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f680/512.gif" alt="🚀" width="20" height="20">
+              <source srcset="https://fonts.gstatic.com/s/e/notoemoji/latest/1f30e/512.webp" type="image/webp">
+              <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f30e/512.gif" alt="🌎" width="32" height="32">
             </picture>
           </span>
-          <span class="sidebar-but-text">Share with friends</span>
-        </a>
-
-        <a class="sidebar-but" href="<?php echo APP_URL; ?>/app" title="Mind map">
-          <span class="sidebar-but-icon" aria-hidden="true">🧠</span>
-          <span class="sidebar-but-text">Mind map</span>
-        </a>
-
-        <a class="sidebar-but" href="<?php echo APP_URL; ?>/app" title="MCQ game">
-          <span class="sidebar-but-icon" aria-hidden="true">🎮</span>
-          <span class="sidebar-but-text">MCQ game</span>
-        </a>
-
-        <a class="sidebar-but" href="<?php echo APP_URL; ?>/images" title="Image Gallery">
-          <span class="sidebar-but-icon" aria-hidden="true">
-            <picture>
-              <source srcset="https://fonts.gstatic.com/s/e/notoemoji/latest/1f4f8/512.webp" type="image/webp">
-              <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f4f8/512.gif" alt="📸" width="20" height="20">
-            </picture>
-          </span>
-          <span class="sidebar-but-text">Image Gallery</span>
-        </a>
-
-        <a class="sidebar-but active" href="<?php echo $profileUrlEscaped; ?>" title="Public Profile" aria-current="page">
-          <span class="sidebar-but-icon" aria-hidden="true">👤</span>
-          <span class="sidebar-but-text">Public Profile</span>
+          <span class="sidebar-but-text">Explore</span>
         </a>
       </div>
 
@@ -3249,7 +3290,7 @@ $badgeRegistryJson = json_encode(
           <i class="fa fa-bullseye" aria-hidden="true"></i>
           <span class="minimize-text">Focused</span>
         </button>
-        <div class="sidebar-footer-userinfo" id="sidebarUserInfo">
+        <a class="sidebar-footer-userinfo" id="sidebarUserInfo" href="<?php echo APP_URL; ?>/app?open=preferences">
           <div class="user-avatar">
             <img
               src="<?php echo $imageUrlEscaped !== '' ? $imageUrlEscaped : (APP_URL . '/assets/images/user.png'); ?>"
@@ -3260,14 +3301,9 @@ $badgeRegistryJson = json_encode(
           <div class="user-details">
             <div class="user-name name-line">
               <span class="name-text"><?php echo $displayNameEscaped; ?></span>
-              <?php echo $profileBadgesHtml; ?>
-            </div>
-            <div class="user-credit-text">Public profile</div>
-            <div class="credit-bar-container">
-              <div class="credit-bar-fill" style="width: 0%;"></div>
             </div>
           </div>
-        </div>
+        </a>
       </div>
     </aside>
 
@@ -3413,7 +3449,7 @@ $badgeRegistryJson = json_encode(
               ?>
               <div class="chat-card" data-chat-title="<?php echo $chatTitleData; ?>">
                 <a class="chat-card-link" href="<?php echo $chatUrlEscaped; ?>">
-                  <div class="chat-title"><?php echo $chatTitleEscaped; ?></div>
+                  <div class="chat-title" data-format-ai="true"><?php echo $chatTitleEscaped; ?></div>
                   <div class="chat-date">Published on <?php echo $chatDateEscaped; ?></div>
                 </a>
                 <div class="item-menu" data-item-type="chat" data-item-id="<?php echo (int)$chat['conversation_id']; ?>">
@@ -3469,17 +3505,17 @@ $badgeRegistryJson = json_encode(
               ?>
               <div class="question-card">
                 <a class="question-card-link" href="<?php echo $questionLinkEscaped; ?>">
-                  <div class="question-body"><?php echo $questionPreviewEscaped; ?></div>
+                  <div class="question-body" data-format-ai="true"><?php echo $questionPreviewEscaped; ?></div>
                   <div class="question-meta">
                     <span><?php echo $questionReplies; ?> replies</span>
                     <span><?php echo $questionDateEscaped; ?></span>
                   </div>
-                  <?php if (!empty($questionImages)): ?>
+                <?php if (!empty($questionImages)): ?>
                     <div class="question-images">
                       <?php foreach ($questionImages as $imgUrl): ?>
                         <?php $imgEscaped = htmlspecialchars($imgUrl, ENT_QUOTES, 'UTF-8'); ?>
                         <?php if ($imgEscaped !== ''): ?>
-                          <img src="<?php echo $imgEscaped; ?>" alt="Question image">
+                          <img src="<?php echo $imgEscaped; ?>" alt="Question image" data-image-preview="<?php echo $imgEscaped; ?>">
                         <?php endif; ?>
                       <?php endforeach; ?>
                     </div>
@@ -3533,8 +3569,8 @@ $badgeRegistryJson = json_encode(
               ?>
               <?php if ($imgUrlEscaped !== ''): ?>
                 <div class="image-card">
-                  <img src="<?php echo $imgUrlEscaped; ?>" alt="<?php echo $promptEscaped; ?>">
-                  <div class="image-caption"><?php echo $promptEscaped; ?></div>
+                  <img src="<?php echo $imgUrlEscaped; ?>" alt="<?php echo $promptEscaped; ?>" data-image-preview="<?php echo $imgUrlEscaped; ?>">
+                  <div class="image-caption" data-format-ai="true"><?php echo $promptEscaped; ?></div>
                   <?php if ($isProfileOwner): ?>
                     <div class="item-menu" data-item-type="image" data-item-id="<?php echo (int)$img['id']; ?>">
                       <button class="item-menu-btn" type="button" aria-label="Open menu">
@@ -3723,6 +3759,16 @@ $badgeRegistryJson = json_encode(
       <div id="userSearchStatus" class="search-status" role="status" aria-live="polite"></div>
       <div id="userSearchResults" class="user-search-results" role="list"></div>
       <div id="userSearchEmpty" class="empty-state" hidden>No public profiles match your search.</div>
+    </div>
+  </div>
+
+  <div class="image-modal" id="imageModal">
+    <div class="image-modal-backdrop"></div>
+    <div class="image-modal-content">
+      <button class="image-modal-close" type="button" aria-label="Close">
+        <i class="fa fa-times"></i>
+      </button>
+      <img id="imageModalImg" src="" alt="Preview">
     </div>
   </div>
 
@@ -4268,6 +4314,23 @@ $badgeRegistryJson = json_encode(
   </script>
   <script>
     (function () {
+      function formatAiText(root = document) {
+        const blocks = Array.from(root.querySelectorAll('[data-format-ai="true"]'));
+        if (!blocks.length) return;
+        if (window.marked && typeof window.marked.setOptions === 'function') {
+          window.marked.setOptions({ breaks: true, gfm: true, headerIds: false, mangle: false });
+        }
+        blocks.forEach((el) => {
+          const raw = el.textContent || '';
+          if (window.marked && window.DOMPurify) {
+            const html = window.DOMPurify.sanitize(window.marked.parse(raw));
+            el.innerHTML = html;
+          } else {
+            el.textContent = raw;
+          }
+        });
+      }
+
       const apiBase = "<?php echo APP_URL; ?>/public_explore_api.php";
       const isGuest = <?php echo $isLoggedIn ? 'false' : 'true'; ?>;
 
@@ -4380,6 +4443,62 @@ $badgeRegistryJson = json_encode(
         if (!event.target.closest('.item-menu')) {
           closeAllMenus();
         }
+      });
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+          formatAiText();
+          if (window.MathJax && window.MathJax.typesetPromise) {
+            window.MathJax.typesetPromise();
+          }
+        });
+      } else {
+        formatAiText();
+        if (window.MathJax && window.MathJax.typesetPromise) {
+          window.MathJax.typesetPromise();
+        }
+      }
+    })();
+  </script>
+  <script>
+    (function () {
+      const imageModal = document.getElementById('imageModal');
+      const imageModalImg = document.getElementById('imageModalImg');
+
+      function openImageModal(src, altText) {
+        if (!imageModal || !imageModalImg) return;
+        imageModalImg.src = src;
+        imageModalImg.alt = altText || 'Preview';
+        imageModal.classList.add('active');
+        document.body.classList.add('modal-open');
+      }
+
+      function closeImageModal() {
+        if (!imageModal || !imageModalImg) return;
+        imageModalImg.src = '';
+        imageModal.classList.remove('active');
+        document.body.classList.remove('modal-open');
+      }
+
+      if (imageModal) {
+        imageModal.addEventListener('click', (event) => {
+          if (event.target.closest('.image-modal-content') && !event.target.closest('.image-modal-close')) {
+            return;
+          }
+          closeImageModal();
+        });
+      }
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          closeImageModal();
+        }
+      });
+
+      document.addEventListener('click', (event) => {
+        const previewImg = event.target.closest('[data-image-preview]');
+        if (!previewImg) return;
+        openImageModal(previewImg.dataset.imagePreview || previewImg.src, previewImg.alt);
       });
     })();
   </script>
