@@ -76,6 +76,9 @@ RedirectMatch 403 ^uploads/userdocs/
   # Blog routes
   RewriteRule ^blog/?$ blog.php [L,QSA]
 
+  # Explore routes
+  RewriteRule ^explore/?$ public_explore.php [L,QSA]
+
   # Payment routes (amount is parsed inside pay.php)
   RewriteRule ^pay/([0-9]+(?:\.[0-9]+)?)/?$ pay.php [L,QSA]
 

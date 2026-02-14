@@ -33,6 +33,26 @@ if (!function_exists('normalize_public_image_url_profile')) {
     }
 }
 
+if (!function_exists('build_public_upload_url')) {
+    function build_public_upload_url(string $value): string {
+        $value = trim($value);
+        if ($value === '') return '';
+        if (preg_match('#^https?://#i', $value)) {
+            return $value;
+        }
+        if (stripos($value, '/uploads/') === 0) {
+            return rtrim(UPLOADS_BASE_URL, '/') . $value;
+        }
+        if (stripos($value, 'uploads/') === 0) {
+            return rtrim(UPLOADS_BASE_URL, '/') . '/' . $value;
+        }
+        if (stripos($value, 'userimg/') === 0) {
+            return rtrim(UPLOADS_BASE_URL, '/') . '/uploads/' . $value;
+        }
+        return rtrim(UPLOADS_BASE_URL, '/') . '/uploads/userimg/' . $value;
+    }
+}
+
 $badgeRegistry = [
     'verified' => [
         'title' => 'Verified user',
@@ -371,6 +391,10 @@ if (!$userRow || (int)$userRow['public_profile_enabled'] !== 1) {
     exit();
 }
 
+$isLoggedIn = $user->_logged_in;
+$viewerId = $isLoggedIn ? (int)$user->_data['id'] : 0;
+$isProfileOwner = $isLoggedIn && $viewerId === (int)$userRow['id'];
+
 $displayName = trim(($userRow['first_name'] ?? '') . ' ' . ($userRow['last_name'] ?? ''));
 if ($displayName === '') {
     $displayName = 'ApilageAI User';
@@ -522,9 +546,70 @@ $imageStmt->bind_param('i', $userRow['id']);
 $imageStmt->execute();
 $imageResult = $imageStmt->get_result();
 while ($row = $imageResult->fetch_assoc()) {
-    $publishedImages[] = $row;
+$publishedImages[] = $row;
 }
 $imageStmt->close();
+
+$publishedQuestions = [];
+$questionIds = [];
+$questionStmt = $db->prepare(
+    "SELECT id, body, created_at
+     FROM public_posts
+     WHERE user_id = ? AND status = 'active'
+     ORDER BY created_at DESC
+     LIMIT 12"
+);
+$questionStmt->bind_param('i', $userRow['id']);
+$questionStmt->execute();
+$questionResult = $questionStmt->get_result();
+while ($row = $questionResult->fetch_assoc()) {
+    $qid = (int)$row['id'];
+    $questionIds[] = $qid;
+    $publishedQuestions[$qid] = [
+        'id' => $qid,
+        'body' => $row['body'] ?? '',
+        'created_at' => $row['created_at'] ?? '',
+        'images' => [],
+        'comment_count' => 0
+    ];
+}
+$questionStmt->close();
+
+if (!empty($questionIds)) {
+    $in = implode(',', array_fill(0, count($questionIds), '?'));
+    $types = str_repeat('i', count($questionIds));
+    $stmt = $db->prepare(
+        "SELECT post_id, image_filename
+         FROM public_post_images
+         WHERE post_id IN ($in)
+         ORDER BY id ASC"
+    );
+    $stmt->bind_param($types, ...$questionIds);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) {
+        $pid = (int)$row['post_id'];
+        if (!isset($publishedQuestions[$pid])) continue;
+        $publishedQuestions[$pid]['images'][] = build_public_upload_url((string)$row['image_filename']);
+    }
+    $stmt->close();
+
+    $stmt = $db->prepare(
+        "SELECT post_id, COUNT(*) AS comment_count
+         FROM public_post_comments
+         WHERE post_id IN ($in)
+         GROUP BY post_id"
+    );
+    $stmt->bind_param($types, ...$questionIds);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) {
+        $pid = (int)$row['post_id'];
+        if (!isset($publishedQuestions[$pid])) continue;
+        $publishedQuestions[$pid]['comment_count'] = (int)$row['comment_count'];
+    }
+    $stmt->close();
+}
 
 $exploreUsers = [];
 $exploreStmt = $db->prepare(
@@ -634,7 +719,8 @@ $shareImage = $imageUrl !== '' ? $imageUrl : (APP_URL . '/assets/images/logo.png
 $shareImageEscaped = htmlspecialchars($shareImage, ENT_QUOTES, 'UTF-8');
 $chatCount = count($publishedChats);
 $imageCount = count($publishedImages);
-$postCount = $chatCount + $imageCount;
+$questionCount = count($publishedQuestions);
+$postCount = $chatCount + $imageCount + $questionCount;
 $profileHandle = '@' . $profileSlug;
 $profileHandleEscaped = htmlspecialchars($profileHandle, ENT_QUOTES, 'UTF-8');
 $getSub = function ($str, $length) {
@@ -1211,12 +1297,69 @@ $badgeRegistryJson = json_encode(
       color: var(--text-primary);
       box-shadow: var(--shadow-hard);
       transition: transform 0.15s ease;
+      position: relative;
+    }
+    .chat-card-link {
+      display: block;
+      color: inherit;
+      text-decoration: none;
     }
     [data-theme="dark"] .chat-card {
       box-shadow: none;
     }
     .chat-card:hover {
       transform: translateY(-3px);
+    }
+    .question-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-top: 14px;
+    }
+    .question-card {
+      border: 2px solid var(--border-color);
+      border-radius: 18px;
+      background: var(--card-bg);
+      box-shadow: var(--shadow-hard);
+      padding: 16px;
+      position: relative;
+    }
+    [data-theme="dark"] .question-card {
+      box-shadow: none;
+    }
+    .question-card-link {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      color: inherit;
+      text-decoration: none;
+    }
+    .question-body {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+    .question-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .question-images {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+      gap: 8px;
+    }
+    .question-images img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      background: var(--surface);
     }
     .image-grid {
       display: grid;
@@ -1233,6 +1376,7 @@ $badgeRegistryJson = json_encode(
       display: flex;
       flex-direction: column;
       gap: 0;
+      position: relative;
     }
     [data-theme="dark"] .image-card {
       box-shadow: none;
@@ -1249,6 +1393,71 @@ $badgeRegistryJson = json_encode(
       font-size: 12px;
       font-weight: 600;
       color: var(--text-muted);
+    }
+    .item-menu {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 5;
+    }
+    .item-menu-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 1px solid var(--border-color);
+      background: var(--card-bg);
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .item-menu-btn:hover {
+      color: var(--x-accent);
+      border-color: var(--x-accent);
+      background: var(--x-accent-soft);
+    }
+    .item-menu-list {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 6px);
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      box-shadow: var(--shadow-hard);
+      padding: 6px;
+      min-width: 160px;
+      display: none;
+    }
+    [data-theme="dark"] .item-menu-list {
+      box-shadow: none;
+    }
+    .item-menu.open .item-menu-list {
+      display: block;
+    }
+    .item-menu-item {
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: var(--text-primary);
+      font-size: 13px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      text-align: left;
+    }
+    .item-menu-item:hover {
+      background: var(--x-accent-soft);
+      color: var(--x-accent);
+    }
+    .item-menu-item.delete {
+      color: #ef4444;
+    }
+    .item-menu-item.delete:hover {
+      background: rgba(239, 68, 68, 0.12);
     }
     .chat-title {
       font-weight: 700;
@@ -3202,15 +3411,102 @@ $badgeRegistryJson = json_encode(
                 $chatUrl = APP_URL . '/app/chat/' . (int)$chat['conversation_id'];
                 $chatUrlEscaped = htmlspecialchars($chatUrl, ENT_QUOTES, 'UTF-8');
               ?>
-              <a class="chat-card" data-chat-title="<?php echo $chatTitleData; ?>" href="<?php echo $chatUrlEscaped; ?>">
-                <div class="chat-title"><?php echo $chatTitleEscaped; ?></div>
-                <div class="chat-date">Published on <?php echo $chatDateEscaped; ?></div>
-              </a>
+              <div class="chat-card" data-chat-title="<?php echo $chatTitleData; ?>">
+                <a class="chat-card-link" href="<?php echo $chatUrlEscaped; ?>">
+                  <div class="chat-title"><?php echo $chatTitleEscaped; ?></div>
+                  <div class="chat-date">Published on <?php echo $chatDateEscaped; ?></div>
+                </a>
+                <div class="item-menu" data-item-type="chat" data-item-id="<?php echo (int)$chat['conversation_id']; ?>">
+                  <button class="item-menu-btn" type="button" aria-label="Open menu">
+                    <i class="fa-solid fa-ellipsis"></i>
+                  </button>
+                  <div class="item-menu-list" role="menu">
+                    <button class="item-menu-item" type="button" data-menu-action="report">
+                      <i class="fa-regular fa-flag"></i>
+                      Report
+                    </button>
+                    <?php if ($isProfileOwner): ?>
+                      <button class="item-menu-item delete" type="button" data-menu-action="delete">
+                        <i class="fa-regular fa-trash-can"></i>
+                        Delete
+                      </button>
+                    <?php endif; ?>
+                  </div>
+                </div>
+              </div>
             <?php endforeach; ?>
           </div>
           <div id="chatEmptyState" class="empty-state" hidden>No chats match your search.</div>
         <?php else: ?>
           <div class="empty-state">No published chats yet.</div>
+        <?php endif; ?>
+
+        <div class="section-title">Public Questions</div>
+        <?php if (!empty($publishedQuestions)): ?>
+          <div class="question-grid">
+            <?php foreach ($publishedQuestions as $question): ?>
+              <?php
+                $questionBody = trim((string)($question['body'] ?? ''));
+                if ($questionBody === '') {
+                    $questionBody = 'Shared images without text.';
+                }
+                $questionPreview = $questionBody;
+                if (function_exists('mb_strlen')) {
+                    if (mb_strlen($questionPreview, 'UTF-8') > 140) {
+                        $questionPreview = mb_substr($questionPreview, 0, 137, 'UTF-8') . '...';
+                    }
+                } elseif (strlen($questionPreview) > 140) {
+                    $questionPreview = substr($questionPreview, 0, 137) . '...';
+                }
+                $questionPreviewEscaped = htmlspecialchars($questionPreview, ENT_QUOTES, 'UTF-8');
+                $questionDate = $question['created_at'] ?? null;
+                $questionDateLabel = $questionDate ? date('M d, Y', strtotime($questionDate)) : 'Date unknown';
+                $questionDateEscaped = htmlspecialchars($questionDateLabel, ENT_QUOTES, 'UTF-8');
+                $questionLink = APP_URL . '/explore?post=' . (int)$question['id'];
+                $questionLinkEscaped = htmlspecialchars($questionLink, ENT_QUOTES, 'UTF-8');
+                $questionReplies = (int)($question['comment_count'] ?? 0);
+                $questionImages = array_slice($question['images'] ?? [], 0, 4);
+              ?>
+              <div class="question-card">
+                <a class="question-card-link" href="<?php echo $questionLinkEscaped; ?>">
+                  <div class="question-body"><?php echo $questionPreviewEscaped; ?></div>
+                  <div class="question-meta">
+                    <span><?php echo $questionReplies; ?> replies</span>
+                    <span><?php echo $questionDateEscaped; ?></span>
+                  </div>
+                  <?php if (!empty($questionImages)): ?>
+                    <div class="question-images">
+                      <?php foreach ($questionImages as $imgUrl): ?>
+                        <?php $imgEscaped = htmlspecialchars($imgUrl, ENT_QUOTES, 'UTF-8'); ?>
+                        <?php if ($imgEscaped !== ''): ?>
+                          <img src="<?php echo $imgEscaped; ?>" alt="Question image">
+                        <?php endif; ?>
+                      <?php endforeach; ?>
+                    </div>
+                  <?php endif; ?>
+                </a>
+                <div class="item-menu" data-item-type="post" data-item-id="<?php echo (int)$question['id']; ?>">
+                  <button class="item-menu-btn" type="button" aria-label="Open menu">
+                    <i class="fa-solid fa-ellipsis"></i>
+                  </button>
+                  <div class="item-menu-list" role="menu">
+                    <button class="item-menu-item" type="button" data-menu-action="report">
+                      <i class="fa-regular fa-flag"></i>
+                      Report
+                    </button>
+                    <?php if ($isProfileOwner): ?>
+                      <button class="item-menu-item delete" type="button" data-menu-action="delete">
+                        <i class="fa-regular fa-trash-can"></i>
+                        Delete
+                      </button>
+                    <?php endif; ?>
+                  </div>
+                </div>
+              </div>
+            <?php endforeach; ?>
+          </div>
+        <?php else: ?>
+          <div class="empty-state">No public questions yet.</div>
         <?php endif; ?>
       </section>
 
@@ -3239,6 +3535,19 @@ $badgeRegistryJson = json_encode(
                 <div class="image-card">
                   <img src="<?php echo $imgUrlEscaped; ?>" alt="<?php echo $promptEscaped; ?>">
                   <div class="image-caption"><?php echo $promptEscaped; ?></div>
+                  <?php if ($isProfileOwner): ?>
+                    <div class="item-menu" data-item-type="image" data-item-id="<?php echo (int)$img['id']; ?>">
+                      <button class="item-menu-btn" type="button" aria-label="Open menu">
+                        <i class="fa-solid fa-ellipsis"></i>
+                      </button>
+                      <div class="item-menu-list" role="menu">
+                        <button class="item-menu-item delete" type="button" data-menu-action="delete">
+                          <i class="fa-regular fa-trash-can"></i>
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  <?php endif; ?>
                 </div>
               <?php endif; ?>
             <?php endforeach; ?>
@@ -3956,6 +4265,123 @@ $badgeRegistryJson = json_encode(
         }
       }
     }
+  </script>
+  <script>
+    (function () {
+      const apiBase = "<?php echo APP_URL; ?>/public_explore_api.php";
+      const isGuest = <?php echo $isLoggedIn ? 'false' : 'true'; ?>;
+
+      function closeAllMenus(except) {
+        document.querySelectorAll('.item-menu.open').forEach((menu) => {
+          if (except && menu === except) return;
+          menu.classList.remove('open');
+        });
+      }
+
+      async function submitReport(itemType, itemId) {
+        if (isGuest) {
+          alert('Please log in to report.');
+          return;
+        }
+        const reason = window.prompt('Report reason (optional):');
+        if (reason === null) return;
+        try {
+          const res = await fetch(`${apiBase}?action=report_item`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ item_type: itemType, item_id: itemId, reason })
+          });
+          const data = await res.json();
+          if (!data.success) {
+            alert(data.message || 'Failed to report.');
+            return;
+          }
+          alert('Report submitted.');
+        } catch (err) {
+          console.error(err);
+          alert('Failed to report.');
+        }
+      }
+
+      async function submitDelete(itemType, itemId, targetEl) {
+        if (isGuest) {
+          alert('Please log in to delete.');
+          return;
+        }
+        if (!window.confirm('Delete this item?')) return;
+        try {
+          const res = await fetch(`${apiBase}?action=delete_item`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ item_type: itemType, item_id: itemId })
+          });
+          const data = await res.json();
+          if (!data.success) {
+            alert(data.message || 'Failed to delete.');
+            return;
+          }
+          if (targetEl) {
+            const parent = targetEl.parentElement;
+            targetEl.remove();
+            if (parent && !parent.querySelector('.chat-card') && !parent.querySelector('.question-card') && !parent.querySelector('.image-card')) {
+              const empty = document.createElement('div');
+              empty.className = 'empty-state';
+              if (itemType === 'chat') {
+                empty.textContent = 'No published chats yet.';
+              } else if (itemType === 'post') {
+                empty.textContent = 'No public questions yet.';
+              } else if (itemType === 'image') {
+                empty.textContent = 'No published images yet.';
+              }
+              parent.appendChild(empty);
+            }
+          }
+        } catch (err) {
+          console.error(err);
+          alert('Failed to delete.');
+        }
+      }
+
+      document.addEventListener('click', (event) => {
+        const menuBtn = event.target.closest('.item-menu-btn');
+        if (menuBtn) {
+          event.preventDefault();
+          event.stopPropagation();
+          const menu = menuBtn.closest('.item-menu');
+          if (menu) {
+            const isOpen = menu.classList.contains('open');
+            closeAllMenus(menu);
+            menu.classList.toggle('open', !isOpen);
+          }
+          return;
+        }
+
+        const menuAction = event.target.closest('[data-menu-action]');
+        if (menuAction) {
+          event.preventDefault();
+          event.stopPropagation();
+          const menu = menuAction.closest('.item-menu');
+          if (!menu) return;
+          closeAllMenus();
+          const itemType = menu.dataset.itemType || '';
+          const itemId = Number(menu.dataset.itemId || 0);
+          const action = menuAction.dataset.menuAction || '';
+          if (action === 'report') {
+            submitReport(itemType, itemId);
+          } else if (action === 'delete') {
+            const targetEl = menu.closest('.chat-card') || menu.closest('.question-card') || menu.closest('.image-card');
+            submitDelete(itemType, itemId, targetEl);
+          }
+          return;
+        }
+
+        if (!event.target.closest('.item-menu')) {
+          closeAllMenus();
+        }
+      });
+    })();
   </script>
 </body>
 </html>
