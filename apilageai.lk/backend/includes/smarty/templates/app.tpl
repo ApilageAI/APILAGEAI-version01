@@ -982,7 +982,10 @@
         </div>
         <div class="notification-wrapper">
           <button id="notificationBell" class="notification-btn">
-            <i class="fa fa-bell"></i>
+            <picture>
+                <source srcset="https://fonts.gstatic.com/s/e/notoemoji/latest/1f514/512.webp" type="image/webp">
+                <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f514/512.gif" alt="🔔" width="32" height="32">
+            </picture>
             <span id="notificationCount" class="notification-count" style="display:none;">0</span>
           </button>
 
@@ -1669,6 +1672,14 @@ body.guest-mode .main-content {
   height: 100%;
   background: linear-gradient(90deg, #f97316, #f59e0b);
   width: 0%;
+}
+.sidebar,
+.sidebar-items {
+  overflow-x: hidden;
+}
+.sidebar-but .sidebar-but-shortcut {
+  position: relative;
+  z-index: 3;
 }
 </style>
 

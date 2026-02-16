@@ -19,13 +19,182 @@ $userProfileUrl = $isLoggedIn ? (function () use ($user) {
 })() : '';
 $userHandle = $userProfileUrl !== '' ? '@' . basename($userProfileUrl) : ($isLoggedIn ? '@apilageai' : '@guest');
 
+function explore_collapse_whitespace(string $text): string {
+    $text = preg_replace('/\s+/u', ' ', $text);
+    return trim((string)$text);
+}
+
+function explore_truncate_text(string $text, int $maxLen): string {
+    $text = trim($text);
+    if ($text === '' || $maxLen <= 0) return '';
+    if (function_exists('mb_strlen') && function_exists('mb_substr')) {
+        if (mb_strlen($text, 'UTF-8') <= $maxLen) return $text;
+        $sliceLen = max(0, $maxLen - 3);
+        $slice = mb_substr($text, 0, $sliceLen, 'UTF-8');
+        return rtrim($slice) . '...';
+    }
+    if (strlen($text) <= $maxLen) return $text;
+    $sliceLen = max(0, $maxLen - 3);
+    $slice = substr($text, 0, $sliceLen);
+    return rtrim($slice) . '...';
+}
+
+function explore_build_upload_url(string $value): string {
+    $value = trim($value);
+    if ($value === '') return '';
+    if (preg_match('#^https?://#i', $value)) {
+        return $value;
+    }
+    if (stripos($value, '/uploads/') === 0) {
+        return rtrim(UPLOADS_BASE_URL, '/') . $value;
+    }
+    if (stripos($value, 'uploads/') === 0) {
+        return rtrim(UPLOADS_BASE_URL, '/') . '/' . $value;
+    }
+    if (stripos($value, 'userimg/') === 0) {
+        return rtrim(UPLOADS_BASE_URL, '/') . '/uploads/' . $value;
+    }
+    return rtrim(UPLOADS_BASE_URL, '/') . '/uploads/userimg/' . $value;
+}
+
+function explore_build_post_snippet(string $body, array $images): string {
+    $body = explore_collapse_whitespace($body);
+    if ($body !== '') {
+        return explore_truncate_text($body, 140);
+    }
+    if (!empty($images)) {
+        return 'Shared a photo on Explore.';
+    }
+    return 'Shared a post on Explore.';
+}
+
+$focusPostId = isset($_GET['post']) ? (int)$_GET['post'] : 0;
+$focusPost = null;
+if ($focusPostId > 0) {
+    $stmt = $db->prepare(
+        "SELECT p.id, p.body, p.created_at,
+                u.id AS user_id, u.first_name, u.last_name, u.image, u.public_profile_username, u.public_profile_token
+         FROM public_posts p
+         JOIN users u ON u.id = p.user_id
+         WHERE p.id = ? AND p.status = 'active'
+         LIMIT 1"
+    );
+    if ($stmt) {
+        $stmt->bind_param('i', $focusPostId);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        if ($row) {
+            $focusPost = [
+                'id' => (int)$row['id'],
+                'body' => $row['body'] ?? '',
+                'created_at' => $row['created_at'],
+                'user' => [
+                    'id' => (int)$row['user_id'],
+                    'name' => trim((string)($row['first_name'] ?? '') . ' ' . (string)($row['last_name'] ?? '')) ?: 'ApilageAI User',
+                    'image_url' => user_image_url($row['image'] ?? ''),
+                    'profile_url' => ''
+                ],
+                'images' => []
+            ];
+
+            $slug = '';
+            if (!empty($row['public_profile_username'])) {
+                $slug = $row['public_profile_username'];
+            } elseif (!empty($row['public_profile_token'])) {
+                $slug = $row['public_profile_token'];
+            }
+            if ($slug !== '') {
+                $focusPost['user']['profile_url'] = APP_URL . '/' . $slug;
+            }
+
+            $stmt = $db->prepare(
+                "SELECT image_filename
+                 FROM public_post_images
+                 WHERE post_id = ?
+                 ORDER BY id ASC"
+            );
+            if ($stmt) {
+                $stmt->bind_param('i', $focusPostId);
+                $stmt->execute();
+                $res = $stmt->get_result();
+                while ($imgRow = $res->fetch_assoc()) {
+                    $focusPost['images'][] = explore_build_upload_url((string)$imgRow['image_filename']);
+                }
+                $stmt->close();
+            }
+        }
+    }
+}
+
 $title = 'Explore | ApilageAI';
+$metaTitle = $title;
+$metaDescription = 'Discover questions, answers, and discussions on ApilageAI Explore.';
+$metaImage = APP_URL . '/assets/images/icon.png';
+$canonicalUrl = APP_URL . '/explore';
+$ogType = 'website';
+$structuredData = [
+    '@context' => 'https://schema.org',
+    '@type' => 'CollectionPage',
+    'name' => 'ApilageAI Explore',
+    'description' => $metaDescription,
+    'url' => $canonicalUrl
+];
+
+if ($focusPost) {
+    $snippet = explore_build_post_snippet($focusPost['body'], $focusPost['images']);
+    $metaTitle = $snippet !== '' ? explore_truncate_text($snippet, 70) . ' | ApilageAI Explore' : 'Explore Post | ApilageAI';
+    $metaDescription = $snippet !== '' ? $snippet : $metaDescription;
+    if (!empty($focusPost['images'])) {
+        $metaImage = $focusPost['images'][0];
+    } else {
+        $metaImage = APP_URL . '/og/explore.php?post=' . $focusPostId;
+    }
+    $canonicalUrl = APP_URL . '/explore?post=' . $focusPostId;
+    $ogType = 'article';
+    $structuredData = [
+        '@context' => 'https://schema.org',
+        '@type' => 'SocialMediaPosting',
+        'headline' => explore_truncate_text($snippet ?: 'ApilageAI Explore Post', 110),
+        'datePublished' => date('c', strtotime($focusPost['created_at'] ?? 'now')),
+        'author' => [
+            '@type' => 'Person',
+            'name' => $focusPost['user']['name'] ?? 'ApilageAI User'
+        ],
+        'image' => [$metaImage],
+        'url' => $canonicalUrl
+    ];
+}
+
+$metaTitleEsc = htmlspecialchars($metaTitle, ENT_QUOTES, 'UTF-8');
+$metaDescEsc = htmlspecialchars($metaDescription, ENT_QUOTES, 'UTF-8');
+$metaImageEsc = htmlspecialchars($metaImage, ENT_QUOTES, 'UTF-8');
+$canonicalEsc = htmlspecialchars($canonicalUrl, ENT_QUOTES, 'UTF-8');
+$ogTypeEsc = htmlspecialchars($ogType, ENT_QUOTES, 'UTF-8');
+$structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 ?><!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title><?php echo htmlspecialchars($title, ENT_QUOTES, 'UTF-8'); ?></title>
+  <title><?php echo $metaTitleEsc; ?></title>
+  <meta name="description" content="<?php echo $metaDescEsc; ?>">
+  <link rel="canonical" href="<?php echo $canonicalEsc; ?>">
+  <meta property="og:site_name" content="ApilageAI">
+  <meta property="og:title" content="<?php echo $metaTitleEsc; ?>">
+  <meta property="og:description" content="<?php echo $metaDescEsc; ?>">
+  <meta property="og:image" content="<?php echo $metaImageEsc; ?>">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="<?php echo $canonicalEsc; ?>">
+  <meta property="og:type" content="<?php echo $ogTypeEsc; ?>">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="<?php echo $metaTitleEsc; ?>">
+  <meta name="twitter:description" content="<?php echo $metaDescEsc; ?>">
+  <meta name="twitter:image" content="<?php echo $metaImageEsc; ?>">
+  <?php if (!empty($structuredJson)) { ?>
+  <script type="application/ld+json"><?php echo $structuredJson; ?></script>
+  <?php } ?>
   <meta name="robots" content="index,follow">
   <link rel="icon" type="image/png" href="<?php echo APP_URL; ?>/assets/images/icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1223,6 +1392,48 @@ $title = 'Explore | ApilageAI';
         display: inline-flex;
       }
     }
+    .focus-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: var(--x-card);
+      border: 1px solid var(--x-border);
+      border-radius: 16px;
+      padding: 12px 16px;
+      margin-bottom: 18px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
+    }
+    .focus-bar .focus-title {
+      font-weight: 600;
+      font-size: 0.98rem;
+    }
+    .focus-bar .focus-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .focus-bar .focus-btn {
+      border: 1px solid var(--x-border);
+      background: transparent;
+      color: var(--x-text);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .focus-bar .focus-btn.primary {
+      background: var(--x-accent);
+      border-color: var(--x-accent);
+      color: #fff;
+    }
+    body.is-focus-mode .load-more,
+    body.is-focus-mode #feedEnd {
+      display: none !important;
+    }
+    body.is-focus-mode .x-composer {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -1421,6 +1632,20 @@ $title = 'Explore | ApilageAI';
       const mentionPalette = ['mention-color-1', 'mention-color-2', 'mention-color-3', 'mention-color-4', 'mention-color-5'];
       const mentionIndex = new Map();
       const currentUserId = window.userData ? Number(window.userData.id) : 0;
+      const notificationEndpoint = `${window.APP_BASE_URL}/notific.php?action=get`;
+      const notificationStorageKey = currentUserId ? `explore_last_notif_${currentUserId}` : null;
+      let notificationInitialized = false;
+      let lastNotificationId = 0;
+      let focusMode = false;
+      let focusPostId = 0;
+      let focusBar = null;
+      if (notificationStorageKey) {
+        try {
+          lastNotificationId = Number(localStorage.getItem(notificationStorageKey) || 0);
+        } catch (err) {
+          lastNotificationId = 0;
+        }
+      }
       const shuffleEnabled = currentUserId > 0;
       const shuffleSeed = (() => {
         const key = `explore_shuffle_seed_${shuffleEnabled ? currentUserId : 'guest'}`;
@@ -1446,6 +1671,71 @@ $title = 'Explore | ApilageAI';
       const MAX_WORDS = 1000;
       const MAX_FILE_BYTES = 60 * 1024 * 1024;
       const ALLOWED_TYPES = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/gif']);
+
+      function storeLastNotificationId(id) {
+        if (!notificationStorageKey) return;
+        lastNotificationId = id;
+        try {
+          localStorage.setItem(notificationStorageKey, String(id));
+        } catch (err) {
+          // ignore storage errors
+        }
+      }
+
+      function maybeRequestNotificationPermission() {
+        if (!('Notification' in window)) return;
+        if (Notification.permission === 'default') {
+          Notification.requestPermission().catch(() => {});
+        }
+      }
+
+      function showBrowserNotification(item) {
+        if (!('Notification' in window)) return;
+        if (Notification.permission !== 'granted') return;
+        const body = item && item.message ? item.message : 'You have a new notification.';
+        const notif = new Notification('ApilageAI', {
+          body,
+          tag: `explore-notif-${item.id || Date.now()}`
+        });
+        notif.onclick = () => {
+          try {
+            window.focus();
+          } catch (err) {
+            // ignore
+          }
+          window.location.href = `${window.APP_BASE_URL}/explore`;
+        };
+      }
+
+      async function pollNotifications() {
+        if (!currentUserId) return;
+        try {
+          const res = await fetch(notificationEndpoint, { cache: 'no-cache' });
+          if (!res.ok) return;
+          const items = await res.json();
+          if (!Array.isArray(items) || items.length === 0) {
+            notificationInitialized = true;
+            return;
+          }
+          const maxId = items.reduce((acc, item) => {
+            const id = Number(item && item.id ? item.id : 0);
+            return id > acc ? id : acc;
+          }, lastNotificationId);
+          if (!notificationInitialized) {
+            storeLastNotificationId(maxId);
+            notificationInitialized = true;
+            return;
+          }
+          const newItems = items.filter((item) => Number(item && item.id ? item.id : 0) > lastNotificationId);
+          if (newItems.length) {
+            newItems.sort((a, b) => Number(a.id) - Number(b.id));
+            newItems.slice(0, 3).forEach(showBrowserNotification);
+            storeLastNotificationId(maxId);
+          }
+        } catch (err) {
+          // ignore polling errors
+        }
+      }
 
       function escapeHtml(str) {
         return String(str ?? '')
@@ -1686,6 +1976,64 @@ $title = 'Explore | ApilageAI';
       function formatBytes(bytes) {
         const mb = bytes / (1024 * 1024);
         return `${mb.toFixed(mb >= 10 ? 0 : 1)}MB`;
+      }
+
+      function getQueryPostId() {
+        const params = new URLSearchParams(window.location.search);
+        const value = Number(params.get('post') || 0);
+        return Number.isFinite(value) ? value : 0;
+      }
+
+      function setFocusMode(active) {
+        focusMode = !!active;
+        document.body.classList.toggle('is-focus-mode', focusMode);
+        if (!focusMode && focusBar) {
+          focusBar.remove();
+          focusBar = null;
+        }
+      }
+
+      function ensureFocusBar(postId) {
+        if (!feedList || !feedList.parentNode) return;
+        if (!focusBar) {
+          focusBar = document.createElement('div');
+          focusBar.className = 'focus-bar';
+          focusBar.innerHTML = `
+            <div class="focus-title">Focused post view</div>
+            <div class="focus-actions">
+              <button class="focus-btn" type="button" data-focus-action="back">Back to Explore</button>
+              <button class="focus-btn primary" type="button" data-focus-action="copy">Copy link</button>
+            </div>
+          `;
+          feedList.parentNode.insertBefore(focusBar, feedList);
+          focusBar.addEventListener('click', (event) => {
+            const btn = event.target.closest('[data-focus-action]');
+            if (!btn) return;
+            const action = btn.dataset.focusAction;
+            if (action === 'back') {
+              exitPostFocus();
+            } else if (action === 'copy') {
+              const id = Number(focusBar?.dataset?.postId || 0);
+              if (id) {
+                const link = `${window.APP_BASE_URL}/explore?post=${id}`;
+                navigator.clipboard.writeText(link);
+              }
+            }
+          });
+        }
+        focusBar.dataset.postId = String(postId || '');
+      }
+
+      function resetFeedState() {
+        chatPage = 1;
+        postPage = 1;
+        feedLoading = false;
+        hasMoreChats = true;
+        hasMorePosts = true;
+        cachedChats.length = 0;
+        cachedPosts.length = 0;
+        seenChats.clear();
+        seenPosts.clear();
       }
 
       function registerUser(user) {
@@ -2178,7 +2526,8 @@ $title = 'Explore | ApilageAI';
         setupMentionAutocomplete(textarea, suggest);
       }
 
-      function buildThread(comments, listEl) {
+      function buildThread(comments, listEl, options = {}) {
+        const expandAll = !!options.expandAll;
         const byParent = {};
         const parentMap = {};
         comments.forEach((comment) => {
@@ -2214,7 +2563,12 @@ $title = 'Explore | ApilageAI';
 
           if (replies.length) {
             toggle.hidden = false;
-            toggle.textContent = `See replies (${replies.length})`;
+            if (expandAll) {
+              toggle.textContent = `Hide replies (${replies.length})`;
+              repliesWrap.hidden = false;
+            } else {
+              toggle.textContent = `See replies (${replies.length})`;
+            }
             item.classList.add('has-replies');
             replies.forEach((reply) => {
               repliesWrap.appendChild(renderNode(reply));
@@ -2459,7 +2813,113 @@ $title = 'Explore | ApilageAI';
         }
       }
 
+      async function fetchPost(postId) {
+        try {
+          const res = await fetch(`${apiBase}?action=get_post&post_id=${postId}`, { credentials: 'include' });
+          const data = await res.json();
+          if (data && data.success && data.post) return data.post;
+        } catch (err) {
+          console.error(err);
+        }
+        return null;
+      }
+
+      async function fetchAllComments(postId) {
+        const all = [];
+        let page = 1;
+        let hasMore = true;
+        const perPage = 50;
+        const maxPages = 20;
+        while (hasMore && page <= maxPages) {
+          try {
+            const res = await fetch(`${apiBase}?action=list_comments&post_id=${postId}&page=${page}&per_page=${perPage}`, { credentials: 'include' });
+            const data = await res.json();
+            if (!data || !data.success || !Array.isArray(data.comments)) {
+              break;
+            }
+            all.push(...data.comments);
+            hasMore = !!data.has_more;
+            page += 1;
+          } catch (err) {
+            console.error(err);
+            break;
+          }
+        }
+        return all;
+      }
+
+      async function openPostFocus(postId, pushState = true) {
+        if (!postId || !feedList) return;
+        setFocusMode(true);
+        focusPostId = Number(postId) || 0;
+        if (pushState) {
+          const url = `${window.APP_BASE_URL}/explore?post=${focusPostId}`;
+          window.history.pushState({ post: focusPostId }, '', url);
+        }
+        ensureFocusBar(focusPostId);
+        feedList.innerHTML = '';
+        feedEmpty.hidden = true;
+        if (feedLoader) feedLoader.hidden = false;
+        if (loadMoreFeed) loadMoreFeed.hidden = true;
+        if (feedEnd) feedEnd.hidden = true;
+        try {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch (err) {
+          window.scrollTo(0, 0);
+        }
+
+        const post = await fetchPost(focusPostId);
+        if (!post) {
+          if (feedLoader) feedLoader.hidden = true;
+          const empty = document.createElement('div');
+          empty.className = 'empty-state';
+          empty.textContent = 'Post not found.';
+          feedList.appendChild(empty);
+          return;
+        }
+
+        const node = renderPostCard(post);
+        initPostCard(node);
+        feedList.appendChild(node);
+
+        const thread = node.querySelector('.x-thread');
+        const list = node.querySelector('.thread-list');
+        const form = node.querySelector('.thread-form');
+        if (thread) thread.hidden = false;
+        if (form) form.hidden = window.IS_GUEST;
+        if (list) {
+          list.dataset.loaded = '1';
+          list.innerHTML = `
+            <div class="feed-loader">
+              <span class="loader-spin" aria-hidden="true"></span>
+              Loading replies...
+            </div>
+          `;
+          const comments = await fetchAllComments(focusPostId);
+          buildThread(comments, list, { expandAll: true });
+        }
+
+        if (feedLoader) feedLoader.hidden = true;
+        updateRightRail();
+      }
+
+      function exitPostFocus(pushState = true) {
+        if (!focusMode) return;
+        setFocusMode(false);
+        focusPostId = 0;
+        if (pushState) {
+          const url = `${window.APP_BASE_URL}/explore`;
+          window.history.pushState({}, '', url);
+        }
+        resetFeedState();
+        if (feedList) feedList.innerHTML = '';
+        if (feedLoader) feedLoader.hidden = true;
+        if (feedEmpty) feedEmpty.hidden = true;
+        loadFeed();
+      }
+
       async function loadFeed() {
+        if (focusMode) return;
         if (feedLoading) return;
         if (!hasMoreChats && !hasMorePosts) {
           updateLoadMoreVisibility();
@@ -2487,6 +2947,10 @@ $title = 'Explore | ApilageAI';
 
           const chatData = chatRes ? await chatRes.json() : { chats: [], has_more: false };
           const postData = postRes ? await postRes.json() : { posts: [], has_more: false };
+
+          if (focusMode) {
+            return;
+          }
 
           const newItems = [];
 
@@ -2881,6 +3345,31 @@ $title = 'Explore | ApilageAI';
           openImageModal(previewImg.dataset.imagePreview || previewImg.src, previewImg.alt);
         }
 
+        const postCard = event.target.closest('.x-post-card');
+        if (postCard && postCard.dataset.type === 'post') {
+          if (
+            event.target.closest('.x-post-actions') ||
+            event.target.closest('.thread-form') ||
+            event.target.closest('.thread-actions') ||
+            event.target.closest('.thread-replies') ||
+            event.target.closest('.thread-item') ||
+            event.target.closest('.item-menu') ||
+            event.target.closest('[data-action]') ||
+            event.target.closest('[data-open-chat]') ||
+            event.target.closest('.x-avatar-link') ||
+            event.target.closest('.x-name') ||
+            event.target.closest('.x-handle') ||
+            event.target.closest('.x-post-media')
+          ) {
+            return;
+          }
+          const postId = postCard.dataset.postId;
+          if (postId) {
+            openPostFocus(Number(postId));
+            return;
+          }
+        }
+
         const shareBtn = event.target.closest('[data-action="copy-link"]');
         if (shareBtn) {
           const card = shareBtn.closest('.x-post-card');
@@ -2940,7 +3429,28 @@ $title = 'Explore | ApilageAI';
         refreshAiFormatting();
       }
 
-      loadFeed();
+      if (currentUserId) {
+        document.addEventListener('click', maybeRequestNotificationPermission, { once: true });
+        pollNotifications();
+        setInterval(pollNotifications, 30000);
+      }
+
+      const initialPostId = getQueryPostId();
+      if (initialPostId) {
+        openPostFocus(initialPostId, false);
+      } else {
+        loadFeed();
+      }
+
+      window.addEventListener('popstate', () => {
+        const postId = getQueryPostId();
+        if (postId) {
+          openPostFocus(postId, false);
+        } else if (focusMode) {
+          exitPostFocus(false);
+        }
+      });
+
       setInterval(() => {
         if (cachedChats.length || cachedPosts.length) {
           updateRightRail();

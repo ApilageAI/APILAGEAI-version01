@@ -358,6 +358,61 @@ function build_ai_avatar(): string {
     return APP_URL . '/assets/images/icon.png';
 }
 
+function collapse_whitespace(string $text): string {
+    $text = preg_replace('/\s+/u', ' ', $text);
+    return trim((string)$text);
+}
+
+function truncate_text(string $text, int $maxLen): string {
+    $text = trim($text);
+    if ($text === '' || $maxLen <= 0) return '';
+    if (function_exists('mb_strlen') && function_exists('mb_substr')) {
+        if (mb_strlen($text, 'UTF-8') <= $maxLen) return $text;
+        $sliceLen = max(0, $maxLen - 3);
+        $slice = mb_substr($text, 0, $sliceLen, 'UTF-8');
+        return rtrim($slice) . '...';
+    }
+    if (strlen($text) <= $maxLen) return $text;
+    $sliceLen = max(0, $maxLen - 3);
+    $slice = substr($text, 0, $sliceLen);
+    return rtrim($slice) . '...';
+}
+
+function build_comment_snippet(string $body, array $images): string {
+    $body = collapse_whitespace($body);
+    if ($body !== '') {
+        return truncate_text($body, 120);
+    }
+    if (!empty($images)) {
+        return 'sent a photo';
+    }
+    return '';
+}
+
+function build_notification_message(string $actorName, string $action, string $body, array $images): string {
+    $actorName = trim($actorName);
+    if ($actorName === '') {
+        $actorName = 'Someone';
+    }
+    $snippet = build_comment_snippet($body, $images);
+    $message = $actorName . ' ' . $action;
+    if ($snippet !== '') {
+        $message .= ': "' . $snippet . '"';
+    }
+    return truncate_text($message, 255);
+}
+
+function insert_notification(mysqli $db, int $recipientId, string $message): void {
+    if ($recipientId <= 0) return;
+    $message = trim($message);
+    if ($message === '') return;
+    $stmt = $db->prepare("INSERT INTO notific (user_id, message, is_read, created_at) VALUES (?, ?, 0, NOW())");
+    if (!$stmt) return;
+    $stmt->bind_param('is', $recipientId, $message);
+    $stmt->execute();
+    $stmt->close();
+}
+
 function get_item_owner(mysqli $db, string $itemType, int $itemId): ?int {
     if ($itemId <= 0) return null;
     switch ($itemType) {
@@ -560,6 +615,76 @@ if ($action === 'list_posts') {
         'page' => $page,
         'per_page' => $perPage,
         'has_more' => count($posts) === $perPage
+    ]);
+}
+
+if ($action === 'get_post') {
+    $postId = (int)($_GET['post_id'] ?? 0);
+    if ($postId <= 0) {
+        json_response(['success' => false, 'message' => 'Invalid post id']);
+    }
+
+    $stmt = $db->prepare(
+        "SELECT p.id, p.body, p.created_at,
+                u.id AS user_id, u.first_name, u.last_name, u.image, u.public_profile_username, u.public_profile_token
+         FROM public_posts p
+         JOIN users u ON u.id = p.user_id
+         WHERE p.id = ? AND p.status = 'active'
+         LIMIT 1"
+    );
+    $stmt->bind_param('i', $postId);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if (!$row) {
+        json_response(['success' => false, 'message' => 'Post not found']);
+    }
+
+    $post = [
+        'id' => (int)$row['id'],
+        'body' => $row['body'] ?? '',
+        'created_at' => $row['created_at'],
+        'images' => [],
+        'comment_count' => 0,
+        'user' => [
+            'id' => (int)$row['user_id'],
+            'name' => build_user_name($row),
+            'image_url' => user_image_url($row['image'] ?? ''),
+            'profile_url' => build_profile_url($row)
+        ]
+    ];
+
+    $stmt = $db->prepare(
+        "SELECT image_filename
+         FROM public_post_images
+         WHERE post_id = ?
+         ORDER BY id ASC"
+    );
+    $stmt->bind_param('i', $postId);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($imgRow = $res->fetch_assoc()) {
+        $post['images'][] = build_upload_url((string)$imgRow['image_filename']);
+    }
+    $stmt->close();
+
+    $stmt = $db->prepare(
+        "SELECT COUNT(*) AS comment_count
+         FROM public_post_comments
+         WHERE post_id = ?"
+    );
+    $stmt->bind_param('i', $postId);
+    $stmt->execute();
+    $countRow = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    if ($countRow) {
+        $post['comment_count'] = (int)($countRow['comment_count'] ?? 0);
+    }
+
+    json_response([
+        'success' => true,
+        'post' => $post
     ]);
 }
 
@@ -799,7 +924,7 @@ if ($action === 'create_comment') {
         json_response(['success' => false, 'message' => 'Invalid post id']);
     }
 
-    $stmt = $db->prepare("SELECT id, body FROM public_posts WHERE id = ? AND status = 'active' LIMIT 1");
+    $stmt = $db->prepare("SELECT id, user_id, body FROM public_posts WHERE id = ? AND status = 'active' LIMIT 1");
     $stmt->bind_param('i', $postId);
     $stmt->execute();
     $postRow = $stmt->get_result()->fetch_assoc();
@@ -908,6 +1033,19 @@ if ($action === 'create_comment') {
             'profile_url' => build_profile_url($user->_data)
         ]
     ];
+
+    $actorName = build_user_name($user->_data);
+    $postOwnerId = (int)($postRow['user_id'] ?? 0);
+    if ($targetCommentId > 0) {
+        $commentOwnerId = get_item_owner($db, 'comment', $targetCommentId);
+        if ($commentOwnerId && $commentOwnerId !== $userId) {
+            $message = build_notification_message($actorName, 'replied to your comment', $body, $images);
+            insert_notification($db, (int)$commentOwnerId, $message);
+        }
+    } elseif ($postOwnerId > 0 && $postOwnerId !== $userId) {
+        $message = build_notification_message($actorName, 'commented on your post', $body, $images);
+        insert_notification($db, $postOwnerId, $message);
+    }
 
     $aiComment = null;
     $mentionTriggered = (bool)preg_match('/(^|\s)@apilageai(\b|\s)/i', $body);
