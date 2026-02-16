@@ -1681,6 +1681,135 @@ body.guest-mode .main-content {
   position: relative;
   z-index: 3;
 }
+
+/* Preferencebox mobile UX improvements */
+@media (max-width: 900px) {
+  .preferencebox-overlay {
+    padding: 12px;
+    align-items: stretch;
+  }
+
+  .preferencebox {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .preferencebox-overlay {
+    padding: 0;
+  }
+
+  .preferencebox {
+    height: 100vh;
+    height: 100dvh;
+    border-radius: 0;
+  }
+
+  .preferencebox-close-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+    top: 10px;
+    right: 10px;
+  }
+
+  .preferencebox-sidebar {
+    padding: 48px 12px 12px;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    background: var(--sidebar-bg);
+  }
+
+  .preferencebox-sidebar nav ul {
+    display: flex;
+    gap: 8px;
+  }
+
+  .preferencebox-sidebar nav a {
+    white-space: nowrap;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    padding: 8px 12px;
+  }
+
+  .preferencebox-sidebar nav a.active {
+    border-color: var(--primary-red);
+  }
+
+  .preferencebox-content {
+    padding: 20px 16px 24px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  .preferencebox-content h2 {
+    font-size: 20px;
+    padding-bottom: 12px;
+    margin-bottom: 18px;
+  }
+
+  .form-section {
+    margin-bottom: 24px;
+  }
+
+  .profile-photo-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .setting-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .streak-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .streak-actions .btn {
+    width: 100%;
+  }
+
+  .delete-account-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .delete-account-actions .btn {
+    width: 100%;
+  }
+
+  .price-slider-container {
+    padding: 16px;
+  }
+
+  .table-scroll-container {
+    overflow-x: auto;
+  }
+
+  .billing-history-table {
+    min-width: 560px;
+  }
+}
+
+@media (max-width: 520px) {
+  .preferencebox-sidebar nav a {
+    font-size: 13px;
+  }
+
+  .preferencebox-sidebar nav a i {
+    display: none;
+  }
+}
 </style>
 
 </body>
