@@ -722,10 +722,15 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
     .x-post-media {
       margin-top: 10px;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(110px, 140px));
-      grid-auto-rows: 140px;
-      justify-content: flex-start;
       gap: 8px;
+    }
+    .x-post-media.is-single {
+      grid-template-columns: minmax(0, 1fr);
+      grid-auto-rows: minmax(180px, 260px);
+    }
+    .x-post-media.is-multi {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-auto-rows: 140px;
     }
     .x-post-media img {
       width: 100%;
@@ -866,6 +871,12 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
       flex-wrap: wrap;
       gap: 8px;
       margin-top: 10px;
+    }
+    .upload-preview.is-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, 72px);
+      grid-auto-rows: 72px;
+      justify-content: flex-start;
     }
     .upload-item {
       position: relative;
@@ -1069,10 +1080,15 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
     .thread-media {
       margin-top: 8px;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(96px, 120px));
-      grid-auto-rows: 120px;
-      justify-content: flex-start;
       gap: 6px;
+    }
+    .thread-media.is-single {
+      grid-template-columns: minmax(0, 1fr);
+      grid-auto-rows: minmax(140px, 200px);
+    }
+    .thread-media.is-multi {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-auto-rows: 120px;
     }
     .thread-media img {
       width: 100%;
@@ -1329,6 +1345,22 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
       object-fit: contain;
       background: var(--x-card);
     }
+    .image-modal-loader {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.35);
+      border-radius: 18px;
+      z-index: 2;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      pointer-events: none;
+    }
+    .image-modal.is-loading .image-modal-loader {
+      opacity: 1;
+    }
     .image-modal-close {
       position: absolute;
       top: -18px;
@@ -1343,11 +1375,130 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      z-index: 3;
+    }
+
+    .share-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 9998;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .share-modal.active {
+      display: flex;
+    }
+    .share-modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+    }
+    .share-modal-card {
+      position: relative;
+      z-index: 1;
+      width: min(420px, 92vw);
+      background: var(--x-card);
+      border: 1px solid var(--x-border);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.2);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .share-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .share-modal-title {
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .share-modal-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--x-border);
+      background: var(--x-card);
+      color: var(--x-text);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .share-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .share-btn {
+      flex: 1 1 120px;
+      border-radius: 12px;
+      border: 1px solid var(--x-border);
+      background: var(--x-bg);
+      color: var(--x-text);
+      padding: 10px 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .share-btn:hover {
+      background: var(--x-accent-soft);
+      color: var(--x-accent);
+    }
+    .share-link-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .share-link-row input {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--x-border);
+      background: var(--x-bg);
+      color: var(--x-text);
+      font-size: 13px;
+    }
+    .share-link-row button {
+      border-radius: 12px;
+      border: none;
+      background: var(--x-accent);
+      color: #fff;
+      padding: 10px 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .share-link-row button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .share-status {
+      font-size: 12px;
+      color: var(--x-muted);
+      min-height: 16px;
+    }
+    .share-status[data-type="error"] {
+      color: #ef4444;
+    }
+    .share-status[data-type="success"] {
+      color: var(--x-success);
     }
 
     @media (max-width: 640px) {
-      .x-post-media,
-      .thread-media {
+      .x-post-media.is-single,
+      .thread-media.is-single {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .x-post-media.is-multi,
+      .thread-media.is-multi {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
@@ -1557,7 +1708,37 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
       <button class="image-modal-close" type="button" aria-label="Close">
         <i class="fa fa-times"></i>
       </button>
+      <div class="image-modal-loader" id="imageModalLoader">
+        <span class="loader-spin" aria-hidden="true"></span>
+      </div>
       <img id="imageModalImg" src="" alt="Preview">
+    </div>
+  </div>
+
+  <div class="share-modal" id="shareModal" aria-hidden="true">
+    <div class="share-modal-backdrop"></div>
+    <div class="share-modal-card" role="dialog" aria-modal="true" aria-label="Share post">
+      <div class="share-modal-header">
+        <div class="share-modal-title">Share</div>
+        <button class="share-modal-close" type="button" data-share-close aria-label="Close share">
+          <i class="fa fa-times"></i>
+        </button>
+      </div>
+      <div class="share-actions">
+        <button class="share-btn" type="button" data-share-whatsapp>
+          <i class="fa-brands fa-whatsapp"></i>
+          WhatsApp
+        </button>
+        <button class="share-btn" type="button" data-share-twitter>
+          <i class="fa-brands fa-x-twitter"></i>
+          Twitter
+        </button>
+      </div>
+      <div class="share-link-row">
+        <input type="text" id="shareLinkInput" readonly>
+        <button type="button" id="shareCopyBtn">Copy link</button>
+      </div>
+      <div class="share-status" id="shareStatus" role="status"></div>
     </div>
   </div>
 
@@ -1619,6 +1800,11 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
 
       const imageModal = document.getElementById('imageModal');
       const imageModalImg = document.getElementById('imageModalImg');
+      const imageModalLoader = document.getElementById('imageModalLoader');
+      const shareModal = document.getElementById('shareModal');
+      const shareLinkInput = document.getElementById('shareLinkInput');
+      const shareCopyBtn = document.getElementById('shareCopyBtn');
+      const shareStatus = document.getElementById('shareStatus');
 
       let chatPage = 1;
       let postPage = 1;
@@ -1646,24 +1832,17 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
           lastNotificationId = 0;
         }
       }
-      const shuffleEnabled = currentUserId > 0;
+      const shuffleEnabled = true;
       const shuffleSeed = (() => {
-        const key = `explore_shuffle_seed_${shuffleEnabled ? currentUserId : 'guest'}`;
         try {
-          let seed = sessionStorage.getItem(key);
-          if (!seed) {
-            if (window.crypto && window.crypto.getRandomValues) {
-              const buf = new Uint32Array(1);
-              window.crypto.getRandomValues(buf);
-              seed = String(buf[0]);
-            } else {
-              seed = String(Math.floor(Math.random() * 1e9));
-            }
-            sessionStorage.setItem(key, seed);
+          if (window.crypto && window.crypto.getRandomValues) {
+            const buf = new Uint32Array(2);
+            window.crypto.getRandomValues(buf);
+            return `${buf[0]}-${buf[1]}`;
           }
-          return seed;
+          return String(Date.now() + Math.random());
         } catch (err) {
-          return String(Date.now());
+          return String(Date.now() + Math.random());
         }
       })();
       const SHUFFLE_JITTER_MS = 6 * 60 * 60 * 1000;
@@ -2204,6 +2383,7 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
           valid.push(file);
         });
         const limited = valid.slice(0, 4);
+        container.classList.toggle('is-grid', limited.length > 1);
         limited.forEach((file) => {
           const item = document.createElement('div');
           item.className = 'upload-item';
@@ -2261,12 +2441,21 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
         return window.location.origin;
       }
 
+      function setImageModalLoading(isLoading) {
+        if (!imageModal) return;
+        imageModal.classList.toggle('is-loading', isLoading);
+      }
+
       function openImageModal(src, altText) {
         if (!imageModal || !imageModalImg) return;
-        imageModalImg.src = src;
+        setImageModalLoading(true);
+        imageModalImg.src = '';
         imageModalImg.alt = altText || 'Preview';
         imageModal.classList.add('active');
         document.body.classList.add('modal-open');
+        requestAnimationFrame(() => {
+          imageModalImg.src = src;
+        });
       }
 
       function closeImageModal() {
@@ -2274,6 +2463,44 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
         imageModalImg.src = '';
         imageModal.classList.remove('active');
         document.body.classList.remove('modal-open');
+        setImageModalLoading(false);
+      }
+
+      if (imageModalImg) {
+        imageModalImg.addEventListener('load', () => setImageModalLoading(false));
+        imageModalImg.addEventListener('error', () => setImageModalLoading(false));
+      }
+
+      function setShareStatus(message, type = '') {
+        if (!shareStatus) return;
+        shareStatus.textContent = message || '';
+        shareStatus.dataset.type = type;
+      }
+
+      function getShareUrl() {
+        if (shareModal && shareModal.dataset.url) {
+          return shareModal.dataset.url;
+        }
+        return window.location.href;
+      }
+
+      function openShareModal(url) {
+        if (!shareModal) return;
+        const link = url || window.location.href;
+        shareModal.dataset.url = link;
+        if (shareLinkInput) shareLinkInput.value = link;
+        shareModal.classList.add('active');
+        shareModal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('modal-open');
+        setShareStatus('');
+      }
+
+      function closeShareModal() {
+        if (!shareModal) return;
+        shareModal.classList.remove('active');
+        shareModal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('modal-open');
+        setShareStatus('');
       }
 
       if (imageModal) {
@@ -2284,11 +2511,53 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
           closeImageModal();
         });
       }
+      if (shareModal) {
+        shareModal.addEventListener('click', (event) => {
+          if (event.target.closest('.share-modal-card') && !event.target.closest('[data-share-close]')) {
+            return;
+          }
+          closeShareModal();
+        });
+      }
       document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {
           closeImageModal();
+          closeShareModal();
         }
       });
+
+      if (shareCopyBtn) {
+        shareCopyBtn.addEventListener('click', () => {
+          const link = getShareUrl();
+          navigator.clipboard.writeText(link).then(() => {
+            setShareStatus('Link copied.', 'success');
+            shareCopyBtn.textContent = 'Copied';
+            setTimeout(() => {
+              shareCopyBtn.textContent = 'Copy link';
+              setShareStatus('');
+            }, 1500);
+          }).catch(() => {
+            setShareStatus('Unable to copy link.', 'error');
+          });
+        });
+      }
+      if (shareModal) {
+        shareModal.addEventListener('click', (event) => {
+          const whatsappBtn = event.target.closest('[data-share-whatsapp]');
+          if (whatsappBtn) {
+            const link = getShareUrl();
+            const url = `https://wa.me/?text=${encodeURIComponent(link)}`;
+            window.open(url, '_blank', 'noopener');
+            return;
+          }
+          const twitterBtn = event.target.closest('[data-share-twitter]');
+          if (twitterBtn) {
+            const link = getShareUrl();
+            const url = `https://twitter.com/intent/tweet?url=${encodeURIComponent(link)}`;
+            window.open(url, '_blank', 'noopener');
+          }
+        });
+      }
 
       async function uploadImages(files, previewContainer) {
         if (!files || !files.length) return [];
@@ -2393,7 +2662,9 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
         wrapper.className = 'x-post-card';
         wrapper.dataset.postId = post.id;
         wrapper.dataset.type = 'post';
-        const imagesHtml = (post.images || []).map((url) => `<img src="${escapeHtml(url)}" alt="Post image" data-image-preview="${escapeHtml(url)}">`).join('');
+        const images = Array.isArray(post.images) ? post.images : [];
+        const mediaClass = images.length > 1 ? 'x-post-media is-multi' : 'x-post-media is-single';
+        const imagesHtml = images.map((url) => `<img src="${escapeHtml(url)}" alt="Post image" data-image-preview="${escapeHtml(url)}">`).join('');
         const handle = formatHandle(post.user);
         const isOwner = currentUserId && Number(post.user.id) === currentUserId;
         const menuHtml = buildItemMenu('post', post.id, isOwner);
@@ -2416,7 +2687,7 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
                 <span class="x-badge"><i class="fa-regular fa-circle-question"></i> Question</span>
               </div>
               <div class="x-post-body" data-format-ai="true"></div>
-              ${imagesHtml ? `<div class="x-post-media">${imagesHtml}</div>` : ''}
+              ${imagesHtml ? `<div class="${mediaClass}">${imagesHtml}</div>` : ''}
             </div>
           </div>
           <div class="x-post-actions">
@@ -2489,7 +2760,9 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
         const handleHtml = hasProfile && comment.author_type !== 'ai'
           ? `<a class="thread-handle" href="${escapeHtml(comment.user.profile_url)}">${escapeHtml(handle)}</a>`
           : `<span class="thread-handle">${escapeHtml(handle)}</span>`;
-        const imagesHtml = (comment.images || []).map((url) => `<img src="${escapeHtml(url)}" alt="Comment image" data-image-preview="${escapeHtml(url)}">`).join('');
+        const images = Array.isArray(comment.images) ? comment.images : [];
+        const mediaClass = images.length > 1 ? 'thread-media is-multi' : 'thread-media is-single';
+        const imagesHtml = images.map((url) => `<img src="${escapeHtml(url)}" alt="Comment image" data-image-preview="${escapeHtml(url)}">`).join('');
         card.innerHTML = `
           ${avatarTagOpen}
             <img src="${escapeHtml(comment.user.image_url)}" alt="${escapeHtml(comment.user.name)}">
@@ -2502,7 +2775,7 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
               <span class="thread-time">- ${escapeHtml(formatDate(comment.created_at))}</span>
             </div>
             <div class="thread-body" data-format-ai="true"></div>
-            ${imagesHtml ? `<div class="thread-media">${imagesHtml}</div>` : ''}
+            ${imagesHtml ? `<div class="${mediaClass}">${imagesHtml}</div>` : ''}
             <div class="thread-actions">
               <button type="button" class="thread-reply-btn" data-comment-id="${comment.id}">Reply</button>
               <button type="button" class="thread-toggle" data-comment-id="${comment.id}" hidden>See replies</button>
@@ -2526,31 +2799,25 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
         setupMentionAutocomplete(textarea, suggest);
       }
 
+      function updateReplyToggle(toggle, repliesWrap) {
+        if (!toggle || !repliesWrap) return;
+        const count = repliesWrap.childElementCount;
+        if (!count) {
+          toggle.hidden = true;
+          return;
+        }
+        toggle.hidden = false;
+        toggle.textContent = `${repliesWrap.hidden ? 'See' : 'Hide'} replies (${count})`;
+      }
+
       function buildThread(comments, listEl, options = {}) {
         const expandAll = !!options.expandAll;
         const byParent = {};
-        const parentMap = {};
-        comments.forEach((comment) => {
-          parentMap[comment.id] = comment.parent_id ? String(comment.parent_id) : '';
-        });
-
-        function resolveRootParent(parentId) {
-          let current = parentId;
-          const visited = new Set();
-          while (current && parentMap[current] && !visited.has(current)) {
-            visited.add(current);
-            current = parentMap[current];
-          }
-          return current;
-        }
 
         comments.forEach((comment) => {
           registerUser(comment.user);
-          let parentId = comment.parent_id ? String(comment.parent_id) : '';
-          if (parentId && parentMap[parentId]) {
-            parentId = resolveRootParent(parentId) || parentId;
-          }
-          const key = parentId ? String(parentId) : 'root';
+          const parentId = comment.parent_id ? String(comment.parent_id) : '';
+          const key = parentId || 'root';
           if (!byParent[key]) byParent[key] = [];
           byParent[key].push({ ...comment, parent_id: parentId || null });
         });
@@ -2562,17 +2829,12 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
           const repliesWrap = item.querySelector('.thread-replies');
 
           if (replies.length) {
-            toggle.hidden = false;
-            if (expandAll) {
-              toggle.textContent = `Hide replies (${replies.length})`;
-              repliesWrap.hidden = false;
-            } else {
-              toggle.textContent = `See replies (${replies.length})`;
-            }
             item.classList.add('has-replies');
             replies.forEach((reply) => {
               repliesWrap.appendChild(renderNode(reply));
             });
+            repliesWrap.hidden = !expandAll;
+            updateReplyToggle(toggle, repliesWrap);
           }
           return item;
         }
@@ -2598,10 +2860,9 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
         const nameEl = form.querySelector('.replying-name');
         const textarea = form.querySelector('textarea');
         const commentId = commentEl ? commentEl.dataset.commentId : '';
-        const parentId = commentEl ? commentEl.dataset.parentId : '';
         form.dataset.replyToId = commentId || '';
         if (commentEl) {
-          form.dataset.parentId = parentId || commentId || '';
+          form.dataset.parentId = commentId || '';
         } else {
           form.dataset.parentId = '';
         }
@@ -2609,7 +2870,7 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
           const name = commentEl.querySelector('.thread-name')?.textContent || 'user';
           if (nameEl) nameEl.textContent = name;
           if (indicator) indicator.hidden = false;
-          if (parentId && textarea) {
+          if (commentId && textarea) {
             const handle = commentEl.dataset.handle || '';
             ensureMention(textarea, handle);
           }
@@ -2640,7 +2901,10 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
           loadMoreFeed.hidden = !canLoadMore;
         }
         if (feedEnd) {
-          feedEnd.hidden = !(total > 0 && !canLoadMore);
+          feedEnd.hidden = true;
+        }
+        if (feedLoader && !feedLoading) {
+          feedLoader.hidden = true;
         }
       }
 
@@ -2744,15 +3008,12 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
             const repliesWrap = parentEl.querySelector('.thread-replies');
             const toggle = parentEl.querySelector('.thread-toggle');
             const childCount = repliesWrap ? repliesWrap.childElementCount : 0;
-            if (toggle) {
-              toggle.hidden = childCount === 0;
-              if (childCount > 0) {
-                toggle.textContent = `See replies (${childCount})`;
-              }
-            }
             if (repliesWrap && childCount === 0) {
               repliesWrap.hidden = true;
               parentEl.classList.remove('has-replies');
+            }
+            if (toggle && repliesWrap) {
+              updateReplyToggle(toggle, repliesWrap);
             }
           }
         }
@@ -3033,14 +3294,19 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
           `;
         }
 
+        let loaded = false;
         try {
           const res = await fetch(`${apiBase}?action=list_comments&post_id=${postId}`, { credentials: 'include' });
           const data = await res.json();
           if (data.success && Array.isArray(data.comments)) {
             buildThread(data.comments, list);
+            loaded = true;
           }
         } catch (err) {
           console.error(err);
+        }
+        if (!loaded && list) {
+          list.innerHTML = '<div class="status-text">No replies yet.</div>';
         }
       }
 
@@ -3079,7 +3345,10 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
           postStatus.textContent = 'Posted successfully.';
           postBody.value = '';
           if (postImages) postImages.value = '';
-          if (postImagePreview) postImagePreview.innerHTML = '';
+          if (postImagePreview) {
+            postImagePreview.innerHTML = '';
+            postImagePreview.classList.remove('is-grid');
+          }
           if (data.post) {
             const node = renderPostCard(data.post);
             initPostCard(node);
@@ -3159,10 +3428,8 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
                 repliesWrap.hidden = false;
                 repliesWrap.appendChild(renderComment(data.comment));
               }
-              if (toggle) {
-                const currentCount = repliesWrap ? repliesWrap.childElementCount : 1;
-                toggle.hidden = false;
-                toggle.textContent = `See replies (${currentCount})`;
+              if (toggle && repliesWrap) {
+                updateReplyToggle(toggle, repliesWrap);
               }
               parentEl.classList.add('has-replies');
             } else {
@@ -3185,10 +3452,8 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
                   repliesWrap.hidden = false;
                   repliesWrap.appendChild(renderComment(data.ai_comment));
                 }
-                if (toggle) {
-                  const currentCount = repliesWrap ? repliesWrap.childElementCount : 1;
-                  toggle.hidden = false;
-                  toggle.textContent = `See replies (${currentCount})`;
+                if (toggle && repliesWrap) {
+                  updateReplyToggle(toggle, repliesWrap);
                 }
                 aiParent.classList.add('has-replies');
               }
@@ -3213,7 +3478,10 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
           setReplyTarget(card, null);
           textarea.value = '';
           if (fileInput) fileInput.value = '';
-          if (preview) preview.innerHTML = '';
+          if (preview) {
+            preview.innerHTML = '';
+            preview.classList.remove('is-grid');
+          }
           updateRightRail();
         } catch (err) {
           console.error(err);
@@ -3297,13 +3565,8 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
           if (!item) return;
           const replies = item.querySelector('.thread-replies');
           if (!replies) return;
-          const isHidden = replies.hidden;
-          replies.hidden = !isHidden;
-          if (isHidden) {
-            replyToggle.textContent = replyToggle.textContent.replace('See', 'Hide');
-          } else {
-            replyToggle.textContent = replyToggle.textContent.replace('Hide', 'See');
-          }
+          replies.hidden = !replies.hidden;
+          updateReplyToggle(replyToggle, replies);
           return;
         }
 
@@ -3358,8 +3621,7 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
             event.target.closest('[data-open-chat]') ||
             event.target.closest('.x-avatar-link') ||
             event.target.closest('.x-name') ||
-            event.target.closest('.x-handle') ||
-            event.target.closest('.x-post-media')
+            event.target.closest('.x-handle')
           ) {
             return;
           }
@@ -3377,12 +3639,7 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
             const postId = card.dataset.postId;
             if (postId) {
               const link = `${window.APP_BASE_URL}/explore?post=${postId}`;
-              navigator.clipboard.writeText(link).then(() => {
-                shareBtn.innerHTML = '<i class="fa-regular fa-circle-check"></i><span>Copied</span>';
-                setTimeout(() => {
-                  shareBtn.innerHTML = '<i class="fa-regular fa-share-from-square"></i><span>Share</span>';
-                }, 1500);
-              });
+              openShareModal(link);
             }
           }
         }

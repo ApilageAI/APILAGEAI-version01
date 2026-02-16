@@ -173,6 +173,116 @@ function parse_json_from_text(string $text): ?array {
     return null;
 }
 
+function detect_disallowed_text_patterns(string $text): string {
+    $text = trim($text);
+    if ($text === '') return '';
+
+    if (preg_match('/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/i', $text)) {
+        return 'Please remove email addresses or contact details.';
+    }
+
+    if (preg_match_all('/\+?[0-9][0-9\\s().-]{6,}[0-9]/', $text, $matches)) {
+        foreach ($matches[0] as $match) {
+            $digits = preg_replace('/\\D/', '', $match);
+            if (strlen($digits) >= 9) {
+                return 'Please remove phone numbers or contact details.';
+            }
+        }
+    }
+
+    $socialPattern = '/\\b(?:https?:\\/\\/)?(?:www\\.)?(?:facebook\\.com|instagram\\.com|tiktok\\.com|twitter\\.com|x\\.com|snapchat\\.com|discord\\.gg|discord\\.com|t\\.me|telegram\\.me|wa\\.me|whatsapp\\.com|linkedin\\.com)\\b[^\\s]*/i';
+    if (preg_match($socialPattern, $text)) {
+        return 'Please remove social media links or public contact details.';
+    }
+
+    return '';
+}
+
+function gemini_moderate_text(string $text): array {
+    if (!defined('GEMINI_API_KEY') || GEMINI_API_KEY === '') {
+        return ['allowed' => false, 'reason' => 'Content moderation unavailable'];
+    }
+
+    $cleanText = trim($text);
+    if ($cleanText === '') {
+        return ['allowed' => true, 'reason' => ''];
+    }
+    if (function_exists('mb_substr')) {
+        $cleanText = mb_substr($cleanText, 0, 1200, 'UTF-8');
+    } else {
+        $cleanText = substr($cleanText, 0, 1200);
+    }
+
+    $prompt = 'You are a strict content safety and relevance checker for a public, teen-focused educational Q&A feed. '
+        . 'Allow only educational or learning-related content that is safe for teens. '
+        . 'Reject content that is spammy or unrelated. '
+        . 'Reject political content that is hate speech, harassment, profanity, sexual content, nudity, self-harm, or illegal activity. '
+        . 'ApilageAI @mentions are allowed; reject any sharing of phone numbers, emails, or external social media account links/handles. '
+        . 'Return ONLY JSON like {"allowed":true|false,"reason":"short reason"}.'
+        . "\n\nText: \"" . $cleanText . "\"";
+
+    $payload = [
+        'contents' => [
+            [
+                'role' => 'user',
+                'parts' => [
+                    ['text' => $prompt]
+                ]
+            ]
+        ],
+        'generationConfig' => [
+            'temperature' => 0,
+            'maxOutputTokens' => 120
+        ]
+    ];
+
+    $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=' . GEMINI_API_KEY;
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => json_encode($payload),
+        CURLOPT_TIMEOUT => 25
+    ]);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode !== 200 || !$response) {
+        return ['allowed' => false, 'reason' => 'Content moderation failed'];
+    }
+
+    $json = json_decode($response, true);
+    $text = $json['candidates'][0]['content']['parts'][0]['text'] ?? '';
+    $parsed = parse_json_from_text((string)$text);
+
+    if (!is_array($parsed)) {
+        return ['allowed' => false, 'reason' => 'Content could not be verified'];
+    }
+
+    return [
+        'allowed' => (bool)($parsed['allowed'] ?? false),
+        'reason' => trim((string)($parsed['reason'] ?? ''))
+    ];
+}
+
+function validate_text_content(string $text): string {
+    $text = trim($text);
+    if ($text === '') return '';
+
+    $patternIssue = detect_disallowed_text_patterns($text);
+    if ($patternIssue !== '') {
+        return $patternIssue;
+    }
+
+    $moderation = gemini_moderate_text($text);
+    if (!$moderation['allowed']) {
+        return $moderation['reason'] !== '' ? $moderation['reason'] : 'Content not allowed for public posting.';
+    }
+    return '';
+}
+
 function gemini_generate_text(string $prompt, int $maxTokens = 256): string {
     if (!defined('GEMINI_API_KEY') || GEMINI_API_KEY === '') {
         return '';
@@ -275,7 +385,7 @@ function gemini_generate_content(string $prompt, array $imagePaths = [], int $ma
     return trim((string)$text);
 }
 
-function gemini_moderate_image(string $filePath): array {
+function gemini_moderate_image(string $filePath, string $contextText = ''): array {
     if (!defined('GEMINI_API_KEY') || GEMINI_API_KEY === '') {
         return ['allowed' => false, 'recognizable' => false, 'reason' => 'Image moderation unavailable'];
     }
@@ -293,11 +403,25 @@ function gemini_moderate_image(string $filePath): array {
         return ['allowed' => false, 'recognizable' => false, 'reason' => 'Image could not be read'];
     }
 
-    $prompt = 'You are a strict content safety checker for a public Q&A feed. '
-        . 'Decide if the image is safe for public posting. '
+    $contextText = trim($contextText);
+    if ($contextText !== '') {
+        if (function_exists('mb_substr')) {
+            $contextText = mb_substr($contextText, 0, 600, 'UTF-8');
+        } else {
+            $contextText = substr($contextText, 0, 600);
+        }
+    }
+
+    $prompt = 'You are a strict content safety and relevance checker for a public, teen-focused educational Q&A feed. '
+        . 'Decide if the image is safe and appropriate for learning. '
+        . 'Allow only educational/learning-related images (notes, textbooks, homework, diagrams, experiments, worksheets, study materials). '
+        . 'Reject images that are unrelated, low-effort, memes, selfies, or not suitable for teens. '
         . 'Unsafe includes nudity, sexual content, graphic violence, hate symbols, self-harm, illegal activity, or minors in sexual context. '
         . 'Also mark recognizable=false if the image is too blurry, blank, or unclear to identify. '
         . 'Return ONLY JSON like {"allowed":true|false,"recognizable":true|false,"reason":"short reason"}.';
+    if ($contextText !== '') {
+        $prompt .= "\n\nContext text: \"" . $contextText . "\"";
+    }
 
     $payload = [
         'contents' => [
@@ -811,6 +935,13 @@ if ($action === 'create_post') {
         }
     }
 
+    if ($body !== '') {
+        $textValidation = validate_text_content($body);
+        if ($textValidation !== '') {
+            json_response(['success' => false, 'message' => $textValidation]);
+        }
+    }
+
     $images = array_values(array_filter(array_map('trim', $images), function ($val) {
         return $val !== '';
     }));
@@ -829,7 +960,7 @@ if ($action === 'create_post') {
         if ($validation !== '') {
             json_response(['success' => false, 'message' => $validation]);
         }
-        $moderation = gemini_moderate_image($path);
+        $moderation = gemini_moderate_image($path, $body);
         if (!$moderation['allowed'] || !$moderation['recognizable']) {
             $reason = $moderation['reason'] !== '' ? $moderation['reason'] : 'Image not allowed for public posting.';
             json_response(['success' => false, 'message' => $reason]);
@@ -949,6 +1080,13 @@ if ($action === 'create_comment') {
         json_response(['success' => false, 'message' => 'Reply exceeds 1000 word limit.']);
     }
 
+    if ($body !== '') {
+        $textValidation = validate_text_content($body);
+        if ($textValidation !== '') {
+            json_response(['success' => false, 'message' => $textValidation]);
+        }
+    }
+
     $userId = (int)$user->_data['id'];
 
     $imagePaths = [];
@@ -964,7 +1102,7 @@ if ($action === 'create_comment') {
         if ($validation !== '') {
             json_response(['success' => false, 'message' => $validation]);
         }
-        $moderation = gemini_moderate_image($path);
+        $moderation = gemini_moderate_image($path, $body);
         if (!$moderation['allowed'] || !$moderation['recognizable']) {
             $reason = $moderation['reason'] !== '' ? $moderation['reason'] : 'Image not allowed for public posting.';
             json_response(['success' => false, 'message' => $reason]);
@@ -972,9 +1110,12 @@ if ($action === 'create_comment') {
         $imagePaths[] = $path;
     }
 
-    $parentId = isset($data['parent_id']) ? (int)$data['parent_id'] : null;
     $replyToId = isset($data['reply_to_id']) ? (int)$data['reply_to_id'] : 0;
-    $targetCommentId = $replyToId > 0 ? $replyToId : ($parentId ?? 0);
+    $parentId = null;
+    $targetCommentId = $replyToId > 0 ? $replyToId : 0;
+    if ($targetCommentId <= 0 && isset($data['parent_id'])) {
+        $targetCommentId = (int)$data['parent_id'];
+    }
     $replyingToAi = false;
     if ($targetCommentId > 0) {
         $stmt = $db->prepare("SELECT id, parent_id, author_type, body FROM public_post_comments WHERE id = ? AND post_id = ? LIMIT 1");
@@ -984,12 +1125,8 @@ if ($action === 'create_comment') {
         $stmt->close();
         if ($targetRow) {
             $replyingToAi = ($targetRow['author_type'] ?? '') === 'ai';
-            $parentId = $targetRow['parent_id'] ? (int)$targetRow['parent_id'] : (int)$targetRow['id'];
-        } else {
-            $parentId = null;
+            $parentId = (int)$targetRow['id'];
         }
-    } else {
-        $parentId = null;
     }
 
     if ($parentId === null) {
