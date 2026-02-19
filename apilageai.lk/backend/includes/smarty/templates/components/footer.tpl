@@ -29,7 +29,7 @@
                 <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="#pricing">Pricing</a></li>
                 <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="{$smarty.const.APP_URL}/blog">Blog</a></li>
                 <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="{$smarty.const.APP_URL}/help">Help Center</a></li>
-                <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="https://api.apilageai.lk">API Docs</a></li>
+                <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="{$smarty.const.APP_URL}/developer-api-documentation">API Docs</a></li>
                 <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="#mobile">Mobile App</a></li>
               </ul>
             </div>
@@ -41,6 +41,7 @@
                 <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="{$smarty.const.APP_URL}/privacypolicy/">Privacy Policy</a></li>
                 <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="{$smarty.const.APP_URL}/termsofservice/">Terms of Service</a></li>
                 <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="{$smarty.const.APP_URL}/data-deletion/">Data Deletion</a></li>
+                <li class="hover:text-brand-red transition-colors cursor-pointer hover:translate-x-1 duration-200"><a href="{$smarty.const.APP_URL}/parents/">Parents &amp; Child Safety</a></li>
               </ul>
             </div>
 
@@ -68,15 +69,18 @@
           <div class="border-t-2 border-brand-dark/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
             <p class="text-sm text-brand-dark/50 font-bold">© 2025 Apilage AI. Made in Sri Lanka 🇱🇰.</p>
             <div class="flex gap-4">
-              <div class="w-8 h-8 border-2 border-brand-dark rounded flex items-center justify-center hover:bg-brand-red hover:text-white transition-colors cursor-pointer shadow-hard-sm">
-                <span class="font-bold text-xs">Fb</span>
-              </div>
-              <div class="w-8 h-8 border-2 border-brand-dark rounded flex items-center justify-center hover:bg-brand-red hover:text-white transition-colors cursor-pointer shadow-hard-sm">
-                <span class="font-bold text-xs">Ig</span>
-              </div>
-               <div class="w-8 h-8 border-2 border-brand-dark rounded flex items-center justify-center hover:bg-brand-red hover:text-white transition-colors cursor-pointer shadow-hard-sm">
-                <span class="font-bold text-xs">Lk</span>
-              </div>
+              <a href="https://www.facebook.com/apilageai/" target="_blank" rel="noopener noreferrer" class="w-8 h-8 border-2 border-brand-dark rounded flex items-center justify-center hover:bg-brand-red hover:text-white transition-colors shadow-hard-sm" aria-label="ApilageAI Facebook">
+                <i class="fa-brands fa-facebook-f" aria-hidden="true"></i>
+              </a>
+              <a href="https://www.instagram.com/apilageai/" target="_blank" rel="noopener noreferrer" class="w-8 h-8 border-2 border-brand-dark rounded flex items-center justify-center hover:bg-brand-red hover:text-white transition-colors shadow-hard-sm" aria-label="ApilageAI Instagram">
+                <i class="fa-brands fa-instagram" aria-hidden="true"></i>
+              </a>
+              <a href="https://www.linkedin.com/company/apilageai?originalSubdomain=lk" target="_blank" rel="noopener noreferrer" class="w-8 h-8 border-2 border-brand-dark rounded flex items-center justify-center hover:bg-brand-red hover:text-white transition-colors shadow-hard-sm" aria-label="ApilageAI LinkedIn">
+                <i class="fa-brands fa-linkedin-in" aria-hidden="true"></i>
+              </a>
+              <a href="https://github.com/ApilageAI" target="_blank" rel="noopener noreferrer" class="w-8 h-8 border-2 border-brand-dark rounded flex items-center justify-center hover:bg-brand-red hover:text-white transition-colors shadow-hard-sm" aria-label="ApilageAI GitHub">
+                <i class="fa-brands fa-github" aria-hidden="true"></i>
+              </a>
             </div>
           </div>
         </div>

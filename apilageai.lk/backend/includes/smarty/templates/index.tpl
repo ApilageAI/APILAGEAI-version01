@@ -383,27 +383,64 @@
                   Integrate Sri Lanka's most powerful educational AI models directly into your LMS, website, or mobile app. Native Sinhala support out of the box.
                 </p>
                 <div class="flex gap-4">
-                  <a href="https://api.apilageai.lk" class="btn-primary bg-brand-dark text-white hover:bg-brand-dark/90">Get API Key</a>
-                  <a href="https://api.apilageai.lk" class="btn-outline">Read Docs</a>
+                  <a href="{$smarty.const.APP_URL}/developers" class="btn-primary bg-brand-dark text-white hover:bg-brand-dark/90">Get API Key</a>
+                  <a href="{$smarty.const.APP_URL}/developer-api-documentation" class="btn-outline">Read Docs</a>
                 </div>
              </div>
              <div class="flex-1 w-full relative">
                 <div class="absolute -top-6 -right-6 w-24 h-24 bg-brand-blueLight rounded-full border-2 border-brand-dark hidden lg:block animate-pulse"></div>
-                <div class="bg-[#172554] rounded-xl border-2 border-brand-dark shadow-hard p-4 font-mono text-sm text-gray-300 relative overflow-hidden">
-                  <div class="flex gap-2 mb-4 border-b border-gray-700 pb-2">
-                    <div class="w-3 h-3 rounded-full bg-red-500"></div>
-                    <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
-                    <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                <div class="bg-[#0b1120] rounded-2xl border-2 border-brand-dark shadow-hard p-4 md:p-5 text-gray-200 relative overflow-hidden">
+                  <div class="flex items-center justify-between gap-4 border-b border-slate-700 pb-3 mb-4">
+                    <div class="flex items-center gap-3">
+                      <div class="flex gap-2">
+                        <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                      </div>
+                      <span class="text-xs font-bold uppercase tracking-widest text-brand-blue">JavaScript (Fetch)</span>
+                    </div>
+                    <button type="button" data-copy-target="developer-js-code" class="btn-outline !py-1 !px-3 !text-xs">Copy</button>
                   </div>
-                  <pre class="overflow-x-auto">
-                    <code>
-<span class="text-brand-blue">curl</span> -s -X POST <span class="text-green-400">APILAGEAPI_URL</span> \ <br>
-  -H <span class="text-green-400">Content-Type: application/json</span> \ <br>
-  -H <span class="text-green-400">Authorization: Bearer APILAGEAI_API</span> \ <br>
-  -d <span class="text-green-400">{literal}{'message': 'Explain Newton law of motion', 'enableGoogleSearch': true}{/literal}</span> \  <br>
-  | jq -r <span class="text-green-400">.response</span> <br>
-                    </code>
-                  </pre>
+                  <div class="bg-[#0f172a] border border-slate-700 rounded-xl p-4 overflow-x-auto">
+                    <ol class="list-decimal list-inside space-y-1 text-xs md:text-sm font-mono text-slate-200">
+{literal}
+                      <li>const API_KEY = "YOUR_API_KEY";</li>
+                      <li>const BASE_URL = "APILAGEAI_URL";</li>
+                      <li>const resp = await fetch(`${BASE_URL}/api/developer/text`, {</li>
+                      <li>&nbsp;&nbsp;method: "POST",</li>
+                      <li>&nbsp;&nbsp;headers: {</li>
+                      <li>&nbsp;&nbsp;&nbsp;&nbsp;"Content-Type": "application/json",</li>
+                      <li>&nbsp;&nbsp;&nbsp;&nbsp;"X-API-Key": API_KEY</li>
+                      <li>&nbsp;&nbsp;},</li>
+                      <li>&nbsp;&nbsp;body: JSON.stringify({</li>
+                      <li>&nbsp;&nbsp;&nbsp;&nbsp;prompt: "Explain Newton's laws",</li>
+                      <li>&nbsp;&nbsp;&nbsp;&nbsp;model: "pro",</li>
+                      <li>&nbsp;&nbsp;&nbsp;&nbsp;system: "You are a tutor."</li>
+                      <li>&nbsp;&nbsp;})</li>
+                      <li>});</li>
+                      <li>const data = await resp.json();</li>
+                      <li>console.log(data.text);</li>
+{/literal}
+                    </ol>
+                  </div>
+                  <textarea id="developer-js-code" class="sr-only">{literal}const API_KEY = "YOUR_API_KEY";
+const BASE_URL = "APILAGEAI_URL";
+
+const resp = await fetch(`${BASE_URL}/api/developer/text`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "X-API-Key": API_KEY
+  },
+  body: JSON.stringify({
+    prompt: "Explain Newton's laws",
+    model: "pro",
+    system: "You are a tutor."
+  })
+});
+
+const data = await resp.json();
+console.log(data.text);{/literal}</textarea>
                 </div>
              </div>
           </div>
@@ -492,6 +529,7 @@
 
     audio.addEventListener('ended', () => setState(false));
   })();
+
 </script>
 
 {include file="components/footer.tpl"}

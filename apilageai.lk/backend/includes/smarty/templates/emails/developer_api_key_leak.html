@@ -1,0 +1,14 @@
+<div style="font-family: Arial, sans-serif; color: #0f172a;">
+  <h2 style="margin: 0 0 12px;">Hello {$name},</h2>
+  <p style="margin: 0 0 12px;">We detected a possible public leak of your ApilageAI API key.</p>
+  <ul style="margin: 0 0 12px; padding-left: 18px;">
+    <li><strong>Key name:</strong> {$key_name}</li>
+    <li><strong>Key prefix:</strong> {$key_prefix}••••</li>
+    <li><strong>Detected at:</strong> {$detected_at}</li>
+  </ul>
+  {if !empty($detail)}
+    <p style="margin: 0 0 12px;">Details: {$detail}</p>
+  {/if}
+  <p style="margin: 0 0 12px;">For your safety, the key may be disabled. Create a new key and rotate immediately.</p>
+  <p style="margin: 0;">ApilageAI Security Team</p>
+</div>

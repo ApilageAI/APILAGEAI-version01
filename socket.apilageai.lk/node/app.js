@@ -463,7 +463,7 @@ app.use((req, res, next) => {
   if (req.method === 'OPTIONS') {
     res.header('Access-Control-Allow-Origin', req.headers.origin || allowedOrigins[0] || APP_BASE_URL);
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie, X-API-Key');
     res.header('Access-Control-Allow-Credentials', 'true');
     return res.sendStatus(200);
   }
@@ -1466,6 +1466,7 @@ function getClientIp(socket) {
 function getClientIpFromRequest(req) {
   return req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress || 'unknown';
 }
+
 
 // Initialize trial_abuse_tracking table if not exists
 async function initializeTrialAbuseTable() {
@@ -6304,6 +6305,7 @@ app.get('/api/conversations/published/:token/messages', async (req, res) => {
     res.status(500).json({ error: true, message: 'Failed to retrieve messages' });
   }
 });
+
 
 // ====== Error/404 (Secure - No information leakage) ======
 app.use(security.secureErrorHandler());
