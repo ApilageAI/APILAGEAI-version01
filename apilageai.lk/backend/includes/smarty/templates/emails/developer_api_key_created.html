@@ -1,11 +1,54 @@
-<div style="font-family: Arial, sans-serif; color: #0f172a;">
-  <h2 style="margin: 0 0 12px;">Hello {$name},</h2>
-  <p style="margin: 0 0 12px;">A new ApilageAI API key was created for your account.</p>
-  <ul style="margin: 0 0 12px; padding-left: 18px;">
-    <li><strong>Key name:</strong> {$key_name}</li>
-    <li><strong>Key prefix:</strong> {$key_prefix}••••</li>
-    <li><strong>Created at:</strong> {$created_at}</li>
-  </ul>
-  <p style="margin: 0 0 12px;">If this wasn&rsquo;t you, log in and delete the key immediately.</p>
-  <p style="margin: 0;">ApilageAI Security Team</p>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Key Created - ApilageAI</title>
+</head>
+<body style="margin: 0; padding: 0; background: #F8FAFC; font-family: 'Plus Jakarta Sans', 'Outfit', Arial, sans-serif;">
+  <div style="max-width: 640px; margin: 32px auto; padding: 0 16px;">
+    <div style="background: #ffffff; border: 2px solid #172554; border-radius: 24px; overflow: hidden; box-shadow: 6px 6px 0 #172554;">
+      <div style="background: #172554; color: #ffffff; padding: 28px 32px; text-align: center;">
+        <div style="display: inline-block; background: #E0F2FE; color: #172554; border: 2px solid #172554; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 1px; padding: 6px 12px; text-transform: uppercase; margin-bottom: 12px; box-shadow: 2px 2px 0 #0f172a;">
+          API
+        </div>
+        <img src="{$smarty.const.APP_URL}/assets/images/icon.png" alt="ApilageAI" style="width: 64px; height: 64px; object-fit: contain; margin: 0 auto 12px; display: block; background: #ffffff; border-radius: 16px; border: 2px solid #172554; padding: 6px;">
+        <h1 style="margin: 0; font-size: 26px; font-weight: 800; letter-spacing: 0.2px;">API key created</h1>
+        <p style="margin: 8px 0 0; font-size: 14px; color: rgba(255, 255, 255, 0.85);">A new ApilageAI API key was created for your account.</p>
+      </div>
+
+      <div style="padding: 28px 32px; color: #0f172a; line-height: 1.6;">
+        <p style="font-size: 16px; margin: 0 0 16px;">Hi <strong>{$name}</strong>,</p>
+
+        <div style="background: #E0F2FE; border: 2px solid #172554; border-radius: 16px; padding: 16px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 14px; color: #0f172a;">
+            <tr>
+              <td style="padding: 6px 0; font-weight: 700; width: 40%;">Key name</td>
+              <td style="padding: 6px 0;">{$key_name}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; font-weight: 700;">Key prefix</td>
+              <td style="padding: 6px 0;">{$key_prefix}****</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; font-weight: 700;">Created at</td>
+              <td style="padding: 6px 0;">{$created_at}</td>
+            </tr>
+          </table>
+        </div>
+
+        <p style="font-size: 13px; color: #475569; margin: 18px 0 0;">If this was not you, log in and delete the key immediately.</p>
+
+        <div style="text-align: center; margin: 22px 0 6px;">
+          <a href="{$smarty.const.APP_URL}/developer" style="background: #FF3B30; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 999px; font-weight: 700; border: 2px solid #172554; box-shadow: 3px 3px 0 #172554; display: inline-block;">Manage API Keys</a>
+        </div>
+      </div>
+
+      <div style="background: #E0F2FE; border-top: 2px solid #172554; padding: 16px 24px; text-align: center; font-size: 12px; color: #172554;">
+        <p style="margin: 0 0 6px;">Need help? <a href="{$smarty.const.APP_URL}" style="color: #FF3B30; text-decoration: none; font-weight: 700;">Support</a></p>
+        <p style="margin: 0;">&copy; 2026 ApilageAI. All rights reserved.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

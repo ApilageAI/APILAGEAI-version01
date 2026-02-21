@@ -1,45 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Device Sign-in</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Device Sign-in - ApilageAI</title>
 </head>
+<body style="margin: 0; padding: 0; background: #F8FAFC; font-family: 'Plus Jakarta Sans', 'Outfit', Arial, sans-serif;">
+  <div style="max-width: 640px; margin: 32px auto; padding: 0 16px;">
+    <div style="background: #ffffff; border: 2px solid #172554; border-radius: 24px; overflow: hidden; box-shadow: 6px 6px 0 #172554;">
+      <div style="background: #172554; color: #ffffff; padding: 28px 32px; text-align: center;">
+        <div style="display: inline-block; background: #E0F2FE; color: #172554; border: 2px solid #172554; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 1px; padding: 6px 12px; text-transform: uppercase; margin-bottom: 12px; box-shadow: 2px 2px 0 #0f172a;">
+          Security
+        </div>
+        <img src="{$smarty.const.APP_URL}/assets/images/icon.png" alt="ApilageAI" style="width: 64px; height: 64px; object-fit: contain; margin: 0 auto 12px; display: block; background: #ffffff; border-radius: 16px; border: 2px solid #172554; padding: 6px;">
+        <h1 style="margin: 0; font-size: 26px; font-weight: 800; letter-spacing: 0.2px;">New device sign-in</h1>
+        <p style="margin: 8px 0 0; font-size: 14px; color: rgba(255, 255, 255, 0.85);">We noticed a sign-in from a new device.</p>
+      </div>
 
-<body style="font-family: 'Arial', sans-serif; margin: 0; padding: 0; background-color: #f6f6f6;">
-    <div style="max-width: 600px; margin: 40px auto; padding: 0; border-radius: 15px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.1);">
-        <!-- Header -->
-        <div style="background-color: #e60000; color: #ffffff; text-align: center; padding: 30px;">
-            <img src="{$smarty.const.APP_URL}/assets/images/icon.png" alt="ApilageAI" style="width: 100px; margin-bottom: 15px;">
-            <h1 style="margin: 0; font-size: 28px; font-weight: bold;">New Device Sign-in</h1>
+      <div style="padding: 28px 32px; color: #0f172a; line-height: 1.6;">
+        <p style="font-size: 16px; margin: 0 0 16px;">Hello <strong>{$name}</strong>,</p>
+        <p style="font-size: 15px; margin: 0 0 20px;">Here are the details from the recent sign-in:</p>
+
+        <div style="background: #E0F2FE; border: 2px solid #172554; border-radius: 16px; padding: 16px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 14px; color: #0f172a;">
+            <tr>
+              <td style="padding: 6px 0; font-weight: 700; width: 40%;">Browser</td>
+              <td style="padding: 6px 0;">{$device['browser']}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; font-weight: 700;">Operating System</td>
+              <td style="padding: 6px 0;">{$device['platform']}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; font-weight: 700;">IP Address</td>
+              <td style="padding: 6px 0;">{$ip}</td>
+            </tr>
+          </table>
         </div>
 
-        <!-- Body -->
-        <div style="background-color: #ffffff; padding: 30px; color: #333333; line-height: 1.6;">
-            <p style="font-size: 16px;">Hello <strong>{$name}</strong>,</p>
-            <p style="font-size: 16px;">We noticed a new device signed into your <strong>Apilage AI</strong> account. Here are the details:</p>
+        <p style="font-size: 13px; color: #475569; margin: 18px 0 0;">If this was not you, secure your account immediately.</p>
 
-            <div style="background-color: #ffe6e6; padding: 20px; border-radius: 15px; margin: 20px 0;">
-                <p style="margin: 8px 0;"><strong>Browser:</strong> {$device['browser']}</p>
-                <p style="margin: 8px 0;"><strong>Operating System:</strong> {$device['platform']}</p>
-                <p style="margin: 8px 0;"><strong>IP Address:</strong> {$ip}</p>
-            </div>
-
-            <p style="font-size: 14px; color: #666666;">This email was sent as part of our security measures. If you did not authorize this sign-in, please contact the system administrator immediately.</p>
-
-            <!-- Button -->
-            <div style="text-align: center; margin-top: 30px;">
-                <a href="{$smarty.const.APP_URL}/account/security" 
-                   style="background-color: #e60000; color: #ffffff; text-decoration: none; padding: 12px 25px; border-radius: 50px; font-weight: bold; display: inline-block;">Secure Your Account</a>
-            </div>
+        <div style="text-align: center; margin: 22px 0 6px;">
+          <a href="{$smarty.const.APP_URL}/account/security" style="background: #FF3B30; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 999px; font-weight: 700; border: 2px solid #172554; box-shadow: 3px 3px 0 #172554; display: inline-block;">Secure Your Account</a>
         </div>
+      </div>
 
-        <!-- Footer -->
-        <div style="text-align: center; background-color: #f9f9f9; padding: 20px; font-size: 12px; color: #999999;">
-            &copy; 2025 ApilageAI. All rights reserved.
-        </div>
+      <div style="background: #E0F2FE; border-top: 2px solid #172554; padding: 16px 24px; text-align: center; font-size: 12px; color: #172554;">
+        <p style="margin: 0 0 6px;">Need help? <a href="{$smarty.const.APP_URL}" style="color: #FF3B30; text-decoration: none; font-weight: 700;">Support</a></p>
+        <p style="margin: 0;">&copy; 2026 ApilageAI. All rights reserved.</p>
+      </div>
     </div>
+  </div>
 </body>
-
 </html>
