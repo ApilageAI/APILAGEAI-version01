@@ -10,6 +10,7 @@
   const forgotForm = document.getElementById('forgotForm');
   const loadingOverlay = document.getElementById('loadingOverlay');
   const signupSuccessOverlay = document.getElementById('signupSuccessOverlay');
+  const authShell = document.querySelector('.auth-shell');
 
   const loginAlert = document.getElementById('loginAlert');
   const signupAlert = document.getElementById('signupAlert');
@@ -17,6 +18,7 @@
 
   const resendBtn = document.getElementById('resendBtn');
   const successResendBtn = document.getElementById('successResendBtn');
+  const resendWrap = document.getElementById('resendWrap');
 
   const loginGoogle = document.getElementById('loginGoogle');
   const loginGlobbook = document.getElementById('loginGlobbook');
@@ -39,6 +41,7 @@
     panels.forEach((panel) => {
       panel.style.display = panel.dataset.authPanel === name ? 'block' : 'none';
     });
+    if (authShell) authShell.dataset.authState = name;
     clearAlerts();
   }
 
@@ -50,6 +53,7 @@
         el.className = 'auth-alert';
       }
     });
+    if (resendWrap) resendWrap.style.display = 'none';
   }
 
   function showAlert(el, message, type = 'error') {
@@ -57,6 +61,21 @@
     el.textContent = message;
     el.style.display = 'block';
     el.className = `auth-alert ${type}`;
+  }
+
+  function getInitialPanel() {
+    const params = new URLSearchParams(window.location.search || '');
+    const mode = (params.get('mode') || params.get('tab') || '').toLowerCase();
+    const hash = (window.location.hash || '').replace('#', '').toLowerCase();
+    const map = {
+      register: 'signup',
+      signup: 'signup',
+      sign_up: 'signup',
+      forgot: 'forgot',
+      reset: 'forgot',
+      login: 'login'
+    };
+    return map[mode] || map[hash] || 'login';
   }
 
   function showLoading(show) {
@@ -174,7 +193,19 @@
   tabs.forEach((tab) => {
     tab.addEventListener('click', (e) => {
       e.preventDefault();
-      showPanel(tab.dataset.authTab);
+      const target = tab.dataset.authTab;
+      showPanel(target);
+      try {
+        const params = new URLSearchParams(window.location.search || '');
+        if (target && target !== 'login') {
+          params.set('mode', target);
+        } else {
+          params.delete('mode');
+        }
+        const query = params.toString();
+        const next = query ? `${window.location.pathname}?${query}` : window.location.pathname;
+        window.history.replaceState(null, '', next);
+      } catch (_) {}
     });
   });
 
@@ -213,6 +244,7 @@
           showAlert(loginAlert, msg, 'error');
           if (result.resend && result.email && resendBtn) {
             resendBtn.onclick = () => resendVerification(result.email, loginAlert);
+            if (resendWrap) resendWrap.style.display = 'block';
           }
           return;
         }
@@ -474,6 +506,6 @@
   if (resendBtn) resendBtn.addEventListener('click', resendVerificationFromLogin);
   if (successResendBtn) successResendBtn.addEventListener('click', resendVerificationFromSuccess);
 
-  showPanel('login');
+  showPanel(getInitialPanel());
   waitForCaptcha();
 })();

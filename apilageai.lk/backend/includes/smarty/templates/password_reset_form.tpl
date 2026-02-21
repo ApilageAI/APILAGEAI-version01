@@ -1,74 +1,161 @@
 {include file="components/head.tpl"}
 
+<div id="pageLoader" class="page-loader" aria-hidden="true">
+  <div class="page-loader-card">
+    <div class="spinner"></div>
+    <p>Loading...</p>
+  </div>
+</div>
+
 <div class="auth-page">
-  <div class="auth-shell auth-split">
-    <aside class="auth-hero">
-      <div class="auth-hero-top">
-        <div class="auth-star">
-          <span></span>
-          <span></span>
-        </div>
-        <h1>Reset Your Password</h1>
-        <p>Choose a new password to keep your ApilageAI account secure.</p>
+  <div class="auth-shell">
+    <header class="auth-header">
+      <div class="auth-brand">
+        <img src="{$smarty.const.APP_URL}/assets/images/icon.png" alt="ApilageAI" class="auth-logo" width="44" height="44" style="width:44px;height:44px;" />
+        <span>ApilageAI</span>
       </div>
-      <div class="auth-hero-footer">© 2026 ApilageAI. All rights reserved.</div>
-    </aside>
+      <div class="auth-kicker">Set a new password.</div>
+      <h1>Reset your password</h1>
+      <p>Create a new password to keep your account secure.</p>
+    </header>
 
-    <section class="auth-card auth-card-plain">
-      <div class="auth-brand">ApilageAI</div>
-
-      {if isset($result.e) && $result.e}
-        <div class="auth-alert error" style="display:block;">
-          {$result.m}
-        </div>
-        {if isset($result.expired) && $result.expired}
-          <p class="auth-footnote">If your link expired, <a class="auth-link" href="{$base_url}/auth/reset-request">request a new reset</a>.</p>
-        {/if}
+    {if isset($result.e) && $result.e}
+      <div class="auth-alert error" role="alert" style="display:block;">
+        {$result.m}
+      </div>
+      {if isset($result.expired) && $result.expired}
+        <p class="auth-footnote">If your link expired, <a class="auth-link" href="{$base_url}/auth/reset-request">request a new reset</a>.</p>
       {/if}
+    {/if}
 
-      {if (empty($reset_complete)) && (!isset($result.e) || !$result.e)}
-      <div class="auth-header">
-        <h2>Set a new password</h2>
-        <p>Password must be longer than 5 characters.</p>
-      </div>
-
-      <form id="resetPasswordForm" class="auth-form" method="POST" action="{$base_url}/auth/reset-password?token={$smarty.get.token}">
+    {if (empty($reset_complete)) && (!isset($result.e) || !$result.e)}
+    <form id="resetPasswordForm" class="auth-form" method="POST" action="{$base_url}/auth/reset-password?token={$smarty.get.token}">
+      <div class="auth-field">
         <label>New Password</label>
         <div class="auth-password">
-          <input type="password" id="password" name="password" required placeholder="Enter new password" />
-          <button type="button" id="toggleResetPassword"><i class="fa-regular fa-eye"></i></button>
+          <input type="password" id="password" name="password" autocomplete="new-password" required placeholder="Enter new password" />
+          <button type="button" id="toggleResetPassword" aria-label="Toggle password visibility"><i class="fa-regular fa-eye"></i></button>
         </div>
+      </div>
 
+      <div class="auth-field">
         <label>Confirm New Password</label>
         <div class="auth-password">
-          <input type="password" id="confirm_password" name="confirm_password" required placeholder="Confirm new password" />
-          <button type="button" id="toggleResetConfirmPassword"><i class="fa-regular fa-eye"></i></button>
+          <input type="password" id="confirm_password" name="confirm_password" autocomplete="new-password" required placeholder="Confirm new password" />
+          <button type="button" id="toggleResetConfirmPassword" aria-label="Toggle password visibility"><i class="fa-regular fa-eye"></i></button>
         </div>
+      </div>
 
-        <button type="submit" class="auth-submit auth-submit-dark">Save New Password</button>
+      <button type="submit" class="auth-submit">Save new password</button>
 
-        <div class="auth-footnote">
-          <span>Back to</span>
-          <a href="{$base_url}/auth/login" class="auth-link">Login</a>
-        </div>
-      </form>
-      {/if}
-    </section>
+      <div class="auth-foot">
+        <span>Back to</span>
+        <a href="{$base_url}/auth/login" class="auth-link">Login</a>
+      </div>
+    </form>
+    {/if}
   </div>
 
   <div id="resetSuccessOverlay" class="auth-loading" style="display:none;">
-    <div class="auth-success-card">
+    <div class="auth-loading-card">
       <div class="auth-success-icon">
         <i class="fa fa-check"></i>
       </div>
-      <h3>Password Updated</h3>
+      <h3>Password updated</h3>
       <p>Redirecting you back to login...</p>
+    </div>
+  </div>
+
+  <div class="auth-help" data-help-menu>
+    <button type="button" class="auth-help-toggle" aria-expanded="false" aria-controls="authHelpMenu">?</button>
+    <div id="authHelpMenu" class="auth-help-menu" role="menu">
+      <div class="auth-help-title">Theme</div>
+      <button type="button" class="auth-help-item" data-theme-choice="system">Default device theme</button>
+      <button type="button" class="auth-help-item" data-theme-choice="light">Light mode</button>
+      <button type="button" class="auth-help-item" data-theme-choice="dark">Dark mode</button>
+      <div class="auth-help-divider"></div>
+      <a class="auth-help-link" href="{$smarty.const.APP_URL}/termsofservice/">See terms and conditions</a>
+      <a class="auth-help-link" href="{$smarty.const.APP_URL}/privacypolicy/">See privacy policy</a>
     </div>
   </div>
 </div>
 
 <script>
   (function () {
+    const themeStorageKey = 'theme';
+    const root = document.documentElement;
+    const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+    const helpMenu = document.querySelector('[data-help-menu]');
+    const helpToggle = helpMenu ? helpMenu.querySelector('.auth-help-toggle') : null;
+    const helpPanel = helpMenu ? helpMenu.querySelector('.auth-help-menu') : null;
+    const themeButtons = helpMenu ? helpMenu.querySelectorAll('[data-theme-choice]') : [];
+
+    function applyTheme(choice) {
+      if (!choice || choice === 'system') {
+        root.classList.remove('dark');
+        root.removeAttribute('data-theme');
+        localStorage.removeItem(themeStorageKey);
+        return;
+      }
+      const theme = choice === 'dark' ? 'dark' : 'light';
+      if (theme === 'dark') {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+      root.setAttribute('data-theme', theme);
+      localStorage.setItem(themeStorageKey, theme);
+    }
+
+    const savedTheme = localStorage.getItem(themeStorageKey);
+    if (savedTheme) {
+      applyTheme(savedTheme);
+    } else if (prefersDarkScheme.matches) {
+      root.classList.add('dark');
+      root.setAttribute('data-theme', 'dark');
+    } else {
+      root.classList.remove('dark');
+      root.setAttribute('data-theme', 'light');
+    }
+
+    if (helpToggle && helpPanel) {
+      helpToggle.addEventListener('click', () => {
+        const isOpen = helpMenu.classList.toggle('auth-help-open');
+        helpToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      });
+      document.addEventListener('click', (event) => {
+        if (!helpMenu.contains(event.target)) {
+          helpMenu.classList.remove('auth-help-open');
+          helpToggle.setAttribute('aria-expanded', 'false');
+        }
+      });
+    }
+
+    if (themeButtons.length) {
+      themeButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          applyTheme(btn.dataset.themeChoice);
+          if (helpMenu) helpMenu.classList.remove('auth-help-open');
+          if (helpToggle) helpToggle.setAttribute('aria-expanded', 'false');
+        });
+      });
+    }
+
+    const loader = document.getElementById('pageLoader');
+    if (loader) {
+      const hide = () => {
+        loader.classList.add('page-loader--hide');
+        setTimeout(() => {
+          loader.remove();
+        }, 400);
+      };
+      if (document.readyState === 'complete') {
+        hide();
+      } else {
+        window.addEventListener('load', hide, { once: true });
+      }
+    }
+
     const resetComplete = {if isset($reset_complete) && $reset_complete}true{else}false{/if};
     if (resetComplete) {
       const overlay = document.getElementById('resetSuccessOverlay');
@@ -97,242 +184,401 @@
 </script>
 
 <style>
-body {
-  background: var(--bg-color);
-  font-family: var(--font-family, "Plus Jakarta Sans", "Outfit", sans-serif);
-  color: var(--text-primary);
+:root {
+  --auth-bg: #ffffff;
+  --auth-ink: #111827;
+  --auth-muted: #6b7280;
+  --auth-border: #e5e7eb;
+  --auth-card: rgba(255, 255, 255, 0.95);
+  --auth-primary: #0f172a;
+  --auth-accent: #1d4ed8;
+  --auth-accent-soft: #dbeafe;
+  --auth-input-bg: #f9fafb;
+  --auth-overlay: rgba(15, 23, 42, 0.35);
 }
+
+[data-theme="dark"] {
+  --auth-bg: #1e1e1e;
+  --auth-ink: #f8fafc;
+  --auth-muted: #94a3b8;
+  --auth-border: rgba(148, 163, 184, 0.25);
+  --auth-card: rgba(15, 23, 42, 0.6);
+  --auth-primary: #f8fafc;
+  --auth-accent: #60a5fa;
+  --auth-accent-soft: rgba(96, 165, 250, 0.2);
+  --auth-input-bg: rgba(15, 23, 42, 0.6);
+  --auth-overlay: rgba(2, 6, 23, 0.72);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --auth-bg: #1e1e1e;
+    --auth-ink: #f8fafc;
+    --auth-muted: #94a3b8;
+    --auth-border: rgba(148, 163, 184, 0.25);
+    --auth-card: rgba(15, 23, 42, 0.6);
+    --auth-primary: #f8fafc;
+    --auth-accent: #60a5fa;
+    --auth-accent-soft: rgba(96, 165, 250, 0.2);
+    --auth-input-bg: rgba(15, 23, 42, 0.6);
+    --auth-overlay: rgba(2, 6, 23, 0.72);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Outfit", "Plus Jakarta Sans", "Patrick Hand", sans-serif;
+  color: var(--auth-ink);
+  background: var(--auth-bg);
+}
+
 .auth-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 32px 20px;
-  background: #f4f5fb;
+  padding: 52px 20px;
+  background: var(--auth-bg);
 }
+
 .auth-shell {
-  width: min(1100px, 100%);
-  display: grid;
-  gap: 0;
-  border-radius: 24px;
-  overflow: hidden;
-  background: #fff;
-  box-shadow: 0 24px 60px rgba(17, 24, 39, 0.16);
+  width: min(540px, 92vw);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 36px 40px 32px;
+  position: relative;
+  animation: authPop 0.6s ease;
 }
-.auth-split {
-  grid-template-columns: 1fr 0.95fr;
-}
-.auth-hero {
-  background: radial-gradient(circle at top right, rgba(255,255,255,0.08), rgba(255,255,255,0) 45%),
-              linear-gradient(180deg, #4543e8 0%, #2d2fc2 45%, #151a7e 100%);
-  color: #fff;
-  padding: 48px 44px;
+
+.auth-header {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  position: relative;
-  overflow: hidden;
+  gap: 8px;
+  margin-bottom: 22px;
 }
-.auth-hero::after {
-  content: '';
-  position: absolute;
-  width: 420px;
-  height: 420px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 50%;
-  top: -120px;
-  left: -60px;
-  box-shadow: 0 0 0 60px rgba(255, 255, 255, 0.04);
-}
-.auth-hero-top h1 {
-  font-size: 40px;
-  margin: 34px 0 16px;
-  line-height: 1.1;
-}
-.auth-hero-top p {
-  color: rgba(255,255,255,0.75);
-  margin: 0;
-  max-width: 320px;
-}
-.auth-star {
-  position: relative;
-  width: 42px;
-  height: 42px;
-}
-.auth-star span {
-  position: absolute;
-  inset: 0;
-  border-radius: 999px;
-  border: 3px solid rgba(255, 255, 255, 0.9);
-  clip-path: polygon(48% 0%, 52% 0%, 52% 100%, 48% 100%);
-}
-.auth-star span:last-child {
-  transform: rotate(90deg);
-}
-.auth-hero-footer {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 13px;
-}
-.auth-card {
-  background: #fff;
-  padding: 44px 40px;
-}
-.auth-card-plain {
-  border-left: 1px solid rgba(15, 23, 42, 0.06);
-}
+
 .auth-brand {
-  font-weight: 700;
-  font-size: 22px;
-  margin-bottom: 30px;
-  color: #111827;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  color: var(--auth-primary);
 }
-.auth-header h2 {
-  margin: 0 0 6px;
-  color: #111827;
-  font-size: 24px;
+
+.auth-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: transparent;
+  padding: 0;
+  object-fit: contain;
 }
+
+.auth-kicker {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--auth-muted);
+}
+
+.auth-header h1 {
+  margin: 0;
+  font-family: "Outfit", "Plus Jakarta Sans", sans-serif;
+  font-size: 28px;
+  color: var(--auth-primary);
+}
+
 .auth-header p {
-  margin: 0 0 18px;
-  color: #6b7280;
+  margin: 0;
+  color: var(--auth-muted);
 }
+
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
 }
-.auth-form label {
+
+.auth-field label {
+  display: block;
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--auth-muted);
+  margin-bottom: 6px;
 }
-.auth-form input {
-  padding: 14px 10px 10px;
-  border-radius: 0;
-  border: none;
-  border-bottom: 2px solid #e5e7eb;
+
+.auth-field input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--auth-border);
+  background: var(--auth-input-bg);
   font-size: 14px;
-  background: transparent;
-  color: #111827;
-  transition: border-color 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
-.auth-form input:focus {
+
+.auth-field input:focus {
   outline: none;
-  border-color: #111827;
+  border-color: rgba(29, 78, 216, 0.5);
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
+  background: var(--auth-card);
 }
+
 .auth-password {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
-.auth-password input {
-  flex: 1;
-}
+
 .auth-password button {
   border: none;
   background: transparent;
+  color: var(--auth-muted);
   cursor: pointer;
-  color: #9ca3af;
+  padding: 6px;
+  border-radius: 8px;
 }
+
+.auth-password button:hover {
+  color: var(--auth-primary);
+  background: rgba(15, 23, 42, 0.06);
+}
+
 .auth-submit {
-  margin-top: 10px;
-  padding: 12px 16px;
   border: none;
-  border-radius: 10px;
-  background: #111827;
-  color: #fff;
+  border-radius: 14px;
+  padding: 13px 18px;
   font-weight: 600;
+  color: #ffffff;
+  background: linear-gradient(135deg, #0f172a, #1f2937);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+
+[data-theme="dark"] .auth-submit {
+  background: #444444;
+}
+
+[data-theme="dark"] .auth-submit:hover {
+  box-shadow: 0 12px 22px rgba(0, 0, 0, 0.45);
+}
+
 .auth-submit:hover {
-  background: #1f2937;
   transform: translateY(-1px);
+  box-shadow: 0 12px 22px rgba(15, 23, 42, 0.18);
 }
-.auth-submit-dark {
-  background: #111827;
-}
-.auth-submit-dark:hover {
-  background: #1f2937;
-}
-.auth-alert {
-  padding: 10px 12px;
-  border-radius: 10px;
+
+.auth-foot {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
   font-size: 13px;
+  color: var(--auth-muted);
+  margin-top: 10px;
 }
-.auth-alert.error {
-  background: #fee2e2;
-  color: #b91c1c;
-}
+
 .auth-link {
-  color: #111827;
+  color: var(--auth-accent);
+  text-decoration: none;
   font-weight: 600;
+}
+
+.auth-link:hover {
   text-decoration: underline;
 }
+
 .auth-footnote {
-  margin-top: 14px;
-  display: flex;
-  gap: 8px;
-  align-items: center;
   font-size: 13px;
-  color: #9ca3af;
+  color: var(--auth-muted);
+  margin-bottom: 12px;
 }
+
+.auth-alert {
+  display: none;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid rgba(185, 28, 28, 0.2);
+  margin-bottom: 14px;
+}
+
+.auth-alert.error {
+  display: block;
+}
+
 .auth-loading {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.35);
+  background: var(--auth-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
-  backdrop-filter: blur(6px);
 }
-.auth-success-card {
-  background: #fff;
-  padding: 28px 30px;
-  border-radius: 18px;
+
+.auth-loading-card {
+  background: var(--auth-card);
+  border-radius: 20px;
+  padding: 26px 30px;
   text-align: center;
-  min-width: min(340px, 90vw);
-  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.2);
+  width: min(420px, 90vw);
 }
+
 .auth-success-icon {
-  width: 64px;
-  height: 64px;
+  width: 72px;
+  height: 72px;
   margin: 0 auto 16px;
-  border-radius: 999px;
-  background: #22c55e;
-  color: #fff;
+  border-radius: 50%;
+  background: var(--auth-accent-soft);
+  color: var(--auth-accent);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-size: 34px;
 }
-.auth-success-card h3 {
-  margin: 0 0 8px;
-  color: #111827;
+
+.page-loader {
+  position: fixed;
+  inset: 0;
+  background: var(--auth-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
 }
-.auth-success-card p {
-  margin: 0;
-  color: #6b7280;
+
+.page-loader--hide {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.page-loader-card {
+  text-align: center;
+  color: var(--auth-muted);
   font-size: 14px;
 }
-@media (max-width: 1060px) {
-  .auth-shell {
-    grid-template-columns: 1fr;
-  }
-  .auth-hero {
-    order: 2;
-  }
-  .auth-card {
-    order: 1;
-  }
+
+[data-theme="dark"] .auth-alert {
+  background: rgba(220, 38, 38, 0.15);
+  color: #fecaca;
+  border-color: rgba(248, 113, 113, 0.4);
 }
-@media (max-width: 720px) {
-  .auth-hero {
-    padding: 24px;
+
+.auth-help {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 10001;
+}
+
+.auth-help-toggle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--auth-border);
+  background: var(--auth-card);
+  color: var(--auth-primary);
+  font-weight: 700;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.15);
+}
+
+.auth-help-menu {
+  position: absolute;
+  right: 0;
+  bottom: 56px;
+  min-width: 220px;
+  background: var(--auth-card);
+  border: 1px solid var(--auth-border);
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.auth-help-menu::after {
+  content: "";
+  position: absolute;
+  right: 16px;
+  bottom: -6px;
+  width: 12px;
+  height: 12px;
+  background: var(--auth-card);
+  border-right: 1px solid var(--auth-border);
+  border-bottom: 1px solid var(--auth-border);
+  transform: rotate(45deg);
+}
+
+.auth-help-open .auth-help-menu {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.auth-help-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--auth-muted);
+  margin-bottom: 8px;
+}
+
+.auth-help-item,
+.auth-help-link {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--auth-primary);
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.auth-help-item:hover,
+.auth-help-link:hover {
+  background: rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="dark"] .auth-help-item:hover,
+[data-theme="dark"] .auth-help-link:hover {
+  background: rgba(148, 163, 184, 0.16);
+}
+
+.auth-help-divider {
+  height: 1px;
+  background: var(--auth-border);
+  margin: 8px 0;
+}
+
+@keyframes authPop {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (max-width: 600px) {
+  .auth-shell {
+    padding: 28px 22px 26px;
   }
-  .auth-card {
-    padding: 32px 24px;
+
+  .auth-header h1 {
+    font-size: 24px;
   }
 }
 </style>
-</body>
-</html>
