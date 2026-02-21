@@ -1,0 +1,1867 @@
+[
+  {
+    "name": "COLOMBO ANANDA COLLEGE",
+    "address": "COLOMBO 10",
+    "province": "1.Western"
+  },
+  {
+    "name": "COLOMBO NALANDA COLLEGE",
+    "address": "SIRI DAMMA MW, COLOMBO 10",
+    "province": "1.Western"
+  },
+  {
+    "name": "COLOMBO THURSTAN COLLEGE",
+    "address": "COLOMBO 07",
+    "province": "1.Western"
+  },
+  {
+    "name": "COLOMBO ROYAL COLLEGE",
+    "address": "RAJAKEEYA MW, COLOMBO 07",
+    "province": "1.Western"
+  },
+  {
+    "name": "COLOMBO D.S.SENANAYAKE COLLEGE",
+    "address": "R.G.SENANAYAKE MW, COLOMBO 07",
+    "province": "1.Western"
+  },
+  {
+    "name": "COLOMBO ANANDA B.V.",
+    "address": "REV. HIKKADUWA SRI SUMANGALA NAHIMI MW, COL",
+    "province": "1.Western"
+  },
+  {
+    "name": "COLOMBO GOTHAMI B.V.",
+    "address": "TEMPLE ROAD, COLOMBO 10",
+    "province": "1.Western"
+  },
+  {
+    "name": "HAMEED AL-HUSSEINIE COLLEGE",
+    "address": "45, HUSSEINIA ROAD, COLOMBO-12",
+    "province": "1.Western"
+  },
+  {
+    "name": "VIVEKANANDA NATIONAL SCHOOL",
+    "address": "57, NEW CHETTY STREET, COLOMBO-13",
+    "province": "1.Western"
+  },
+  {
+    "name": "KOTAHENA M.M.V.",
+    "address": "MAHA VIDYALA MW, COLOMBO 13",
+    "province": "1.Western"
+  },
+  {
+    "name": "COLOMBO MAHANAMA COLLEGE",
+    "address": "R A DE MEL MAWATHA, COLOMBO 03",
+    "province": "1.Western"
+  },
+  {
+    "name": "COLOMBO ISIPATHANA COLLEGE",
+    "address": "ISIPATHANA MW, COLOMBO-05",
+    "province": "1.Western"
+  },
+  {
+    "name": "BAMBALAPITIYA HINDU COLLEGE",
+    "address": "77, LORENZ ROAD, COLOMBO 04",
+    "province": "1.Western"
+  },
+  {
+    "name": "COLOMBO SIRIMAVO BANDARANAYAKE V.",
+    "address": "STANMORE CRESCENT, COLOMBO 07",
+    "province": "1.Western"
+  },
+  {
+    "name": "MILAGIRIYA ST. PAUL'S GIRL'S SCHOOL",
+    "address": "MILAGIRIYA, COLOMBO 05",
+    "province": "1.Western"
+  },
+  {
+    "name": "COLOMBO VISAKHA V.",
+    "address": "133, VAJIRA RD, COLOMBO 05",
+    "province": "1.Western"
+  },
+  {
+    "name": "BAMBALAPITIYA MUSLIM LADIES COLLEGE",
+    "address": "22, BAMBALAPITIYA, COLOMBO-04",
+    "province": "1.Western"
+  },
+  {
+    "name": "BAMBALAPITIYA RAMANATHAN HINDU LADIES COLLEGE",
+    "address": "55/5, LORENCE RD, COLOMBO-04",
+    "province": "1.Western"
+  },
+  {
+    "name": "COLOMBO LUMBINI V.",
+    "address": "HAVELOCK TOWN, COLOMBO 05",
+    "province": "1.Western"
+  },
+  {
+    "name": "DEFENCE SERVICES COLLEGE",
+    "address": "34, MALAY ST, COLOMBO-02",
+    "province": "1.Western"
+  },
+  {
+    "name": "COLOMBO DEVI B.V.",
+    "address": "COLOMBO-08",
+    "province": "1.Western"
+  },
+  {
+    "name": "AVISSAWELLA SEETHAWAKA M.M.V.",
+    "address": "AVISSAWELLA",
+    "province": "1.Western"
+  },
+  {
+    "name": "HANWELLA RAJASINGHE CENTRAL COLLEGE",
+    "address": "SCHOOL LANE, HANWELLA",
+    "province": "1.Western"
+  },
+  {
+    "name": "HOMAGAMA MAHINDA RAJAPAKSHA COLLEGE",
+    "address": "PITIPANA, HOMAGAMA",
+    "province": "1.Western"
+  },
+  {
+    "name": "SUNEETHA VIDYALAYA",
+    "address": "WATAREKA , PADUKKA",
+    "province": "1.Western"
+  },
+  {
+    "name": "DEHIWALA PRESBYTERIAN B.V",
+    "address": "DEHIWALA",
+    "province": "1.Western"
+  },
+  {
+    "name": "PILIYANDALA M.M.V.",
+    "address": "PILIYANDALA",
+    "province": "1.Western"
+  },
+  {
+    "name": "MORATUWA PRINCE OF WALES COLLEGE",
+    "address": "MORATUWA",
+    "province": "1.Western"
+  },
+  {
+    "name": "MORATUWA PRINCESS OF WALES' COLLEGE",
+    "address": "RAWATHAWATHA, MORATUWA",
+    "province": "1.Western"
+  },
+  {
+    "name": "BATTARAMULLA SUBHUTHI NATIONAL SCHOOL",
+    "address": "BATTARAMULLA",
+    "province": "1.Western"
+  },
+  {
+    "name": "BOMIRIYA CENTRAL COLLEGE",
+    "address": "KADUWELA",
+    "province": "1.Western"
+  },
+  {
+    "name": "KOLONNAWA BALIKA VIDYALAYA",
+    "address": "SUGUNASARA ROAD, KOLONNAWA",
+    "province": "1.Western"
+  },
+  {
+    "name": "KUDA BUTHGAMUWA SRI RAJASINGHE CENTRAL COLLE",
+    "address": "KUDA BUTHGAMUWA, MULLERIYAWA NEW TOWN",
+    "province": "1.Western"
+  },
+  {
+    "name": "PANNIPITIYA DHARMAPALA VIDYALAYA",
+    "address": "PANNIPITIYA",
+    "province": "1.Western"
+  },
+  {
+    "name": "KOTTE ANANDA SHASTHRALAYA",
+    "address": "KOTTE",
+    "province": "1.Western"
+  },
+  {
+    "name": "RAJAGIRIYA PRESIDENT'S COLLEGE",
+    "address": "RAJAGIRIYA",
+    "province": "1.Western"
+  },
+  {
+    "name": "NUGEGODA ANULA VIDYALAYA",
+    "address": "NUGEGODA",
+    "province": "1.Western"
+  },
+  {
+    "name": "VEYANGODA BANDARANAYAKE CENTRAL COLLEGE",
+    "address": "VEYANGODA",
+    "province": "1.Western"
+  },
+  {
+    "name": "NITTAMBUWA SANGABODHI M.M.V.",
+    "address": "NITTAMBUWA",
+    "province": "1.Western"
+  },
+  {
+    "name": "SIYANE NATIONAL SCHOOL",
+    "address": "PALUGAMA, DOMPE",
+    "province": "1.Western"
+  },
+  {
+    "name": "GAMPAHA BANDARANAYAKE M.V.",
+    "address": "YAKKALA ROAD, GAMPAHA",
+    "province": "1.Western"
+  },
+  {
+    "name": "GAMPAHA RATHNAWALEE BALIKA V.",
+    "address": "COLOMBO ROAD, GAMPAHA",
+    "province": "1.Western"
+  },
+  {
+    "name": "GALAHITIYAWA CENTRAL COLLEGE",
+    "address": "GALAHITIYAWA, GANEMULLA",
+    "province": "1.Western"
+  },
+  {
+    "name": "AL-MUBARAK NATIONAL SCHOOL",
+    "address": "MALWANA",
+    "province": "1.Western"
+  },
+  {
+    "name": "KIRIBATHGODA VIHARAMAHADEVI B.V.",
+    "address": "KIRIBATHGODA",
+    "province": "1.Western"
+  },
+  {
+    "name": "KELANIYA GURUKULA  V.",
+    "address": "KELANIYA",
+    "province": "1.Western"
+  },
+  {
+    "name": "KELANIYA SRI DHARMALOKA M.M.V",
+    "address": "WARAGODA RD, KELANIYA",
+    "province": "1.Western"
+  },
+  {
+    "name": "HENEGAMA CENTRAL COLLEGE",
+    "address": "HENEGAMA",
+    "province": "1.Western"
+  },
+  {
+    "name": "WATTALA ST. ANTHONY'S M.V.",
+    "address": "VINSTANT JHOSEP MW, OLD NEGOMBO RD,WATTALA",
+    "province": "1.Western"
+  },
+  {
+    "name": "MIRIGAMA D.S.SENANAYAKA NATIONAL SCHOOL",
+    "address": "MIRIGAMA",
+    "province": "1.Western"
+  },
+  {
+    "name": "MINUWANGODA NALANDA BOYS M.M.V",
+    "address": "MINUWANGODA",
+    "province": "1.Western"
+  },
+  {
+    "name": "UDUGAMPOLA SENERATH PARANAVITHANA M.V.",
+    "address": "UDUGAMPOLA",
+    "province": "1.Western"
+  },
+  {
+    "name": "JA-ELA CHRIST KING COLLEGE",
+    "address": "THUDELLA, JA-ELA",
+    "province": "1.Western"
+  },
+  {
+    "name": "KOTUGODA SRI PANGNANANDA NATIONAL COLLEGE",
+    "address": "RADDOLUWA, KOTUGODA",
+    "province": "1.Western"
+  },
+  {
+    "name": "NEGOMBO NEWSTEAD GIRLS COLLEGE",
+    "address": "NEGOMBO",
+    "province": "1.Western"
+  },
+  {
+    "name": "NEGOMBO HARISHCHANDRA NATIONAL SCHOOL",
+    "address": "TEMPLE RD, NEGOMBO",
+    "province": "1.Western"
+  },
+  {
+    "name": "BANDARAGAMA M.M.V.",
+    "address": "BANDARAGAMA",
+    "province": "1.Western"
+  },
+  {
+    "name": "BULATHSINHALA M.M.V",
+    "address": "BULATHSINHALA",
+    "province": "1.Western"
+  },
+  {
+    "name": "HORANA SRIPALEE M.V.",
+    "address": "WEWALA, HORANA",
+    "province": "1.Western"
+  },
+  {
+    "name": "HORANA RAJAKEEYA M.V.",
+    "address": "HORANA",
+    "province": "1.Western"
+  },
+  {
+    "name": "HORANA TAXILA M.M.V",
+    "address": "AGURUWATHOTA ROAD, HORANA",
+    "province": "1.Western"
+  },
+  {
+    "name": "BERUWALA AL HUMAISARA CENTRAL COLLEGE",
+    "address": "CHINA FORT BERUWALA",
+    "province": "1.Western"
+  },
+  {
+    "name": "ALUTHGAM WEEDIYA MUSLIM BALIKA M.V.",
+    "address": "DHARGA TOWN",
+    "province": "1.Western"
+  },
+  {
+    "name": "ALUTHGAMA NATIONAL SCHOOL",
+    "address": "ALUTHGAMA",
+    "province": "1.Western"
+  },
+  {
+    "name": "D S SENANAYAKA NATIONAL SCHOOL",
+    "address": "BERUWALA",
+    "province": "1.Western"
+  },
+  {
+    "name": "DODANGODA MIRISWATTA NATIONAL SCHOOL",
+    "address": "DODANGODA",
+    "province": "1.Western"
+  },
+  {
+    "name": "KALUTARA M.V.",
+    "address": "KALUTARA SOUTH",
+    "province": "1.Western"
+  },
+  {
+    "name": "KALUTARA BALIKA M.V.",
+    "address": "OLD ROAD, KALUTARA SOUTH",
+    "province": "1.Western"
+  },
+  {
+    "name": "KALUTARA TISSA M.M.V.",
+    "address": "NAGAS JUNCTION, KALUTARA NORTH",
+    "province": "1.Western"
+  },
+  {
+    "name": "PANADURA SRI SUMANGALA COLLEGE",
+    "address": "HORANA ROAD, PANADURA",
+    "province": "1.Western"
+  },
+  {
+    "name": "PANADURA SRI SUMANGALA BALIKA M.V.",
+    "address": "NALLURUWA, PANADURA",
+    "province": "1.Western"
+  },
+  {
+    "name": "PANADURA ST. JOHN'S M.V.",
+    "address": "UDAHAMULLA, PANADURA",
+    "province": "1.Western"
+  },
+  {
+    "name": "MATUGAMA ANANDA SASTRALAYA",
+    "address": "MATUGAMA",
+    "province": "1.Western"
+  },
+  {
+    "name": "MATUGAMA C.W.W. KANNANGARA M.M.V.",
+    "address": "MATUGAMA",
+    "province": "1.Western"
+  },
+  {
+    "name": "D.B.WIJETHUNGA N.S",
+    "address": "MURUTHAGAHAMULA",
+    "province": "2.Central"
+  },
+  {
+    "name": "AL-MANAR CENTRAL COLLEGE(N.S.)",
+    "address": "HANDESSA",
+    "province": "2.Central"
+  },
+  {
+    "name": "KADUGANNAWA N.S",
+    "address": "KADUGANNAWA",
+    "province": "2.Central"
+  },
+  {
+    "name": "SRI SWARNAJOTHI NATINAL SCHOOL",
+    "address": "KIRIBATHIKUBURA",
+    "province": "2.Central"
+  },
+  {
+    "name": "SENADHIKARI NATIONAL SCHOOL",
+    "address": "UDAHENTHENNA",
+    "province": "2.Central"
+  },
+  {
+    "name": "ANURUDDA KUMARA MMV",
+    "address": "NAWALAPITIYA",
+    "province": "2.Central"
+  },
+  {
+    "name": "GAMPOLA ZAHIRA NATIONAL SCHOOL",
+    "address": "GAMPOLA",
+    "province": "2.Central"
+  },
+  {
+    "name": "GAMPOLA WICKRAMABAHU MADYA VIDYALAYA",
+    "address": "GAMPOLA",
+    "province": "2.Central"
+  },
+  {
+    "name": "ATABAGE WIMALADHARMA N.S.",
+    "address": "ATABAGE, GAMPOLA",
+    "province": "2.Central"
+  },
+  {
+    "name": "HINDU N.S.",
+    "address": "NUWARA ELIYA ROAD, PUSSELLAWA",
+    "province": "2.Central"
+  },
+  {
+    "name": "KANDY DHARMARAJA COLLEGE",
+    "address": "KANDY",
+    "province": "2.Central"
+  },
+  {
+    "name": "KANDY KINGSWOOD COLLEGE",
+    "address": "KANDY",
+    "province": "2.Central"
+  },
+  {
+    "name": "KANDY MAHAMAYA GIRLS COLLEGE",
+    "address": "KANDY",
+    "province": "2.Central"
+  },
+  {
+    "name": "KANDY GIRL'S HIGH SCHOOL",
+    "address": "KANDY",
+    "province": "2.Central"
+  },
+  {
+    "name": "KANDY BADI-DU-DIN MAHMUD GIRLS' COLLEGE",
+    "address": "D.S.SENANAYAKA VEEDIYA, KANDY",
+    "province": "2.Central"
+  },
+  {
+    "name": "KATUGASTOTA SRI RAHULA COLLEGE",
+    "address": "KATUGASTOTA",
+    "province": "2.Central"
+  },
+  {
+    "name": "KANDY PUSHPADANA GIRLS' COLLEGE",
+    "address": "KANDY",
+    "province": "2.Central"
+  },
+  {
+    "name": "BOPITIYA RAJASINGHE N.S.",
+    "address": "POTHGODA, MARASSANA",
+    "province": "2.Central"
+  },
+  {
+    "name": "MARASSANA N.S.",
+    "address": "MERUPPA, MARASSANA",
+    "province": "2.Central"
+  },
+  {
+    "name": "ALAWATHUGODA M.M.V",
+    "address": "ALAWATHUGODA",
+    "province": "2.Central"
+  },
+  {
+    "name": "AKURANA AZHAR CENTRAL COLLEGE",
+    "address": "AKURANA",
+    "province": "2.Central"
+  },
+  {
+    "name": "AKURANA ZAHIRA MUS.M.M.V.",
+    "address": "BULUGAHATHENNA, AKURANA",
+    "province": "2.Central"
+  },
+  {
+    "name": "GALAGEDARA M.M.V.",
+    "address": "GALAGEDARA",
+    "province": "2.Central"
+  },
+  {
+    "name": "GALAGEDARA SUJATHA BALIKA.M.M.V.",
+    "address": "GALAGEDARA",
+    "province": "2.Central"
+  },
+  {
+    "name": "NUGAWELA.M.M.V.",
+    "address": "NUGAWELA",
+    "province": "2.Central"
+  },
+  {
+    "name": "HATHARALIYADDA M. M. V.",
+    "address": "HATHARALIYADDA",
+    "province": "2.Central"
+  },
+  {
+    "name": "POOJAPITIYA M.M.V.",
+    "address": "POOJAPITIYA",
+    "province": "2.Central"
+  },
+  {
+    "name": "ANKUMBURA PARAKRAMA M. M. V.",
+    "address": "ANKUMBURA",
+    "province": "2.Central"
+  },
+  {
+    "name": "AL-MANAR MUS.M.V.",
+    "address": "GALHINNA",
+    "province": "2.Central"
+  },
+  {
+    "name": "TELDENIYA NATIONAL SCHOOL",
+    "address": "TELDENIYA",
+    "province": "2.Central"
+  },
+  {
+    "name": "AMUPITIYA N.S.",
+    "address": "UDISPATHTHUWA",
+    "province": "2.Central"
+  },
+  {
+    "name": "HASALAKA RANASINGHE PREMADASA NATIONAL SCHOO",
+    "address": "HASALAKA",
+    "province": "2.Central"
+  },
+  {
+    "name": "DIGANA RAJAWELLA HINDU N.C.",
+    "address": "RAJAWELLA, DIGANA",
+    "province": "2.Central"
+  },
+  {
+    "name": "S.W.R.D.BANDARANAYAKE N.S.",
+    "address": "WARAPITIYA, KUNDASALE",
+    "province": "2.Central"
+  },
+  {
+    "name": "MADAWALA MADINA N S",
+    "address": "MADAWALA BAZAAR",
+    "province": "2.Central"
+  },
+  {
+    "name": "RANGIRI DAMBULLA CENTRAL COLLEGE",
+    "address": "NISSANKA MAWATHA, DAMBULLA",
+    "province": "2.Central"
+  },
+  {
+    "name": "AKURAMBODA WEERA KEPPETIPOLA NATIONAL SCHOO",
+    "address": "AKURAMBODA",
+    "province": "2.Central"
+  },
+  {
+    "name": "MATALE ZAHIRA COLLEGE",
+    "address": "MATALE",
+    "province": "2.Central"
+  },
+  {
+    "name": "MATALE HINDU NATIONAL SCHOOL",
+    "address": "MATALE",
+    "province": "2.Central"
+  },
+  {
+    "name": "MATALE SRI SANGAMITHTHA BALIKA NATIONAL SCHOO",
+    "address": "HULANGAMUWA ROAD MATALE",
+    "province": "2.Central"
+  },
+  {
+    "name": "MATALE AMINA NATIONAL SCHOOL",
+    "address": "MOLANDAPITIYA RD, MATALE",
+    "province": "2.Central"
+  },
+  {
+    "name": "AKURAMBODA MATALE PAKKIYAM NATIONAL COLLEGE",
+    "address": "DHRAMAPALA MAWATHA, MATALE",
+    "province": "2.Central"
+  },
+  {
+    "name": "MATALE VIJAYA NATIONAL SCHOOL",
+    "address": "MATALE",
+    "province": "2.Central"
+  },
+  {
+    "name": "MATALE CHRIST CHURCH COLLEGE",
+    "address": "MATALE",
+    "province": "2.Central"
+  },
+  {
+    "name": "MATALE ST. THOMAS COLLEGE",
+    "address": "MATALE",
+    "province": "2.Central"
+  },
+  {
+    "name": "UKUWELA AJMEER NATIONAL SCHOOL",
+    "address": "ELKADUWA, UKUWELA",
+    "province": "2.Central"
+  },
+  {
+    "name": "NAULA SRI NAGA NATIONAL SCHOOL",
+    "address": "NAULA",
+    "province": "2.Central"
+  },
+  {
+    "name": "PORAMADULLA CENTRAL COLLEGE",
+    "address": "RIKILLAGASKADA",
+    "province": "2.Central"
+  },
+  {
+    "name": "VICTORIA NATIONAL SCHOOL",
+    "address": "RAJAMAWATHA ADIKARIGAMA",
+    "province": "2.Central"
+  },
+  {
+    "name": "JAYAHELA NATIONAL SCHOOL",
+    "address": "PUNDALUOYA",
+    "province": "2.Central"
+  },
+  {
+    "name": "GAMINI DISSANAYAKE N.S.",
+    "address": "NEW TOWN, KOTMALE",
+    "province": "2.Central"
+  },
+  {
+    "name": "AL-MINHAJ N.S.",
+    "address": "HAPUGASTHALAWA, NAWALAPITIYA",
+    "province": "2.Central"
+  },
+  {
+    "name": "NUWARA ELIYA GAMINI CENTRAL COLLEGE",
+    "address": "NUWARA ELIYA",
+    "province": "2.Central"
+  },
+  {
+    "name": "SRI SUMANGALA NC",
+    "address": "NILDANDAHINNA",
+    "province": "2.Central"
+  },
+  {
+    "name": "AMBALANGODA SRI DEVANANDA COLLEGE",
+    "address": "AMBALANGODA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "AMBALANGODA DHARMASHOKA COLLEGE",
+    "address": "AMBALANGODA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "BALAPITIYA REWATHA NATIONAL COLLEGE",
+    "address": "SIR LALITHA RAJAPAKSHA MAWATHA, BALAPITIYA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "RATHGAMA DEVAPATHIRAJA COLLEGE",
+    "address": "RATHGAMA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "SRI SUMANGALA M.M.V.",
+    "address": "NALAGASDENIYA, HIKKADUWA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "BENTHOTA GAMINI M.M.V",
+    "address": "BENTHOTA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "ELPITIYA ANANDA M.V.",
+    "address": "ELPITIYA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "KARANDENIYA CENTRAL COLLEGE",
+    "address": "KARANDENIYA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "UPANANDA VIDYALAYA",
+    "address": "MANAWILA WALAHANDUWA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "MEEPAWALA AMARASURIYA COLLEGE",
+    "address": "MEEPAWALA, PODDALA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "LABUDUWA SIRIDHAMMA COLLEGE",
+    "address": "LABUDUWA,  AKMEEMANA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "BADDEGAMA CHRIST CHURCH BOY'S COLLEGE",
+    "address": "BADDEGAMA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "BADDEGAMA CHRIST CHURCH GIRLS' COLLEGE",
+    "address": "BADDEGAMA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "WANDURAMBA CENTRAL COLLEGE",
+    "address": "WANDURAMBA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "GALLE MAHINDA COLLEGE",
+    "address": "WOODWARD MAWATHA GALLE",
+    "province": "3.Southern"
+  },
+  {
+    "name": "GALLE RICHMOND COLLEGE",
+    "address": "RICHMOND HILL, GALLE",
+    "province": "3.Southern"
+  },
+  {
+    "name": "GALLE ST. ALOYSIUS COLLEGE",
+    "address": "KALUWELLA GALLE",
+    "province": "3.Southern"
+  },
+  {
+    "name": "GALLE VIDYALOKA COLLEGE",
+    "address": "WACKWELLA ROAD, GALLE",
+    "province": "3.Southern"
+  },
+  {
+    "name": "GALLE RIPPON GIRLS COLLEGE",
+    "address": "RICHMAN HILL, GALLE",
+    "province": "3.Southern"
+  },
+  {
+    "name": "GALLE SANGHAMITHTHA BALIKA VIDYALAYA",
+    "address": "WACKWELLA ROAD, GALLE",
+    "province": "3.Southern"
+  },
+  {
+    "name": "GALLE SOUTHLAND COLLEGE",
+    "address": "FORT -GALLE",
+    "province": "3.Southern"
+  },
+  {
+    "name": "GALLE MALHARSULHIYA CENTRAL COLLEGE",
+    "address": "H.K.EDMOND MAWATHA, GALLE",
+    "province": "3.Southern"
+  },
+  {
+    "name": "GINTOTA ZAHIRA COLLEGE (N.S.)",
+    "address": "KURUDWATTA, GINTOTA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "BUONAVISTA COLLEGE",
+    "address": "UNAWATUNA GALLE",
+    "province": "3.Southern"
+  },
+  {
+    "name": "KATHALUWA CENTRAL COLLEGE",
+    "address": "KATHALUWA, AHANGAMA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "BATEMULLA NATIONAL SCHOOL",
+    "address": "IMADUWA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "NAGODA ROYAL NATIONAL SCHOOL",
+    "address": "NAGODA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "THAWALAMA VIDYARAJA NATIONAL SCHOOL",
+    "address": "THAWALAMA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "NELUWA NATIONAL SCHOOL",
+    "address": "NELUWA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "AKURESSA GODAPITIYA NATIONAL SCHOOL",
+    "address": "MATARA ROAD, AKURESSA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "THELIJJAWILA CENTRAL COLLEGE",
+    "address": "THELIJJAWILA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "DEVINUWARA CENTRAL COLLEGE",
+    "address": "DEVINUWARA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "DICKWELLA VIJITHA CENTRAL COLLEGE",
+    "address": "MAHAWELA ROAD, DICKWELLA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "DICKWELLA MINHATH N.S.",
+    "address": "SANDIS ROAD, DICKWELLA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "MATARA RAHULA COLLEGE",
+    "address": "MATARA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "MATARA ST. THOMAS BOYS COLLEGE",
+    "address": "KUMARATHUNGA MAWATHA, MATARA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "MATARA ST. SERVETIOUS COLLEGE",
+    "address": "KOTUWEGODA, MATARA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "MATARA SUJATHA VIDYALAYA",
+    "address": "MATARA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "MATARA ST.THOMAS GIRL'S HIGH SCH0OL",
+    "address": "WALPOLA, MATARA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "MATARA CENTRAL COLLEGE",
+    "address": "RAHULA ROAD, MATARA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "MATARA MAHINDA RAJAPAKSHA COLLEGE",
+    "address": "SARASAVI UYANA, MATARA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "WELIGAMA SIDDARTHA COLLEGE",
+    "address": "HETTIWEDIYA, WELIGAMA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "WELIGAMA SRI SUMANGALA BALIKA VIDYALAYA",
+    "address": "WELIGAMA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "ARAFA CENTRAL COLLEGE",
+    "address": "GALBOKKA, WELIGAMA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "DENIYAYA CENTRAL COLLEGE",
+    "address": "DENIYAYA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "MORAWKA KEERTHI ABEYWICKRAMA NATIONAL SCHOO",
+    "address": "DENIYAYA RD, MORAWAKA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "KOTAPOLA N.S.",
+    "address": "KOTAPOLA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "URUBOKKA NATIONAL SCHOOL",
+    "address": "URUBOKKA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "KAMBURUPIYIYA NARANDENIYA M.M.V.",
+    "address": "KAMBURUPIYIYA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "DEYIYANDARA NATIONAL SCHOOL",
+    "address": "DEYIYANDARA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "THIHAGODA M.M.V.",
+    "address": "THIHAGODA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "HUNGAMA VIJAYABA NATIONAL SCHOOL",
+    "address": "HUNGAMA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "AMBALANTOTA THERAPUTHTHA N.S",
+    "address": "AMBALANTOTA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "HAMBANTOTA ST.MARY'S COLLEGE",
+    "address": "HAMBANTOTA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "HAMBANTOTA TZU-CHI NATIONAL SCHOOL",
+    "address": "SIRIBOPURA, HAMBANTOTA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "HAMABANTOTA ZAHIRA N.S.",
+    "address": "HAMABANTOTA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "SOORIYAWEWA N.S",
+    "address": "VIDYALA MAWATHA, SOORIYAWEWA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "THISSAMAHARAMA DEBARAWEWA  CENTRAL SCHOOL",
+    "address": "DEBARAWEWA, THISSAMAHARAMA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "ANGUNAKOLAPELESSA MAHANAGA NATIONAL SCHOOL",
+    "address": "ANGUNAKOLAPELESSA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "GATAMANNA VIJAYA NATIONAL SCHOOL",
+    "address": "GATAMANNA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "BELIATTA RUHUNU VIJAYABA NATIONAL COLLEGE",
+    "address": "SITINAMALUWA, BELIATTA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "TANGALLE BOYS NATIONAL SCHOOL",
+    "address": "TANGALLE",
+    "province": "3.Southern"
+  },
+  {
+    "name": "TANGALLE BALIKA VIDYALAYA",
+    "address": "TANGALLE",
+    "province": "3.Southern"
+  },
+  {
+    "name": "KATUWANA NATIONAL SCHOOL",
+    "address": "KATUWANA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "SRI LANKA SINGAPORE FRIENSHIP COLLEGE",
+    "address": "KONDAGALA, WEERAKATIYA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "WALASMULLA NATIONAL SCHOOL",
+    "address": "WALASMULLA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "WEERAKETIYA RAJAPAKSHA CENTTAL COLLEGE",
+    "address": "WEERAKETIYA",
+    "province": "3.Southern"
+  },
+  {
+    "name": "JAFFNA CENTRAL COLLEGE",
+    "address": "JAFFNA",
+    "province": "4.Northern"
+  },
+  {
+    "name": "JAFFNA HOLY FAMILY CONVENT NATIONAL SCHOOL",
+    "address": "VEMBADY ROAD, JAFFNA",
+    "province": "4.Northern"
+  },
+  {
+    "name": "JAFFNA VEMBADI GIRLS HIGH SCHOOL",
+    "address": "1ST CROSS STREET, JAFFNA",
+    "province": "4.Northern"
+  },
+  {
+    "name": "JAFFNA HINDU COLLEGE",
+    "address": "KKS ROAD JAFFNA",
+    "province": "4.Northern"
+  },
+  {
+    "name": "CHAVAKACHCHERI HINDU COLLEGE",
+    "address": "KANDY ROAD, CHAVAKACHCHERI",
+    "province": "4.Northern"
+  },
+  {
+    "name": "NELLIADY CENTRAL COLLEGE",
+    "address": "KARAVEDDY",
+    "province": "4.Northern"
+  },
+  {
+    "name": "MANIPAY HINDU COLLEGE (NATIONAL SCHOOL)",
+    "address": "SANGARAPILLAI ROAD, MANIPAY",
+    "province": "4.Northern"
+  },
+  {
+    "name": "MANNAR ST. XAVIERS BOYS COLLEGE",
+    "address": "SINNAKADAI, MANNAR",
+    "province": "4.Northern"
+  },
+  {
+    "name": "MANNAR ST. XAVIER'S GIRLS' COLLEGE",
+    "address": "SINNAKADAI, MANNAR",
+    "province": "4.Northern"
+  },
+  {
+    "name": "SITHIVINAYAGAR HINDU COLLEGE",
+    "address": "UPPUKULAM MANNAR",
+    "province": "4.Northern"
+  },
+  {
+    "name": "AL-AZHAR M.V.",
+    "address": "MOORSTREET, MANNAR",
+    "province": "4.Northern"
+  },
+  {
+    "name": "MUSALI NATIONAL SCHOOL",
+    "address": "MUSALI, CHILAWATHUARI",
+    "province": "4.Northern"
+  },
+  {
+    "name": "MADUKANDA  MAHA VIDIYALAYA (NATIONAL SCHOOL)",
+    "address": "MADUKANDA VAVUNIYA",
+    "province": "4.Northern"
+  },
+  {
+    "name": "GAMINI NATIONAL SCHOOL",
+    "address": "MANNAR ROAD VAVUNIYA",
+    "province": "4.Northern"
+  },
+  {
+    "name": "VAVUNIYA RAMBAIKULAM GIRLS MAHA VIDYALAYAM",
+    "address": "RAMBAIKULAM VAVUNIYA",
+    "province": "4.Northern"
+  },
+  {
+    "name": "VAVUNIYA TAMIL M.M.V.",
+    "address": "KANDY ROAD, VAVUNIYA",
+    "province": "4.Northern"
+  },
+  {
+    "name": "VAVUNIYA MUSLIM MAHA VIDYALAYAM",
+    "address": "MANNAR ROAD PADDANICHOOR VAVUNIYA",
+    "province": "4.Northern"
+  },
+  {
+    "name": "MULLIYAWALAI VIDYANANDA COLLEGE",
+    "address": "MULLIYAWALAI",
+    "province": "4.Northern"
+  },
+  {
+    "name": "SAMPATH NUWARA N.S.",
+    "address": "SAMPATHNUWARA, WELIOYA, ETHAWETUNUWEWA",
+    "province": "4.Northern"
+  },
+  {
+    "name": "MALLAVI CENTRAL COLLEGE",
+    "address": "YOGAPURAM",
+    "province": "4.Northern"
+  },
+  {
+    "name": "KILINOCHCHI MADHYA MAHA VIDYALAYAM",
+    "address": "A9 ROAD, ANANTHAPURAM, KILINOCHCHI",
+    "province": "4.Northern"
+  },
+  {
+    "name": "MULANKAVIL MAHA VIDYALAYAM",
+    "address": "VINAYAKAPURAM, POONAKARY",
+    "province": "4.Northern"
+  },
+  {
+    "name": "BATTICALOA ST. MICHAEL'S COLLEGE",
+    "address": "1 CENTRAL ROAD, BATTICALOA",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "SHIVANANDA VIDYALAYAM",
+    "address": "KALLADY UPPODAI, BATTICALOA",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "BATTICALOA VINCENT GIRLS' HIGH SCHOOL",
+    "address": "CHAPEL STREET, BATTICALOA",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "BATTICALOA ST. CECILIA'S GIRLS' COLLEGE",
+    "address": "2ND CROSS ROAD, BATTICALOA",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "MACAN MARKAR MAHA VIDYALAYA",
+    "address": "MEERAKERNY ROAD, ERAVUR",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "ALIGHAR CENTRAL COLLEGE",
+    "address": "MAIN STREET, ERAVUR",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "KATTANKUDY MEERA BALIKA MAHA VIDYALAYAM",
+    "address": "MAIN STREET, KATTANKUDY",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "KATTANKUDY MADYA MAHA VIDYALAYAM",
+    "address": "322, BEACH ROAD, NEW KATTANKUDY 06",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "ODDAMAVADI CENTERL COLLEGE",
+    "address": "ODDAMAVADI",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "VALAICHEANAI AN-NOOR MAHA VIDYALAYAM",
+    "address": "MAIN CROSS ROAD, VALACHEANAI-5",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "VALAICHENAI HINDU COLLEGE",
+    "address": "KALKUDAH ROAD, VALAICHENAI",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "PADDIRUPPU MADHYA MAHA VIDYALAYAM",
+    "address": "KALUWANCHIKUDY - 30200",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "KALUTHAVALAI MAHA VIDYALAYAM",
+    "address": "KALUTHAVALAI, PADDIRIPPU",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "ADDALAICENAI M.M.V.",
+    "address": "MAIN STREET ADDALAICENAI",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "AKKARAIPATTU MUSLIM CENTRAL COLLEGE (NATIONAL",
+    "address": "AKKARAIPATTU-06",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "POTTUVIL CENTRAL COLLEGE",
+    "address": "R.M.NAGAR, POTTUVIL-27",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "AMPARA BANDARANAYAKA BALIKA MAHA VIDYALAYA",
+    "address": "AMPARA",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "AMPARA D.S.SENANAYAKA MADYA MAHA VIDYALAYA",
+    "address": "AMPARA",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "UHANA MAHA VIDYALAYA",
+    "address": "UHANA",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "DEHIATTAKANDIYA M.M.V.",
+    "address": "DEHIATTAKANDIYA",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "KALMUNAI CARMEL FATIMA COLLEGE (NATIONAL SCHO",
+    "address": "YARD ROAD, KALMUNAI - 01B",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "AL-ASHRAQ MADYA MAHA VIDYALAYA (NATIONAL SCHO",
+    "address": "MAIN STREET, NINTAVUR-25",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "SAINTHAMARUTHU ZAHIRA COLLEGE",
+    "address": "ZAHIRA COLLEGE ROAD, SAINTHAMARUTHU - 02",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "PADIYATHALAWA NATIONAL SCHOOL",
+    "address": "PADIYATHALAWA",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "IRAKKAMAM ASHRAF CENTRAL COLLEGE",
+    "address": "IRAKKAMAM-09",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "SAMMANTHURAI AL-MARJAN MUSLIM LADIES COLLEGE",
+    "address": "AMPARA ROAD, SAMMANTHURAI",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "SAMMANTHURAI MUSLIM MADYA MAHA VIDYALAYAM",
+    "address": "AMPARA ROAD, SAMMANTHURAI",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "SRI RAMAKRISHNA COLLEGE",
+    "address": "AKKARAIPATTU",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "THAMBILUVIL MADHYA MAHA VIDYALAYAM (NS)",
+    "address": "MAIN STREET, THAMBILUVIL",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "KANTHALE AGRABODHI NATIONAL SCHOOL",
+    "address": "KANTHALE",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "KINNIYA CENTRAL COLLEGE",
+    "address": "MAIN STREET, KINNIYA-05",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "KINNIYA MUSLIM GIRLS' MAHA VIDYALAYAM",
+    "address": "PERIYA KINNIYA, KINNIYA-06",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "KINNIYA AL-AQSHA COLLEGE",
+    "address": "MAIN STREET, KINNIYA",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "MUTTUR CENTRAL COLLEGE",
+    "address": "KNOX ROAD, MUTUR-05",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "TRINCOMALEE R.K.M.SRI KONESWARA HINDU COLLEGE",
+    "address": "246, DOCKYARD ROAD TRINCOMALEE",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "TRINCOMALEE ST. JOSEPH'S COLLEGE",
+    "address": "POWER HOUSE ROAD, TRINCOMALEE",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "TRINCOMALEE SRI SHANMUGA HINDU LADIES' COLLEGE",
+    "address": "VIDYALAYAM ROAD, TRINCOMALEE",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "TRINCOMALEE ST. MARY'S COLLEGE",
+    "address": "DOCKYARD ROAD, TRINCOMALEE",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "SINHALA MADYA MAHA VIDYALAYA",
+    "address": "INNER HARBOUR ROAD, TRINCOMALEE",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "RAJAKEEYA VIDYALOKA M.V. (N.S.) -TRINCOMALEE",
+    "address": "NORTH COAST ROAD, TRINCOMALEE",
+    "province": "5.Eastern"
+  },
+  {
+    "name": "NARAMMALA MAYURAPADA N.S.",
+    "address": "NARAMMALA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "ALAWWA SRI RAHULA N.S",
+    "address": "ALAWWA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "NAKKAWATTTHA M.M.V.",
+    "address": "NAKKAWATTA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "SIYAMBALAGASKOTUWA MADEENA NATIONAL SCHOOL",
+    "address": "SIYAMBALAGASKOTUWA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "KEKUNAGOLLA NATIONAL SCHOOL",
+    "address": "KEKUNAGOLLA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "GIRIULLA WICKRAMASHILA N.S.",
+    "address": "GIRIULLA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "PANNALA NATIONAL SCHOOL",
+    "address": "PANNALA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "SANDALANKA  M.M.V.",
+    "address": "SANDALANKAWA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "GANEWATHTHA S.B.HERATH M.M.V.",
+    "address": "GANEWATHTHA, NIKADALUPOTHA.",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "IBBAGAMUWA CENTRAL COLLEGE",
+    "address": "IBBAGAMUWA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "BINGIRIYA SRI SARANANKARA NATIONAL SCHOOL",
+    "address": "BINGIRIYA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "KULIYAPITIYA CENTRAL COLLEAGE",
+    "address": "MEEGAHAKOTUWA KULIYAPITIYA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "KULIYAPITIYA SARANATH VIDYALAYA",
+    "address": "KULIYAPITIYA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "PANDUWASNUWARA S.W.R.D.BANDARANAYAKA NATIO",
+    "address": "PANDUWASNUWARA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "DUMMALASOORIYA J.R.JAYAWARDANA M.M.V.",
+    "address": "DUMMALASOORIYA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "KURUNEGALA MALIYADEVA COLLEGE",
+    "address": "NEGOMBO ROAD, KURUNEGALA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "KURUNEGALA MALIYADEVA BALIKA VIDYALAYA",
+    "address": "COLOMBO ROAD, KURUNEGALA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "KURUNEGALA VISHVODA NATIONAL SCHOOL",
+    "address": "BOYAGANE, KURUNEGALA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "MAWATHAGAMA M.M.V.",
+    "address": "KANDY ROAD, MAWATHAGAMA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "PARAGAHADENIYA NATIONAL SCHOOL",
+    "address": "PARAGAHADENIYA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "SRI NISHSHANKA M.M.V. (N.S.) - INDULGODAKANDA",
+    "address": "INDULGODAKANDA KURUNEGALA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "POLGAHAWELA PARAKRAMABAHU MADYA MAHA VIDY",
+    "address": "POLGAHAWELA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "GALGAMUWA U B WANNINAYA NATIONAL COLLEGE",
+    "address": "NANNERIYA ROAD, GALGAMUWA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "MEEGALEWA MAHWELI N.S.",
+    "address": "MEEGALEWA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "PERAKUMPURA NATIONAL SCHOOL",
+    "address": "R.L.B. TRACK 03, SOLEPURA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "MAHO VIJAYABA N.S.",
+    "address": "MAHO",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "POLPITHIGAMA N.S.",
+    "address": "POLPITHIGAMA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "SRI PARACKRAMA N.S.",
+    "address": "KOBEIGANE",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "NIKAWERATIYA MAHASEN N.S.",
+    "address": "NIKAWERATIYA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "WARIYAPOLA SRI SUMANGALA M.M.V.",
+    "address": "WARIYAPOLA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "CHILAW ANANDA NATIONAL SCHOOL",
+    "address": "COLOMBO ROAD, CHILAW",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "MADAMPE SENANAYAKA NATIONAL SCHOOL",
+    "address": "MADAMPE",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "NATHTHANDIYA DHAMMISSARA NATIONAL SCHOOL",
+    "address": "NATHTHANDIYA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "WENNAPPUWA ST. JOSEPH VAZ COLLEGE",
+    "address": "WENNAPPUWA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "KALPITIYA AL-AQSHA NATIOAL SCHOOL",
+    "address": "U M U ROAD, KALPITIYA",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "ANANDA NATIONAL SCHOOL",
+    "address": "PUTTLAM",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "PUTTALAM ZAHIRA COLLEGE",
+    "address": "MANNAR ROAD  PUTTALAM",
+    "province": "6.North Weste"
+  },
+  {
+    "name": "ANURADHAPURA SWARNAPALI GIRLS COLLEGE",
+    "address": "ANURADHAPURA",
+    "province": "7.North Centra"
+  },
+  {
+    "name": "ANURADHAPURA ZAHIRA COLLEGE",
+    "address": "ANURADHAPURA",
+    "province": "7.North Centra"
+  },
+  {
+    "name": "ANURADHAPURA CENTRAL COLLEGE",
+    "address": "ANURADHAPURA",
+    "province": "7.North Centra"
+  },
+  {
+    "name": "MEDAWACHCHIYA MAITHRIPALA SENANAYAKA CENTRA",
+    "address": "MEDAWACHCHIYA",
+    "province": "7.North Centra"
+  },
+  {
+    "name": "KEKIRAWA CENTRAL COLLEGE",
+    "address": "KEKIRAWA",
+    "province": "7.North Centra"
+  },
+  {
+    "name": "EPPAWALA SRI SIDDARTHA MAHA VIDYALAYA",
+    "address": "EPPAWALA",
+    "province": "7.North Centra"
+  },
+  {
+    "name": "VILAYAYA C.C",
+    "address": "ARALAGANWILA",
+    "province": "7.North Centra"
+  },
+  {
+    "name": "BAKAMUNA MAHASEN MADYA MAHA VIDYALAYA",
+    "address": "BAKAMUNA",
+    "province": "7.North Centra"
+  },
+  {
+    "name": "ANANDA BALIKA N.S",
+    "address": "HINGURAKGODA",
+    "province": "7.North Centra"
+  },
+  {
+    "name": "HINGURAKGODA MINNERIYA N.S.",
+    "address": "HINGURAKGODA",
+    "province": "7.North Centra"
+  },
+  {
+    "name": "MEDIRIGIRIYA NATIONAL SCHOOL",
+    "address": "MEDIRIGIRIYA",
+    "province": "7.North Centra"
+  },
+  {
+    "name": "DIVULANKADAWALA CENTRAL COLLEGE",
+    "address": "DIVULANKADAWALA",
+    "province": "7.North Centra"
+  },
+  {
+    "name": "POLONNARUWA THOPAWEWA MAHA VIDYALAYA",
+    "address": "POLONNARUWA",
+    "province": "7.North Centra"
+  },
+  {
+    "name": "POLONNARUWA ROYAL CENTRAL COLLEGE",
+    "address": "NEW TOWN, POLONNARUWA",
+    "province": "7.North Centra"
+  },
+  {
+    "name": "POLONNARUWA MUSLIM CENTRAL COLLEGE",
+    "address": "KADURUWELA POLONNARUWA",
+    "province": "7.North Centra"
+  },
+  {
+    "name": "BADULLA DHARMADUTHA NATIONAL COLLEGE",
+    "address": "BADULLA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "BADULLA VISHAKA GIRLS' HIGH SCHOOL",
+    "address": "BADULLA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "BADULLA MADYA MAHA VIDYALAYA",
+    "address": "BADULLA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "BADULLA SARASWATHY CENTRAL COLLEGE",
+    "address": "MAHIYANGANA ROAD, BADULLA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "ETTAMPITIYA NATIONAL COLLEGE",
+    "address": "ETTAMPITIYA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "HALI-ELA CENTRAL COLLEGE",
+    "address": "HALI-ELA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "BANDARAWELA KUDAKUSUM BALIKA M.V.",
+    "address": "BANDARAWELA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "BANDARAWELA M.M.V.",
+    "address": "KINIGAMA, BANDARAWELA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "BANDARAWELA ST. JOSEPH'S COLLEGE",
+    "address": "BANDARAWELA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "BANDARAWELA VISHAKA B.M.M.V.",
+    "address": "BANDARAWELA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "HALPE NATIONAL SCHOOL",
+    "address": "HELA - HALPE",
+    "province": "8.Uva"
+  },
+  {
+    "name": "NAULLA M.M.V.",
+    "address": "NAULLA, DEMODARA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "ANANDA M.M.V.",
+    "address": "WALHAPUTHENNA, HALDUMMULLA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "KOSLANDA M.M.V.",
+    "address": "WELLAWAYA ROAD, KOSLANDA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "SRI JANANANDA.M.V.",
+    "address": "KADURUGAMUWA, DIYATHALAWA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "KAHAGOLLA M.V.",
+    "address": "KAHAGOLLA, DIYATHALAWA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "MAHIYANGANAYA N.S",
+    "address": "MAHIYANGANAYA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "ANDAULPOTHA N.S.",
+    "address": "URANIYA, MAHIYANGANAYA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "PASSARA TAMIL MAHA VIDYALAYA",
+    "address": "PASSARA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "PASSARA MADYA VIDYALAYA",
+    "address": "PASSARA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "VIYALUWA D.S.SENANAYAKE NATIONAL SCHOOL",
+    "address": "KANDAKETIYA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "MEEGAHAKIVULA NATIONAL COLLEGE",
+    "address": "MEEGAHAKIVULA, BADULLA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "KANDEGEDARA NATIONAL SCHOOL",
+    "address": "KANDEGEDARA, HALIELA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "LOONUWATTA NATIONAL SCHOOL",
+    "address": "LOONUWATTA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "WELIMADA MADYA MAHA VIDYALAYA",
+    "address": "WELIMADA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "GURUTHALAWA MUSLIM CENTRAL COLLEGE",
+    "address": "GURUTHATHLAWA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "BORALANDA WANGIYAKUMBURA M.M.V.",
+    "address": "BORALANDA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "BIBILE WELLASSA N.S.",
+    "address": "HEWELWELA, BIBILE",
+    "province": "8.Uva"
+  },
+  {
+    "name": "MEDAGAMA N.S.",
+    "address": "MEDAGAMA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "BADALKUMBURA NISHSHANKA M.M.V.",
+    "address": "BADALKUMBURA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "MONARAGALA RAJAKEEYA V.",
+    "address": "MONARAGALA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "MONARAGALA MAHANAMA M.M.V.",
+    "address": "MONARAGALA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "KATHARAGAMA M.M.V",
+    "address": "KATAHARAGAMA.",
+    "province": "8.Uva"
+  },
+  {
+    "name": "THANAMALWILA M.M.V",
+    "address": "THANAMALWILA.",
+    "province": "8.Uva"
+  },
+  {
+    "name": "BUTTALA DUTUGEMUNU CENTRAL COLLEGE",
+    "address": "BUTTALA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "MALWATTAWALA M.M.V.",
+    "address": "WELLAWAYA",
+    "province": "8.Uva"
+  },
+  {
+    "name": "BALANGODA ANANDA MAITHRIYA M.M.V.",
+    "address": "MIRISWATTA, BALANGODA",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "DEHIGASTALAWA JAILANI MUS M.V.",
+    "address": "DEHIGASTALAWA, BALANGODA",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "EMBILIPITIYA PRESIDENT COLLEGE",
+    "address": "NEW TOWN,EMBILIPITIYA",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "GODAKAWELA RAHULA NATIONAL SCHOOL",
+    "address": "GODAKAWELA",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "KOLONNA NATIONAL SCHOOL.",
+    "address": "KOLONNA",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "KALAWANA NATIONAL SCHOOL",
+    "address": "KALAWANA",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "KARAWITA NATIONAL SCHOOL",
+    "address": "KARAWITA",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "EHELIYAGODA M.M.V.",
+    "address": "EHELIYAGODA",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "PELMADULLA GANKANDA CENTRAL COLLEGE",
+    "address": "VIDYALA MAWATHA, PELMADULLA",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "RATNAPURA ST. ALOYSIUS NATIONAL SCHOOL",
+    "address": "CHURCH ROAD RATNAPURA",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "RATNAPURA FERGUSION HIGH SCHOOL",
+    "address": "RATNAPURA",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "RATNAPURA CONVENT OF THE CHILD JESUS NATIONAL S",
+    "address": "RATNAPURA",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "RATNAPURA SUMANA BALIKA V",
+    "address": "GETANGAMA, RATNAPURA",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "RATNAPURA SEEVALEE CENTRAL COLLEGE",
+    "address": "HIDELLANA, RATNAPURA",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "DEHIOWITA NATIONAL SCHOOL",
+    "address": "DEHIOWITA",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "DERANIYAGALA SIRISAMAN NATIONAL SCHOOL",
+    "address": "VIDYALA MAWATHA, DERANIYAGALA",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "RUWANWELLA RAJASINGHE M.M.V.",
+    "address": "RUWANWELLA",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "YATIYANTOTA DR. N.M. PERERA M.M.V.",
+    "address": "YATIYANTOTA",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "PINDENIYA M.M.V",
+    "address": "PINDENIYA, ATALA",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "KEGALU VIDYALAYA",
+    "address": "KEGALLE",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "KEGALLE ST. MARYS COLLEGE",
+    "address": "KEGALLE",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "KEGALU BALIKA M.V",
+    "address": "BANDARANAYAKA MAWATHA,  KEGALLE",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "KEGALLE ST. JOSEPH'S BALIKA M.V.",
+    "address": "KEGALLE",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "THOLANGAMUWA DUDLEY SENANAYAKA CENTRAL COL",
+    "address": "THOLANGAMUWA",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "MAWATHAGODA RIVISANDA M.M.V.",
+    "address": "USSAPITIYA",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "MAWANELLA MAYURAPADA M.M.V.",
+    "address": "MAWANELLA",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "MAWANELLA ZAHIRA COLLEGE",
+    "address": "MAWANELLA",
+    "province": "9.Sabaragamu"
+  },
+  {
+    "name": "PINNAWALA M.M.V.",
+    "address": "RAMBUKKANA",
+    "province": "9.Sabaragamu"
+  }
+]

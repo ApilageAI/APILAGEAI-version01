@@ -319,7 +319,10 @@
                     <div class="onboard-icon-wrapper"><i class="fas fa-rocket onboard-icon"></i></div>
                     <h2>Welcome to අපිලගේ AI</h2>
                     <p>Let's personalize your AI experience in a few simple steps to get you started.</p>
-                    <input name="school" id="school-input" type="text" class="onboard-input" placeholder="ඔයාගේ School එක හෝ University එක?">
+                    <input name="school" id="school-input" type="text" class="onboard-input" list="school-list" autocomplete="off" placeholder="ඔයාගේ School එක හෝ University එක?">
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 6px;">
+                        Search and select your school from the list.
+                    </div>
                     <div class="onboard-checkbox-container">
                         <input id="not-student-checkbox" type="checkbox" name="not_student">
                         <label for="not-student-checkbox">මම student කෙනක් නෙමයි</label>
@@ -383,6 +386,7 @@
             </div>
         </div>
     </div>
+    <datalist id="school-list"></datalist>
 
 
      <!-- MInd map-->
@@ -450,6 +454,7 @@
                         <li><a href="#" class="preferencebox-tab-link" data-tab="public-profile"><i class="fa fa-user-circle"></i> Public Profile</a></li>
                         {/if}
                         <li><a href="#" class="preferencebox-tab-link" data-tab="ai"><i class="fa fa-robot"></i>Preference</a></li>
+                        <li><a href="#" class="preferencebox-tab-link" data-tab="student-verification"><i class="fa fa-graduation-cap"></i> Student Verification</a></li>
                         <li><a href="#" class="preferencebox-tab-link" data-tab="billing"><i class="fa fa-credit-card"></i> Billing</a></li>
                         <li><a href="#" class="preferencebox-tab-link" data-tab="app"><i class="fa fa-cogs"></i> Account</a></li>
                     </ul>
@@ -591,18 +596,7 @@
                 <div id="ai" class="preferencebox-tab-content">
                     <h2>Preference</h2>
                     <div class="form-section">
-                        <div class="form-group" style="margin-bottom: 16px;">
-                            <label for="schoolInput">School / Institute</label>
-                            <input type="text" id="schoolInput" placeholder="e.g., University of Colombo">
-                            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
-                              Either fill School or check 'Not a student', not both.
-                            </div>
-                        </div>
                         <div class="form-group">
-                            <div class="onboard-checkbox-container" style="margin-bottom: 12px;">
-                                <input id="notStudentInput" type="checkbox" name="not_student">
-                                <label for="notStudentInput">මම student කෙනක් නෙමයි</label>
-                            </div>
                             <label>Interested Subjects</label>
                                                         <input type="text" id="subjectInput" placeholder="e.g., Maths, Science" aria-describedby="subjectHelpText">
                                                         <div id="subjectHelpText" style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
@@ -633,6 +627,37 @@
                   <button class="btn btn-primary" id="savePreferenceBtn">Save Preferences</button>
                 <div id="preferenceAlertBox" style="display:none; margin-top:10px;"></div>
                 </div>
+                </div>
+
+                <!-- Student Verification Tab Content -->
+                <div id="student-verification" class="preferencebox-tab-content">
+                    <h2>Student Verification</h2>
+                    <div class="form-section">
+                        <div class="form-group" style="margin-bottom: 16px;">
+                            <label for="schoolInput">School / Institute</label>
+                            <input type="text" id="schoolInput" list="school-list" autocomplete="off" placeholder="Search your school from the list">
+                            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                                Select from the list. Either choose a school or check 'Not a student', not both.
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="onboard-checkbox-container" style="margin-bottom: 12px;">
+                                <input id="notStudentInput" type="checkbox" name="not_student">
+                                <label for="notStudentInput">මම student කෙනක් නෙමයි</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-section">
+                        <button class="btn btn-primary" id="saveStudentVerificationBtn" type="button">Save Student Verification</button>
+                        <div id="studentVerificationAlertBox" style="display:none; margin-top:10px;"></div>
+                    </div>
+                    <div class="form-section">
+                        <h3>Verify School Email</h3>
+                        <button class="btn btn-secondary" id="verifySchoolEmailBtn" type="button" disabled>
+                            <i class="fa fa-envelope"></i> Verify school student email (Dummy)
+                        </button>
+                        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 6px;">Coming soon.</div>
+                    </div>
                 </div>
 
                 <!-- Billing Tab Content -->
@@ -1185,7 +1210,7 @@
 <script src="{$smarty.const.APP_URL}/assets/scripts/learning-streak.js?V=1.00.00.2026{get_hash_token()}"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/notifications.js?V=03.01.10.2025"></script>
 <script type="module" src="{$smarty.const.APP_URL}/assets/scripts/gm.min.js?V=12.20.10.2025"></script>
-<script src="{$smarty.const.APP_URL}/assets/scripts/ob.js?V=10.26.09.2025"></script>
+<script src="{$smarty.const.APP_URL}/assets/scripts/ob.js?V=10.26.09.2025{get_hash_token()}"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/report-data.js?V=1.25.01.2026{get_hash_token()}"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/canvo.min.js?V=1.25.01.2026{get_hash_token()}"></script>
 <script>
