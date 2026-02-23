@@ -62,6 +62,9 @@ RedirectMatch 403 ^uploads/userdocs/
   RewriteRule ^auth/facebook-callback/?$ auth.php?do=facebook-callback [L,QSA]
   RewriteRule ^auth/facebook-deauthorize/?$ auth.php?do=facebook-deauthorize [L,QSA]
 
+  # Account routes
+  RewriteRule ^account/security/?$ account_security.php [L,QSA]
+
   # Legal routes
   RewriteRule ^privacypolicy/?$ privacypolicy.php [L,QSA]
   RewriteRule ^termsofservice/?$ termsofservice.php [L,QSA]

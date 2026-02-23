@@ -1194,15 +1194,11 @@
   window.userBalance = {$user->_data['balance']|default:0|intval};
 </script>
 
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script>
   window.APP_BASE_URL = '{$smarty.const.APP_URL}';
   window.NODE_API_BASE = '{$smarty.const.NODE_API_BASE}';
   window.IS_GUEST = {if $is_guest}true{else}false{/if};
 </script>
-
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/libs/dialog-js/main.min.js?V=01.03.04.2025"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/mp.min.js?V=01.22.22.2025"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/app.min.js?V=1.30.01.2026{get_hash_token()}"></script>

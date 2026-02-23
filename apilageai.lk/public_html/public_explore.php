@@ -1625,6 +1625,98 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
     body.is-focus-mode .x-composer {
       display: none;
     }
+    .guest-cta-banner {
+      position: fixed;
+      left: 50%;
+      bottom: 16px;
+      transform: translateX(-50%);
+      width: min(980px, calc(100% - 32px));
+      background: var(--x-card);
+      border: 1px solid var(--x-border);
+      border-radius: 16px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+      z-index: 1200;
+    }
+    [data-theme="light"] .guest-cta-banner {
+      box-shadow: 0 12px 30px rgba(15, 20, 25, 0.12);
+    }
+    .guest-cta-banner.is-hidden {
+      display: none;
+    }
+    .guest-cta-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .guest-cta-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--x-text);
+    }
+    .guest-cta-sub {
+      font-size: 12px;
+      color: var(--x-muted);
+      font-weight: 600;
+    }
+    .guest-cta-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .guest-cta-login {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 18px;
+      border-radius: 999px;
+      background: var(--x-accent);
+      color: #fff;
+      border: 1px solid var(--x-accent);
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .guest-cta-login:hover {
+      background: var(--x-accent-hover);
+      border-color: var(--x-accent-hover);
+    }
+    .guest-cta-close {
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 1px solid var(--x-border);
+      background: transparent;
+      color: var(--x-text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .guest-cta-close:hover {
+      background: var(--x-accent-soft);
+    }
+    body.guest-banner-active .explore-main,
+    body.guest-banner-active .right-rail {
+      padding-bottom: 110px;
+    }
+    @media (max-width: 700px) {
+      .guest-cta-banner {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .guest-cta-actions {
+        width: 100%;
+        justify-content: space-between;
+      }
+      body.guest-banner-active .explore-main,
+      body.guest-banner-active .right-rail {
+        padding-bottom: 150px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1746,6 +1838,21 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
       </div>
     </aside>
   </div>
+
+  <?php if (!$isLoggedIn): ?>
+    <div class="guest-cta-banner" id="guestCtaBanner" role="region" aria-label="Log in prompt">
+      <div class="guest-cta-text">
+        <div class="guest-cta-title">Log in to post or reply to questions.</div>
+        <div class="guest-cta-sub">Join the conversation on ApilageAI.</div>
+      </div>
+      <div class="guest-cta-actions">
+        <a class="guest-cta-login" href="<?php echo APP_URL; ?>/auth/login">Log in</a>
+        <button class="guest-cta-close" type="button" data-guest-banner-close aria-label="Dismiss login prompt">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+  <?php endif; ?>
 
   <div class="image-modal" id="imageModal">
     <div class="image-modal-backdrop"></div>
@@ -3811,6 +3918,35 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
           updateRightRail();
         }
       }, 25000);
+    })();
+  </script>
+  <script>
+    (function () {
+      if (!window.IS_GUEST) return;
+      const banner = document.getElementById('guestCtaBanner');
+      if (!banner) return;
+      const storageKey = 'guest_cta_banner_dismissed';
+      try {
+        if (localStorage.getItem(storageKey) === '1') {
+          banner.classList.add('is-hidden');
+          return;
+        }
+      } catch (err) {
+        // ignore storage errors
+      }
+      document.body.classList.add('guest-banner-active');
+      const closeBtn = banner.querySelector('[data-guest-banner-close]');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+          banner.classList.add('is-hidden');
+          document.body.classList.remove('guest-banner-active');
+          try {
+            localStorage.setItem(storageKey, '1');
+          } catch (err) {
+            // ignore storage errors
+          }
+        });
+      }
     })();
   </script>
 </body>

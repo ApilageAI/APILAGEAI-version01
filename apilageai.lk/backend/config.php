@@ -110,18 +110,6 @@ define('GEMINI_API_KEY_MCQBLUST', 'AIzaSyDNzEKIIS7GUIHpZBXjDlPbURZGtZYx7KE');  /
 define('OPENAI_API_KEY', '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');  // CHANGE THIS!
 
 // ================================================================
-// FIREBASE CONFIGURATION
-// ================================================================
-define('FIREBASE_API_KEY', 'AIzaSyBY5gsQusKZ95Os3KoWvjauEMxGI8fBw3c');
-define('FIREBASE_AUTH_DOMAIN', 'apilage-ai.firebaseapp.com');
-define('FIREBASE_DATABASE_URL', 'https://apilage-ai-default-rtdb.firebaseio.com');
-define('FIREBASE_PROJECT_ID', 'apilage-ai');
-define('FIREBASE_STORAGE_BUCKET', 'apilage-ai.firebasestorage.app');
-define('FIREBASE_MESSAGING_SENDER_ID', '902160013451');
-define('FIREBASE_APP_ID', '1:902160013451:web:498911915681b72ce25c8e');
-define('FIREBASE_MEASUREMENT_ID', 'G-N7SRT0LHJV');
-
-// ================================================================
 // PAYABLE PAYMENT GATEWAY
 // ================================================================
 define('PAYABLE_SANDBOX', false);  // Set to true for testing
