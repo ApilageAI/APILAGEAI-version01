@@ -284,7 +284,7 @@ if ($action === 'general' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
-    $image_url = null;
+    $image_filename = null;
     $photoUploading = false;
     
     if (!empty($_FILES['profilePhoto']['name'])) {
@@ -292,6 +292,12 @@ if ($action === 'general' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Validate file type
         $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        $mimeToExt = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/gif' => 'gif',
+            'image/webp' => 'webp'
+        ];
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mimeType = finfo_file($finfo, $_FILES['profilePhoto']['tmp_name']);
         finfo_close($finfo);
@@ -309,29 +315,27 @@ if ($action === 'general' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $uploadDir = __DIR__ . "/uploads/profile/";
         if (!file_exists($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
+            mkdir($uploadDir, 0755, true);
         }
 
-        $fileExt = strtolower(pathinfo($_FILES['profilePhoto']['name'], PATHINFO_EXTENSION));
-        $allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-        
-        if (!in_array($fileExt, $allowedExts)) {
-            echo json_encode(['success' => false, 'message' => 'Invalid file extension']);
+        $fileExt = $mimeToExt[$mimeType] ?? '';
+        if ($fileExt === '') {
+            echo json_encode(['success' => false, 'message' => 'Invalid image file type']);
             exit();
         }
-        
-        $fileName = "user_" . $user_id . "_" . time() . "." . $fileExt;
+
+        $fileName = "user_" . $user_id . "_" . time() . "_" . bin2hex(random_bytes(4)) . "." . $fileExt;
         $filePath = $uploadDir . $fileName;
 
         if (move_uploaded_file($_FILES['profilePhoto']['tmp_name'], $filePath)) {
-            $image_url = APP_URL . "/uploads/profile/" . $fileName;
-            error_log("Profile Photo Upload - URL: " . $image_url . " | UPLOADS_BASE_URL: " . UPLOADS_BASE_URL);
+            $image_filename = $fileName;
+            error_log("Profile Photo Upload - File: " . $image_filename);
         }
     }
 
-    if ($image_url) {
+    if ($image_filename) {
         $stmt = $db->prepare("UPDATE users SET first_name=?, last_name=?, email=?, phone=?, image=? WHERE id=?");
-        $stmt->bind_param("sssssi", $first, $last, $email, $phone, $image_url, $user_id);
+        $stmt->bind_param("sssssi", $first, $last, $email, $phone, $image_filename, $user_id);
     } else {
         $stmt = $db->prepare("UPDATE users SET first_name=?, last_name=?, email=?, phone=? WHERE id=?");
         $stmt->bind_param("ssssi", $first, $last, $email, $phone, $user_id);
@@ -341,7 +345,7 @@ if ($action === 'general' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode([
             'success' => true, 
             'photoUploading' => $photoUploading,
-            'image_url' => $image_url ?? null
+            'image_url' => $image_filename ? user_image_url($image_filename) : null
         ]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Failed to update profile']);

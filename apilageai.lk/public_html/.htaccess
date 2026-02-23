@@ -1,6 +1,8 @@
 # Friendly URL routing for ApilageAI
 # Requires Apache mod_rewrite and AllowOverride All
 
+Options -Indexes
+
 <IfModule mod_headers.c>
   Header set X-Content-Type-Options "nosniff"
   Header set X-Frame-Options "DENY"

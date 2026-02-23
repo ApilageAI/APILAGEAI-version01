@@ -10,6 +10,11 @@
  * @package ApilageAI
  */
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit('Forbidden');
+}
+
 // Define APILAGE_LOADED to allow including bootstrap
 define('APILAGE_LOADED', true);
 
@@ -65,8 +70,8 @@ function cleanupUserData($userId, $profileImage) {
     $stmt->execute();
     $res = $stmt->get_result();
     while ($row = $res->fetch_assoc()) {
-        $path = __DIR__ . '/' . ltrim(parse_url($row['image_url'], PHP_URL_PATH), '/');
-        if (file_exists($path) && is_file($path)) {
+        $path = uploads_path_from_db($row['image_url'] ?? '', 'genimg');
+        if ($path && file_exists($path) && is_file($path)) {
             unlink($path);
             echo "    Deleted image: " . basename($path) . "\n";
         }
@@ -75,8 +80,8 @@ function cleanupUserData($userId, $profileImage) {
     
     // 2. Delete profile image from disk
     if (!empty($profileImage)) {
-        $path = __DIR__ . '/' . ltrim(parse_url($profileImage, PHP_URL_PATH), '/');
-        if (file_exists($path) && is_file($path)) {
+        $path = uploads_path_from_db($profileImage ?? '', 'profile');
+        if ($path && file_exists($path) && is_file($path)) {
             unlink($path);
             echo "    Deleted profile photo: " . basename($path) . "\n";
         }

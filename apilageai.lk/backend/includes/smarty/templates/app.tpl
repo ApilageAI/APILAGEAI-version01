@@ -132,7 +132,7 @@
   <div class="sidebar-footer-userinfo" id="sidebarUserInfo" title="Open settings">
     <div class="user-avatar">
       <img
-        src="{$user->_data.image}"
+        src="{$user->_data.image|user_image_url}"
         alt="{$user->_data.first_name|default:'Guest'} Avatar"
         onerror="this.onerror=null;this.src='{$smarty.const.APP_URL}/assets/images/user.png';"
       />
@@ -471,7 +471,7 @@
                         <div class="profile-photo-section">
                             <img
                               id="profilePhoto"
-                              src="{$user->_data.image}"
+                              src="{$user->_data.image|user_image_url}"
                               alt="{$user->_data.first_name|default:'Guest'} Avatar"
                               onerror="this.onerror=null;this.src='{$smarty.const.APP_URL}/assets/images/user.png';"
                             />

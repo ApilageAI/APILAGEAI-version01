@@ -221,19 +221,7 @@ if (table_exists($db, "bug_reports")) {
                 $report["status"] = "open";
             }
             $path = trim($report["screenshot_path"] ?? "");
-            if ($path !== "") {
-                if (preg_match('#^https?://#i', $path)) {
-                    $report["screenshot_url"] = $path;
-                } elseif (stripos($path, "uploads/") === 0 || stripos($path, "/uploads/") === 0) {
-                    $report["screenshot_url"] = rtrim(UPLOADS_BASE_URL, "/") . "/" . ltrim($path, "/");
-                } elseif (stripos($path, "upload/") === 0 || stripos($path, "/upload/") === 0) {
-                    $report["screenshot_url"] = rtrim(APP_URL, "/") . "/" . ltrim($path, "/");
-                } else {
-                    $report["screenshot_url"] = rtrim(UPLOADS_BASE_URL, "/") . "/" . ltrim($path, "/");
-                }
-            } else {
-                $report["screenshot_url"] = "";
-            }
+            $report["screenshot_url"] = $path !== '' ? (uploads_url_from_db($path, 'userimg') ?? '') : '';
         }
         unset($report);
     }

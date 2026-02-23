@@ -31,6 +31,82 @@ function is_empty(mixed $value): bool {
     return false;
 }
 
+// Upload helpers
+function uploads_extract_path(string $value): string {
+    $value = trim($value);
+    if ($value === '') return '';
+    if (preg_match('#^https?://#i', $value)) {
+        $parsed = parse_url($value);
+        $value = (string)($parsed['path'] ?? '');
+    }
+    $value = preg_replace('/[?#].*$/', '', $value);
+    $value = str_replace('\\', '/', $value);
+    return $value;
+}
+
+function uploads_detect_subfolder(string $value, string $default = 'userimg'): string {
+    $path = uploads_extract_path($value);
+    $path = ltrim($path, '/');
+    if (preg_match('#^uploads/([a-z0-9_-]+)/#i', $path, $m)) {
+        return strtolower($m[1]);
+    }
+    if (preg_match('#^([a-z0-9_-]+)/#i', $path, $m)) {
+        return strtolower($m[1]);
+    }
+    return strtolower($default);
+}
+
+function uploads_extract_filename(string $value): string {
+    $path = uploads_extract_path($value);
+    if ($path === '') return '';
+    $path = ltrim($path, '/');
+    if (preg_match('#^uploads/[^/]+/(.+)$#i', $path, $m)) {
+        $path = $m[1];
+    } elseif (preg_match('#^[^/]+/(.+)$#i', $path, $m)) {
+        $path = $m[1];
+    }
+    $filename = basename($path);
+    if ($filename === '.' || $filename === '..') return '';
+    return $filename;
+}
+
+function uploads_url_from_db(?string $value, string $defaultFolder = 'userimg', ?string $baseOverride = null): ?string {
+    if ($value === null) return null;
+    $raw = trim((string)$value);
+    if ($raw === '') return '';
+
+    if (preg_match('#^https?://#i', $raw)) {
+        $host = parse_url($raw, PHP_URL_HOST);
+        $path = parse_url($raw, PHP_URL_PATH) ?? '';
+        $appHost = parse_url(APP_URL, PHP_URL_HOST);
+        $uploadsHost = parse_url(UPLOADS_BASE_URL, PHP_URL_HOST);
+        if ($host && $host !== $appHost && $host !== $uploadsHost) {
+            return $raw;
+        }
+        $raw = $path ?: $raw;
+    }
+
+    $folder = uploads_detect_subfolder($raw, $defaultFolder);
+    $filename = uploads_extract_filename($raw);
+    if ($filename === '') return '';
+    $base = $baseOverride ?: (($folder === 'profile') ? APP_URL : UPLOADS_BASE_URL);
+    return rtrim($base, '/') . '/uploads/' . $folder . '/' . $filename;
+}
+
+function uploads_path_from_db(?string $value, string $defaultFolder = 'userimg'): ?string {
+    $raw = trim((string)($value ?? ''));
+    if ($raw === '') return null;
+    $filename = uploads_extract_filename($raw);
+    if ($filename === '') return null;
+    $folder = uploads_detect_subfolder($raw, $defaultFolder);
+    $base = realpath(__DIR__ . '/../public_html/uploads/' . $folder);
+    if (!$base) return null;
+    $path = $base . '/' . $filename;
+    $real = realpath($path);
+    if (!$real || strpos($real, $base) !== 0) return null;
+    return $real;
+}
+
 /**
  * Build a safe, absolute URL for a user profile image.
  *
@@ -53,36 +129,13 @@ function user_image_url(mixed $image, ?string $fallback = null): string {
     if (preg_match('#^https?://#i', $image)) {
         return $image;
     }
-
-    // Profile images should use APP_URL
-    if (preg_match('#^/uploads/profile/#i', $image)) {
-        return APP_URL . $image;
-    }
-    if (stripos($image, 'uploads/profile/') === 0) {
-        return APP_URL . '/' . $image;
-    }
-    if (stripos($image, 'profile/') === 0) {
-        return APP_URL . '/uploads/' . $image;
-    }
-
-    // Other uploads (userimg/genimg) can use UPLOADS_BASE_URL
-    if (preg_match('#^/uploads/#i', $image)) {
-        return UPLOADS_BASE_URL . $image;
-    }
-    if (stripos($image, 'uploads/') === 0) {
-        return UPLOADS_BASE_URL . '/' . $image;
-    }
-    if (stripos($image, 'userimg/') === 0 || stripos($image, 'genimg/') === 0) {
-        return UPLOADS_BASE_URL . '/uploads/' . $image;
-    }
-
     // If starts with / but not /uploads (e.g., /assets/...), use APP_URL
-    if (strpos($image, '/') === 0) {
+    if (strpos($image, '/') === 0 && stripos($image, '/uploads/') !== 0) {
         return APP_URL . $image;
     }
 
-    // Default: treat as filename in profile folder
-    return APP_URL . '/uploads/profile/' . $image;
+    $resolved = uploads_url_from_db($image, 'profile', APP_URL);
+    return $resolved !== '' ? $resolved : $fallbackUrl;
 }
 
 /**
@@ -432,20 +485,28 @@ function user_agent_array($agent) {
 function save_picture_from_url($file, $prefix, $img_quality = 'medium', $subfolder = 'userimg') {
     // init image & prepare image name & path
     require_once(__DIR__.'/class-image.php');
-    
+
     $image = new Image($file);
-    $image_name = $prefix.$image->_img_ext;
+    $safePrefix = preg_replace('/[^a-zA-Z0-9_-]/', '', (string)$prefix);
+    if ($safePrefix === '') {
+        $safePrefix = bin2hex(random_bytes(8));
+    }
+    $image_name = $safePrefix.$image->_img_ext;
     // Sanitize subfolder to prevent directory traversal
-    $subfolder = basename($subfolder);
-    $path = __DIR__.'/../public_html/uploads/'.$subfolder.'/'.$image_name;
+    $subfolder = preg_replace('/[^a-zA-Z0-9_-]/', '', (string)$subfolder);
+    if ($subfolder === '') {
+        $subfolder = 'userimg';
+    }
+    $dir = __DIR__.'/../public_html/uploads/'.$subfolder;
+    if (!is_dir($dir)) {
+        mkdir($dir, 0755, true);
+    }
+    $path = $dir.'/'.$image_name;
 
     /* save the new image */
     $image->save($path, $img_quality);
-    // Return full URL for database storage (must include /uploads/ path)
-    if ($subfolder === 'profile') {
-        return APP_URL . '/uploads/' . $subfolder . '/' . $image_name;
-    }
-    return UPLOADS_BASE_URL . '/uploads/' . $subfolder . '/' . $image_name;
+    // Return just filename for database storage
+    return $image_name;
 }
 
 /**

@@ -339,7 +339,7 @@
                 </td>
                 <td class="py-2">{$bug.created_at|escape}</td>
                 <td class="py-2">
-                  <select class="bug-status-select border-2 border-brand-dark rounded px-2 py-1 text-xs" data-bug-id="{$bug.id}">
+                  <select class="bug-status-select border-2 border-brand-dark rounded px-2 py-1 text-xs" data-bug-id="{$bug.id}" name="bug_status" aria-label="Bug status">
                     <option value="open" {if $bug.status == 'open'}selected{/if}>Open</option>
                     <option value="fixed" {if $bug.status == 'fixed'}selected{/if}>Fixed</option>
                   </select>
@@ -450,16 +450,16 @@
                 </td>
                 <td class="py-2">{$usage.date|escape}</td>
                 <td class="py-2">
-                  <input data-field="messages_used" value="{$usage.messages_used|escape}" class="w-24 rounded-lg border-2 border-brand-dark px-2 py-1 text-xs">
+                  <input data-field="messages_used" name="messages_used" aria-label="Messages used" value="{$usage.messages_used|escape}" class="w-24 rounded-lg border-2 border-brand-dark px-2 py-1 text-xs">
                 </td>
                 <td class="py-2">
-                  <input data-field="image_uploads_used" value="{$usage.image_uploads_used|escape}" class="w-28 rounded-lg border-2 border-brand-dark px-2 py-1 text-xs">
+                  <input data-field="image_uploads_used" name="image_uploads_used" aria-label="Image uploads used" value="{$usage.image_uploads_used|escape}" class="w-28 rounded-lg border-2 border-brand-dark px-2 py-1 text-xs">
                 </td>
                 <td class="py-2">
-                  <input data-field="file_uploads_used" value="{$usage.file_uploads_used|escape}" class="w-24 rounded-lg border-2 border-brand-dark px-2 py-1 text-xs">
+                  <input data-field="file_uploads_used" name="file_uploads_used" aria-label="File uploads used" value="{$usage.file_uploads_used|escape}" class="w-24 rounded-lg border-2 border-brand-dark px-2 py-1 text-xs">
                 </td>
                 <td class="py-2">
-                  <input data-field="image_generations_used" value="{$usage.image_generations_used|escape}" class="w-28 rounded-lg border-2 border-brand-dark px-2 py-1 text-xs">
+                  <input data-field="image_generations_used" name="image_generations_used" aria-label="Image generations used" value="{$usage.image_generations_used|escape}" class="w-28 rounded-lg border-2 border-brand-dark px-2 py-1 text-xs">
                 </td>
                 <td class="py-2">{$usage.window_id|escape}</td>
                 <td class="py-2">
@@ -499,23 +499,23 @@
               <tr class="border-t border-brand-dark/10" data-trial-abuse-row="{$row.id}">
                 <td class="py-2">{$row.id}</td>
                 <td class="py-2">
-                  <input data-field="user_id" value="{$row.user_id|escape}" class="w-24 rounded-lg border-2 border-brand-dark px-2 py-1 text-xs">
+                  <input data-field="user_id" name="user_id" aria-label="User ID" value="{$row.user_id|escape}" class="w-24 rounded-lg border-2 border-brand-dark px-2 py-1 text-xs">
                 </td>
                 <td class="py-2">
                   <div class="font-semibold text-brand-dark">{$row.first_name|escape} {$row.last_name|escape}</div>
                   <div class="text-xs text-brand-dark/60">{$row.email|escape}</div>
                 </td>
                 <td class="py-2">
-                  <input data-field="ip_address" value="{$row.ip_address|escape}" class="w-36 rounded-lg border-2 border-brand-dark px-2 py-1 text-xs">
+                  <input data-field="ip_address" name="ip_address" aria-label="IP address" value="{$row.ip_address|escape}" class="w-36 rounded-lg border-2 border-brand-dark px-2 py-1 text-xs">
                 </td>
                 <td class="py-2">
-                  <input data-field="device_fingerprint" value="{$row.device_fingerprint|escape}" class="w-48 rounded-lg border-2 border-brand-dark px-2 py-1 text-xs">
+                  <input data-field="device_fingerprint" name="device_fingerprint" aria-label="Device fingerprint" value="{$row.device_fingerprint|escape}" class="w-48 rounded-lg border-2 border-brand-dark px-2 py-1 text-xs">
                 </td>
                 <td class="py-2">
-                  <input data-field="trial_start_date" value="{$row.trial_start_date|escape}" placeholder="YYYY-MM-DD" class="w-32 rounded-lg border-2 border-brand-dark px-2 py-1 text-xs">
+                  <input data-field="trial_start_date" name="trial_start_date" aria-label="Trial start date" value="{$row.trial_start_date|escape}" placeholder="YYYY-MM-DD" class="w-32 rounded-lg border-2 border-brand-dark px-2 py-1 text-xs">
                 </td>
                 <td class="py-2">
-                  <input data-field="trial_end_date" value="{$row.trial_end_date|escape}" placeholder="YYYY-MM-DD" class="w-32 rounded-lg border-2 border-brand-dark px-2 py-1 text-xs">
+                  <input data-field="trial_end_date" name="trial_end_date" aria-label="Trial end date" value="{$row.trial_end_date|escape}" placeholder="YYYY-MM-DD" class="w-32 rounded-lg border-2 border-brand-dark px-2 py-1 text-xs">
                 </td>
                 <td class="py-2">
                   <button class="save-trial-abuse-btn rounded-lg border-2 border-brand-dark bg-brand-blueLight px-3 py-1 text-xs font-bold" data-id="{$row.id}">Save</button>

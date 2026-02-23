@@ -114,7 +114,7 @@ if (isset($_FILES["screenshot"]) && $_FILES["screenshot"]["error"] !== UPLOAD_ER
         respond(false, "Unable to save the screenshot.", [], 500);
     }
 
-    $screenshotPath = rtrim(UPLOADS_BASE_URL, "/") . "/uploads/userimg/" . $filename;
+    $screenshotPath = $filename;
 }
 
 // Insert into database

@@ -437,8 +437,8 @@ function toImageUrl(imagePath) {
     return APP_BASE_URL + imagePath;
   }
   
-  // Default: treat as filename in userimg folder
-  return UPLOADS_BASE_URL + '/uploads/userimg/' + imagePath;
+  // Default: treat as profile image filename
+  return UPLOADS_BASE_URL + '/uploads/profile/' + imagePath;
 }
 
 const allowedOriginSet = new Set(

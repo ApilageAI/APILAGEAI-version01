@@ -17,33 +17,7 @@ function jsonResponse($arr) {
 }
 
 function normalize_upload_url(?string $value): ?string {
-    if ($value === null) {
-        return null;
-    }
-    $value = trim($value);
-    if ($value === '') {
-        return '';
-    }
-    if (preg_match('#^https?://#i', $value)) {
-        $parsed = parse_url($value);
-        $path = $parsed['path'] ?? '';
-        $host = $parsed['host'] ?? '';
-        $appHost = parse_url(APP_URL, PHP_URL_HOST);
-        if ($host && $appHost && strcasecmp($host, $appHost) === 0 && stripos($path, '/uploads/') === 0) {
-            return rtrim(UPLOADS_BASE_URL, '/') . $path;
-        }
-        return $value;
-    }
-    if (stripos($value, '/uploads/') === 0) {
-        return rtrim(UPLOADS_BASE_URL, '/') . $value;
-    }
-    if (stripos($value, 'uploads/') === 0) {
-        return rtrim(UPLOADS_BASE_URL, '/') . '/' . $value;
-    }
-    if (preg_match('#^(userimg|profile|genimg)/#i', $value)) {
-        return rtrim(UPLOADS_BASE_URL, '/') . '/uploads/' . $value;
-    }
-    return $value;
+    return uploads_url_from_db($value, 'genimg');
 }
 
 // Require authentication

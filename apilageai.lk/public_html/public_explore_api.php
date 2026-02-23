@@ -74,21 +74,7 @@ function build_user_name(array $row): string {
 }
 
 function build_upload_url(string $value): string {
-    $value = trim($value);
-    if ($value === '') return '';
-    if (preg_match('#^https?://#i', $value)) {
-        return $value;
-    }
-    if (stripos($value, '/uploads/') === 0) {
-        return rtrim(UPLOADS_BASE_URL, '/') . $value;
-    }
-    if (stripos($value, 'uploads/') === 0) {
-        return rtrim(UPLOADS_BASE_URL, '/') . '/' . $value;
-    }
-    if (stripos($value, 'userimg/') === 0) {
-        return rtrim(UPLOADS_BASE_URL, '/') . '/uploads/' . $value;
-    }
-    return rtrim(UPLOADS_BASE_URL, '/') . '/uploads/userimg/' . $value;
+    return (string)(uploads_url_from_db($value, 'userimg') ?? '');
 }
 
 function get_upload_file_path(string $filename): ?string {

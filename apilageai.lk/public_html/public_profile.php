@@ -3,53 +3,13 @@ require_once __DIR__ . '/../backend/bootstrap.php';
 
 if (!function_exists('normalize_public_image_url_profile')) {
     function normalize_public_image_url_profile(?string $value): ?string {
-        if ($value === null) {
-            return null;
-        }
-        $value = trim($value);
-        if ($value === '') {
-            return '';
-        }
-        if (preg_match('#^https?://#i', $value)) {
-            $parsed = parse_url($value);
-            $path = $parsed['path'] ?? '';
-            $host = $parsed['host'] ?? '';
-            $appHost = parse_url(APP_URL, PHP_URL_HOST);
-            if ($host && $appHost && strcasecmp($host, $appHost) === 0 && stripos($path, '/uploads/') === 0) {
-                return rtrim(UPLOADS_BASE_URL, '/') . $path;
-            }
-            return $value;
-        }
-        if (stripos($value, '/uploads/') === 0) {
-            return rtrim(UPLOADS_BASE_URL, '/') . $value;
-        }
-        if (stripos($value, 'uploads/') === 0) {
-            return rtrim(UPLOADS_BASE_URL, '/') . '/' . $value;
-        }
-        if (preg_match('#^(userimg|profile|genimg)/#i', $value)) {
-            return rtrim(UPLOADS_BASE_URL, '/') . '/uploads/' . $value;
-        }
-        return $value;
+        return uploads_url_from_db($value, 'genimg');
     }
 }
 
 if (!function_exists('build_public_upload_url')) {
     function build_public_upload_url(string $value): string {
-        $value = trim($value);
-        if ($value === '') return '';
-        if (preg_match('#^https?://#i', $value)) {
-            return $value;
-        }
-        if (stripos($value, '/uploads/') === 0) {
-            return rtrim(UPLOADS_BASE_URL, '/') . $value;
-        }
-        if (stripos($value, 'uploads/') === 0) {
-            return rtrim(UPLOADS_BASE_URL, '/') . '/' . $value;
-        }
-        if (stripos($value, 'userimg/') === 0) {
-            return rtrim(UPLOADS_BASE_URL, '/') . '/uploads/' . $value;
-        }
-        return rtrim(UPLOADS_BASE_URL, '/') . '/uploads/userimg/' . $value;
+        return (string)(uploads_url_from_db($value, 'userimg') ?? '');
     }
 }
 
@@ -2673,6 +2633,30 @@ $badgeRegistryJson = json_encode(
       font-weight: 700;
       font-size: 12px;
     }
+    .x-card-avatar-wrap {
+      position: relative;
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+    }
+    .x-card-avatar-wrap img,
+    .x-card-avatar-wrap .x-card-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid var(--x-border);
+      background: var(--x-card);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+    }
+    .x-card-avatar-wrap .x-card-avatar {
+      position: absolute;
+      inset: 0;
+    }
     .x-card-name {
       font-size: 14px;
       font-weight: 700;
@@ -3428,7 +3412,7 @@ $badgeRegistryJson = json_encode(
             <label class="search-label" for="chatSearch">Search Published Chats</label>
             <div class="search-input-wrap">
               <i class="fa-solid fa-magnifying-glass"></i>
-              <input class="search-input" id="chatSearch" type="search" placeholder="Search chats by title" aria-describedby="chatSearchStatus">
+              <input class="search-input" id="chatSearch" name="chat_search" type="search" placeholder="Search chats by title" autocomplete="off" aria-describedby="chatSearchStatus">
             </div>
             <div id="chatSearchStatus" class="search-status" role="status" aria-live="polite"></div>
           </div>
@@ -3597,7 +3581,7 @@ $badgeRegistryJson = json_encode(
     <aside class="right-rail">
       <div class="x-search" data-open-user-search role="button" tabindex="0" aria-haspopup="dialog" aria-controls="userSearchModal">
         <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" placeholder="Search" aria-label="Search public profiles" readonly>
+        <input type="text" name="public_profile_search_trigger" placeholder="Search" aria-label="Search public profiles" autocomplete="off" readonly>
       </div>
 
       <div class="x-card">
@@ -3627,7 +3611,10 @@ $badgeRegistryJson = json_encode(
             <div class="x-card-item">
               <div class="x-card-user">
                 <?php if ($avatarEscaped !== ''): ?>
-                  <img src="<?php echo $avatarEscaped; ?>" alt="<?php echo $nameEscaped; ?>">
+                  <div class="x-card-avatar-wrap">
+                    <img src="<?php echo $avatarEscaped; ?>" alt="<?php echo $nameEscaped; ?>" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="x-card-avatar" style="display:none;"><?php echo $avatarInitials; ?></div>
+                  </div>
                 <?php else: ?>
                   <div class="x-card-avatar"><?php echo $avatarInitials; ?></div>
                 <?php endif; ?>
@@ -3674,7 +3661,10 @@ $badgeRegistryJson = json_encode(
             <div class="x-card-item">
               <div class="x-card-user">
                 <?php if ($avatarEscaped !== ''): ?>
-                  <img src="<?php echo $avatarEscaped; ?>" alt="<?php echo $nameEscaped; ?>">
+                  <div class="x-card-avatar-wrap">
+                    <img src="<?php echo $avatarEscaped; ?>" alt="<?php echo $nameEscaped; ?>" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="x-card-avatar" style="display:none;"><?php echo $avatarInitials; ?></div>
+                  </div>
                 <?php else: ?>
                   <div class="x-card-avatar"><?php echo $avatarInitials; ?></div>
                 <?php endif; ?>
@@ -3753,7 +3743,7 @@ $badgeRegistryJson = json_encode(
       </div>
       <div class="user-search-input-wrap">
         <i class="fa-solid fa-magnifying-glass"></i>
-        <input class="user-search-input" id="userSearchInput" type="search" placeholder="Search by name, username, or school">
+        <input class="user-search-input" id="userSearchInput" name="user_search" type="search" placeholder="Search by name, username, or school" autocomplete="off" aria-label="Search users">
         <button class="user-search-clear" type="button" id="userSearchClear">Clear</button>
       </div>
       <div id="userSearchStatus" class="search-status" role="status" aria-live="polite"></div>

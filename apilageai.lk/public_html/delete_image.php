@@ -49,10 +49,8 @@ try {
 
     // Delete file from disk
     // Convert URL back to file path (handle both apilageai.lk and socket.apilageai.lk domains)
-    $imagePath = $res['image_url'];
-    $imagePath = str_replace(UPLOADS_BASE_URL . "/", __DIR__ . "/", $imagePath);
-    $imagePath = str_replace(APP_URL . "/", __DIR__ . "/", $imagePath);
-    if (file_exists($imagePath) && is_file($imagePath)) {
+    $imagePath = uploads_path_from_db($res['image_url'], 'genimg');
+    if ($imagePath && file_exists($imagePath) && is_file($imagePath)) {
         unlink($imagePath);
     }
 

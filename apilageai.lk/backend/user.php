@@ -634,7 +634,7 @@ class User
         $imageName = null;
         if (is_empty($data["image"]["tmp_name"]) && !is_empty($_SESSION["gb_auth"]["picture"] ?? '')) {
             $imagePrefix = $this->get_unique_media_prefix();
-            // save_picture_from_url returns full URL for database storage
+            // save_picture_from_url returns filename for database storage
             $imageName = save_picture_from_url(
                 $_SESSION["gb_auth"]["picture"],
                 $imagePrefix,
@@ -660,10 +660,14 @@ class User
             require_once __DIR__ . "/class-image.php";
             $image = new Image($data["image"]["tmp_name"]);
             $image_name = $this->get_unique_media_prefix() . $image->_img_ext;
-            $path = __DIR__ . "/../public_html/uploads/profile/" . $image_name;
+            $dir = __DIR__ . "/../public_html/uploads/profile/";
+            if (!is_dir($dir)) {
+                mkdir($dir, 0755, true);
+            }
+            $path = $dir . $image_name;
             $image->save($path, "low");
-            // Store full URL for consistency
-            $imageName = APP_URL . "/uploads/profile/" . $image_name;
+            // Store just the filename for consistency
+            $imageName = $image_name;
         }
 
         // Generate verification token
@@ -1003,7 +1007,7 @@ class User
                         $imageName = null;
                         if ($picture) {
                             $imagePrefix = $this->get_unique_media_prefix();
-                            // Save profile picture to profile folder - returns full URL with /uploads/
+                            // Save profile picture to profile folder - returns filename
                             $imageName = save_picture_from_url(
                                 $picture,
                                 $imagePrefix,
@@ -1264,7 +1268,7 @@ class User
                 $imageName = null;
                 if ($picture) {
                     $imagePrefix = $this->get_unique_media_prefix();
-                    // Save profile picture to profile folder - returns full URL with /uploads/
+                    // Save profile picture to profile folder - returns filename
                     $imageName = save_picture_from_url(
                         $picture,
                         $imagePrefix,
@@ -1563,7 +1567,7 @@ class User
             if ($current !== '') {
                 $lower = strtolower($current);
                 $isLocal = false;
-                if (strpos($lower, '/uploads/') !== false) {
+                if (strpos($lower, '/uploads/') !== false || strpos($lower, 'uploads/') !== false || preg_match('#\\.[a-z0-9]{2,5}$#i', $lower)) {
                     if (strpos($lower, 'http://') === 0 || strpos($lower, 'https://') === 0) {
                         $host = parse_url($lower, PHP_URL_HOST);
                         $appHost = parse_url(APP_URL, PHP_URL_HOST);
@@ -1583,11 +1587,11 @@ class User
 
         try {
             $imagePrefix = $this->get_unique_media_prefix();
-            // Save profile picture to profile folder with full URL
-            $imageUrl = save_picture_from_url($pictureUrl, $imagePrefix, "low", "profile");
-            if (!empty($imageUrl)) {
+            // Save profile picture to profile folder (filename only)
+            $imageName = save_picture_from_url($pictureUrl, $imagePrefix, "low", "profile");
+            if (!empty($imageName)) {
                 $stmt = $db->prepare("UPDATE users SET image = ? WHERE id = ?");
-                $stmt->bind_param("si", $imageUrl, $userId);
+                $stmt->bind_param("si", $imageName, $userId);
                 $stmt->execute();
                 $stmt->close();
             }

@@ -40,21 +40,7 @@ function explore_truncate_text(string $text, int $maxLen): string {
 }
 
 function explore_build_upload_url(string $value): string {
-    $value = trim($value);
-    if ($value === '') return '';
-    if (preg_match('#^https?://#i', $value)) {
-        return $value;
-    }
-    if (stripos($value, '/uploads/') === 0) {
-        return rtrim(UPLOADS_BASE_URL, '/') . $value;
-    }
-    if (stripos($value, 'uploads/') === 0) {
-        return rtrim(UPLOADS_BASE_URL, '/') . '/' . $value;
-    }
-    if (stripos($value, 'userimg/') === 0) {
-        return rtrim(UPLOADS_BASE_URL, '/') . '/uploads/' . $value;
-    }
-    return rtrim(UPLOADS_BASE_URL, '/') . '/uploads/userimg/' . $value;
+    return (string)(uploads_url_from_db($value, 'userimg') ?? '');
 }
 
 function explore_build_post_snippet(string $body, array $images): string {
@@ -1651,7 +1637,7 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
           <img class="x-avatar" src="<?php echo htmlspecialchars($userImage, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($userName, ENT_QUOTES, 'UTF-8'); ?>">
           <div style="flex: 1; min-width: 0;">
             <div class="mention-wrap">
-              <textarea id="postBody" placeholder="Ask a public question..."></textarea>
+              <textarea id="postBody" name="post_body" placeholder="Ask a public question..." autocomplete="off" aria-label="Ask a public question"></textarea>
               <div class="mention-suggest" id="postMentionSuggest"></div>
             </div>
             <div class="upload-preview" id="postImagePreview"></div>
@@ -1659,7 +1645,7 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
               <div>
                 <div class="x-composer-icons">
                   <label title="Add images">
-                    <input type="file" id="postImages" accept="image/png,image/jpeg,image/gif" multiple>
+                    <input type="file" id="postImages" name="post_images[]" accept="image/png,image/jpeg,image/gif" multiple aria-label="Add images">
                     <i class="fa-regular fa-image"></i>
                   </label>
                   <span class="x-helper">PNG, GIF, JPG. Up to 4 images, 60MB each.</span>
@@ -1689,7 +1675,7 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
     <aside class="right-rail">
       <div class="x-search">
         <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" id="exploreSearch" placeholder="Search explore">
+        <input type="text" id="exploreSearch" name="explore_search" placeholder="Search explore" autocomplete="off" aria-label="Search explore">
       </div>
       <div class="x-card">
         <div class="x-card-title">What's happening</div>
@@ -1735,7 +1721,7 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
         </button>
       </div>
       <div class="share-link-row">
-        <input type="text" id="shareLinkInput" readonly>
+        <input type="text" id="shareLinkInput" name="share_link" readonly autocomplete="off" aria-label="Share link">
         <button type="button" id="shareCopyBtn">Copy link</button>
       </div>
       <div class="share-status" id="shareStatus" role="status"></div>
@@ -2708,14 +2694,14 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
                 <button type="button" class="reply-cancel">Cancel</button>
               </div>
               <div class="mention-wrap">
-                <textarea placeholder="Reply or mention @apilageai"></textarea>
+                <textarea name="reply_body" placeholder="Reply or mention @apilageai" autocomplete="off" aria-label="Reply or mention"></textarea>
                 <div class="mention-suggest"></div>
               </div>
               <div class="upload-preview"></div>
               <div class="form-actions">
                 <div class="thread-upload">
                   <label class="thread-file" title="Add images">
-                    <input type="file" accept="image/png,image/jpeg,image/gif" multiple>
+                    <input type="file" name="reply_images[]" accept="image/png,image/jpeg,image/gif" multiple aria-label="Attach images">
                     <i class="fa-regular fa-image"></i>
                   </label>
                   <span class="x-helper">PNG, GIF, JPG. Up to 4 images, 60MB. Mention @apilageai for AI reply.</span>

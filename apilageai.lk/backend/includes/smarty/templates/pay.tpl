@@ -36,7 +36,7 @@
       <input type="hidden" name="paymentType" value="1" />
       <input type="hidden" name="checkValue" value="{$checkValue}" />
 
-      <input type="submit" value="Continue to Payment" />
+      <input type="submit" name="submit_payment" value="Continue to Payment" aria-label="Continue to Payment" />
     </form>
   </div>
 
