@@ -54,6 +54,29 @@ function explore_build_post_snippet(string $body, array $images): string {
     return 'Shared a post on Explore.';
 }
 
+function explore_avatar_initials(string $name): string {
+    $name = trim($name);
+    if ($name === '') return '??';
+    $compact = preg_replace('/\s+/u', '', $name);
+    $compact = $compact !== null ? $compact : '';
+    if ($compact === '') return '??';
+    if (function_exists('mb_substr')) {
+        $slice = mb_substr($compact, 0, 2, 'UTF-8');
+    } else {
+        $slice = substr($compact, 0, 2);
+    }
+    if (function_exists('mb_strtoupper')) {
+        $slice = mb_strtoupper($slice, 'UTF-8');
+    } else {
+        $slice = strtoupper($slice);
+    }
+    return $slice;
+}
+
+$userInitials = explore_avatar_initials($userName);
+$userInitialsEsc = htmlspecialchars($userInitials, ENT_QUOTES, 'UTF-8');
+$userHasImage = $userImage !== '';
+
 $focusPostId = isset($_GET['post']) ? (int)$_GET['post'] : 0;
 $focusPost = null;
 if ($focusPostId > 0) {
@@ -269,6 +292,9 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
     }
     * {
       box-sizing: border-box;
+    }
+    [hidden] {
+      display: none !important;
     }
     body {
       margin: 0;
@@ -581,17 +607,45 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
       display: flex;
       gap: 12px;
     }
-    .x-avatar {
+    .x-avatar-shell {
       width: 42px;
       height: 42px;
       border-radius: 50%;
-      object-fit: cover;
       border: 1px solid var(--x-border);
       background: var(--x-card);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
       flex-shrink: 0;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.4px;
+      color: var(--x-muted);
+      text-transform: uppercase;
+    }
+    .x-avatar {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .x-avatar-fallback {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      background: var(--x-card);
+      color: var(--x-muted);
+    }
+    .x-avatar-shell.has-image .x-avatar-fallback {
+      display: none;
     }
     .x-avatar-link {
       display: inline-flex;
+      align-items: center;
+      justify-content: center;
       border-radius: 50%;
       overflow: hidden;
       flex-shrink: 0;
@@ -1634,7 +1688,12 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
 
       <?php if ($isLoggedIn): ?>
         <div class="x-composer">
-          <img class="x-avatar" src="<?php echo htmlspecialchars($userImage, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($userName, ENT_QUOTES, 'UTF-8'); ?>">
+          <div class="x-avatar-shell<?php echo $userHasImage ? ' has-image' : ''; ?>">
+            <?php if ($userHasImage): ?>
+              <img class="x-avatar" src="<?php echo htmlspecialchars($userImage, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($userName, ENT_QUOTES, 'UTF-8'); ?>" onerror="this.style.display='none';this.closest('.x-avatar-shell').classList.remove('has-image');">
+            <?php endif; ?>
+            <span class="x-avatar-fallback" aria-hidden="true"><?php echo $userInitialsEsc; ?></span>
+          </div>
           <div style="flex: 1; min-width: 0;">
             <div class="mention-wrap">
               <textarea id="postBody" name="post_body" placeholder="Ask a public question..." autocomplete="off" aria-label="Ask a public question"></textarea>
@@ -1831,7 +1890,6 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
           return String(Date.now() + Math.random());
         }
       })();
-      const SHUFFLE_JITTER_MS = 6 * 60 * 60 * 1000;
       const MAX_FEED_ITEMS = 120;
       const MAX_WORDS = 1000;
       const MAX_FILE_BYTES = 60 * 1024 * 1024;
@@ -1911,6 +1969,25 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
           .replace(/'/g, '&#39;');
       }
 
+      function initialsFromName(name) {
+        const raw = String(name || '').trim();
+        if (!raw) return '??';
+        const compact = raw.replace(/\s+/g, '');
+        if (!compact) return '??';
+        return compact.slice(0, 2).toUpperCase();
+      }
+
+      function buildAvatarHtml(user) {
+        const name = user && user.name ? String(user.name) : 'User';
+        const imageUrl = user && user.image_url ? String(user.image_url) : '';
+        const hasImage = imageUrl.trim() !== '';
+        const initials = initialsFromName(name);
+        const imgHtml = hasImage
+          ? `<img class="x-avatar" src="${escapeHtml(imageUrl)}" alt="${escapeHtml(name)}" onerror="this.style.display='none';this.closest('.x-avatar-shell').classList.remove('has-image');">`
+          : '';
+        return `<span class="x-avatar-shell${hasImage ? ' has-image' : ''}">${imgHtml}<span class="x-avatar-fallback" aria-hidden="true">${escapeHtml(initials)}</span></span>`;
+      }
+
       function buildItemMenu(type, id, canDelete) {
         return `
           <div class="item-menu" data-item-type="${escapeHtml(type)}" data-item-id="${escapeHtml(String(id))}">
@@ -1967,17 +2044,35 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
       function itemShuffleScore(item) {
         const key = itemShuffleKey(item);
         const hash = hashHandle(`${shuffleSeed}:${key}`);
-        const ratio = (hash % 1000000) / 1000000;
-        const jitter = (ratio - 0.5) * SHUFFLE_JITTER_MS;
-        return (item.time || 0) + jitter;
+        const time = item.time || 0;
+        return hash + (time % 1000) / 1000;
+      }
+
+      function assignItemScore(item) {
+        if (!item) return 0;
+        const score = shuffleEnabled ? itemShuffleScore(item) : (item.time || 0);
+        item.score = score;
+        return score;
       }
 
       function sortFeedItems(items) {
         if (!Array.isArray(items)) return [];
-        if (!shuffleEnabled) {
-          return items.sort((a, b) => b.time - a.time);
+        return items.sort((a, b) => (b.score ?? b.time ?? 0) - (a.score ?? a.time ?? 0));
+      }
+
+      function insertFeedNode(node, score) {
+        if (!feedList || !node) return;
+        const numericScore = Number(score || 0);
+        node.dataset.feedScore = String(numericScore);
+        const children = Array.from(feedList.children);
+        for (let i = 0; i < children.length; i += 1) {
+          const childScore = Number(children[i].dataset.feedScore || 0);
+          if (numericScore > childScore) {
+            feedList.insertBefore(node, children[i]);
+            return;
+          }
         }
-        return items.sort((a, b) => itemShuffleScore(b) - itemShuffleScore(a));
+        feedList.appendChild(node);
       }
 
       function mentionClass(handle) {
@@ -2604,7 +2699,7 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
         const menuHtml = buildItemMenu('chat', chat.conversation_id, isOwner);
         const avatarHtml = wrapProfileLink(
           chat.user,
-          `<img class="x-avatar" src="${escapeHtml(chat.user.image_url)}" alt="${escapeHtml(chat.user.name)}">`,
+          buildAvatarHtml(chat.user),
           'x-avatar-link'
         );
         const nameHtml = wrapProfileLink(chat.user, escapeHtml(chat.user.name), 'x-name');
@@ -2656,7 +2751,7 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
         const menuHtml = buildItemMenu('post', post.id, isOwner);
         const avatarHtml = wrapProfileLink(
           post.user,
-          `<img class="x-avatar" src="${escapeHtml(post.user.image_url)}" alt="${escapeHtml(post.user.name)}">`,
+          buildAvatarHtml(post.user),
           'x-avatar-link'
         );
         const nameHtml = wrapProfileLink(post.user, escapeHtml(post.user.name), 'x-name');
@@ -3237,8 +3332,12 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
             hasMorePosts = false;
           }
 
+          newItems.forEach(assignItemScore);
+
           if (newItems.length === 0 && feedList.children.length === 0) {
             feedEmpty.hidden = false;
+          } else if (newItems.length) {
+            feedEmpty.hidden = true;
           }
 
           sortFeedItems(newItems).forEach((item) => {
@@ -3246,7 +3345,12 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
             if (item.type === 'post') {
               initPostCard(node);
             }
-            feedList.appendChild(node);
+            if (shuffleEnabled) {
+              insertFeedNode(node, item.score);
+            } else {
+              node.dataset.feedScore = String(item.score || 0);
+              feedList.appendChild(node);
+            }
           });
 
           updateRightRail();
@@ -3338,9 +3442,17 @@ $structuredJson = json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNE
           if (data.post) {
             const node = renderPostCard(data.post);
             initPostCard(node);
-            feedList.prepend(node);
             feedEmpty.hidden = true;
             cachedPosts.unshift(data.post);
+            const createdAt = data.post.created_at || '';
+            const item = {
+              type: 'post',
+              time: new Date(createdAt).getTime() || Date.now(),
+              data: data.post
+            };
+            const score = assignItemScore(item);
+            node.dataset.feedScore = String(score || 0);
+            feedList.prepend(node);
           }
           if (data.ai_comment && data.post) {
             const card = feedList.querySelector(`[data-post-id="${data.post.id}"]`);
