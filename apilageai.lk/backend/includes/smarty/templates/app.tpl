@@ -152,7 +152,7 @@
 
     <!-- sidebar for notes -->
 
-    <div id="rightsidebar2" class="sidebar2 canvas-sidebar" aria-hidden="true">
+    <div id="rightsidebar2" class="sidebar2 canvas-sidebar" data-canvas-mode="miro" aria-hidden="true">
         <div class="sidebar-header canvas-header">
             <h3>Canvas</h3>
             <div class="canvas-header-actions">
@@ -160,6 +160,16 @@
                 <button id="canvas-fullscreen-btn" type="button" class="canvas-header-btn" aria-label="Open canvas fullscreen"><i class="fa-solid fa-expand" aria-hidden="true"></i></button>
                 <button id="canvas-close-btn" type="button" class="canvas-close-btn" aria-label="Close canvas">&times;</button>
             </div>
+        </div>
+
+        <div class="canvas-miro-panel" id="canvas-miro-panel">
+            <div class="canvas-miro-controls">
+                <input id="miro-embed-url" class="canvas-miro-input" type="text" placeholder="Paste Miro board or live-embed link" autocomplete="off" />
+                <button id="miro-embed-apply" type="button" class="canvas-miro-btn">Load</button>
+                <button id="miro-embed-open" type="button" class="canvas-miro-btn" disabled>Open</button>
+            </div>
+            <div id="miro-embed-status" class="canvas-miro-status">Paste a Miro embed link to start.</div>
+            <iframe id="miro-embed-frame" class="canvas-miro-frame" title="Miro board" loading="lazy" allowfullscreen></iframe>
         </div>
 
         <div class="canvas-toolbar" role="toolbar" aria-label="Canvas tools">

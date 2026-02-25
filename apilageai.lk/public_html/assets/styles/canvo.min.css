@@ -79,6 +79,91 @@
     font-weight: bold;
 }
 
+/* Miro Canvas Panel */
+.canvas-miro-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    background: #f5f5f5;
+    border-bottom: 1px solid #d0d0d0;
+}
+
+.canvas-miro-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #ffffff;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.canvas-miro-input {
+    flex: 1;
+    min-width: 220px;
+    padding: 8px 10px;
+    border: 1px solid #cfcfcf;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #222;
+}
+
+.canvas-miro-input:focus {
+    outline: none;
+    border-color: #4a9eff;
+}
+
+.canvas-miro-btn {
+    border: none;
+    background: #3c3c3c;
+    color: #ffffff;
+    font-size: 12px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.canvas-miro-btn:hover {
+    background: #2f2f2f;
+}
+
+.canvas-miro-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.canvas-miro-status {
+    padding: 6px 16px;
+    font-size: 12px;
+    color: #666;
+    background: #f7f7f7;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.canvas-miro-status.success {
+    color: #1b5e20;
+    background: #e8f5e9;
+}
+
+.canvas-miro-status.error {
+    color: #b71c1c;
+    background: #ffebee;
+}
+
+.canvas-miro-frame {
+    flex: 1;
+    min-height: 260px;
+    border: none;
+    width: 100%;
+    background: #ffffff;
+}
+
+#rightsidebar2[data-canvas-mode="miro"] .canvas-toolbar,
+#rightsidebar2[data-canvas-mode="miro"] .canvas-stage {
+    display: none;
+}
+
 /* Canvas Toolbar */
 .canvas-toolbar {
     display: flex;
