@@ -399,12 +399,12 @@ function toImageUrl(imagePath) {
   if (!imagePath || typeof imagePath !== 'string') {
     return `${APP_BASE_URL}/assets/images/user.png`;
   }
-  
+
   imagePath = String(imagePath).trim();
   if (!imagePath) {
     return `${APP_BASE_URL}/assets/images/user.png`;
   }
-  
+
   // If already a full URL, normalize uploads to socket domain when needed
   if (/^https?:\/\//i.test(imagePath)) {
     try {
@@ -416,27 +416,27 @@ function toImageUrl(imagePath) {
     } catch (_) { }
     return imagePath;
   }
-  
+
   // If starts with /uploads/, use UPLOADS_BASE_URL
   if (/^\/uploads\//i.test(imagePath)) {
     return UPLOADS_BASE_URL + imagePath;
   }
-  
+
   // If contains uploads/ prefix (relative path)
   if (/^uploads\//i.test(imagePath)) {
     return UPLOADS_BASE_URL + '/' + imagePath;
   }
-  
+
   // If contains userimg/ or profile/ prefix (relative path)
   if (/^(userimg|profile)\//i.test(imagePath)) {
     return UPLOADS_BASE_URL + '/uploads/' + imagePath;
   }
-  
+
   // If starts with / but not /uploads (e.g., /assets/...), use APP_BASE_URL
   if (imagePath.startsWith('/')) {
     return APP_BASE_URL + imagePath;
   }
-  
+
   // Default: treat as profile image filename
   return UPLOADS_BASE_URL + '/uploads/profile/' + imagePath;
 }
@@ -4063,13 +4063,13 @@ ${newMessage || ''}`;
             ORDER BY created_at ASC`,
           [conversationId, conversationId]
         );
-      
+
       // Convert image paths to full URLs
       const participants = rows.map(row => ({
         ...row,
         image: toImageUrl(row.image)
       }));
-      
+
       return { error: false, participants, viewer_is_owner: viewerIsOwner };
     } catch (error) {
       console.error('Error getting participants:', error);
@@ -5568,6 +5568,384 @@ io.on('connection', (socket) => {
       });
     } catch (err) {
       console.error('canvas_doc error:', err);
+    }
+  });
+
+  // ── canvas_shape: add/upsert a Fabric.js shape/sticky/image element ──────────
+  socket.on('canvas_shape', async (data) => {
+    try {
+      const conversationId = Number(data?.conversation_id);
+      const element = data?.element;
+      if (!conversationId || !element) return;
+
+      const accessInfo = await socket.chatManager.canAccessConversation(conversationId);
+      if (!accessInfo.hasAccess || !accessInfo.canEdit) {
+        socket.emit('error', { message: 'No permission to edit this canvas' });
+        return;
+      }
+
+      const room = getConversationRoom(conversationId);
+      socket.join(room);
+
+      const state = await loadCanvasState(conversationId);
+      if (!state.data || typeof state.data !== 'object') {
+        state.data = { strokes: [], texts: [], doc_html: '', elements: [] };
+      }
+      if (!Array.isArray(state.data.elements)) state.data.elements = [];
+
+      const ALLOWED_TYPES = ['shape', 'sticky', 'text', 'image', 'pdf_page'];
+      const type = String(element.type || '');
+      if (!ALLOWED_TYPES.includes(type)) return;
+
+      const userName = `${socket.userData.first_name || ''} ${socket.userData.last_name || ''}`.trim() || 'User';
+
+      const normalizedElement = {
+        id: String(element.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`),
+        type,
+        x: Number.isFinite(Number(element.x)) ? Number(element.x) : 0.1,
+        y: Number.isFinite(Number(element.y)) ? Number(element.y) : 0.1,
+        w: Number.isFinite(Number(element.w)) ? Math.max(0.01, Number(element.w)) : 0.2,
+        h: Number.isFinite(Number(element.h)) ? Math.max(0.01, Number(element.h)) : 0.15,
+        // Shape-specific
+        shape: type === 'shape' ? String(element.shape || 'rect') : undefined,
+        fill: type === 'shape' ? String(element.fill || '#e3f2fd') : undefined,
+        stroke: type === 'shape' ? String(element.stroke || '#1565c0') : undefined,
+        stroke_width: type === 'shape' ? Math.max(1, Math.min(20, Number(element.stroke_width || 2))) : undefined,
+        // Text/sticky
+        text: (type === 'text' || type === 'sticky') ? String(element.text || '').slice(0, 2000) : undefined,
+        bg: type === 'sticky' ? String(element.bg || '#ffe082') : undefined,
+        color: String(element.color || '#1a1a2e'),
+        font_size: Math.max(8, Math.min(96, Number(element.font_size || 14))),
+        bold: Boolean(element.bold),
+        // Image / PDF page
+        src: (type === 'image' || type === 'pdf_page') ? String(element.src || '') : undefined,
+        page: type === 'pdf_page' ? Number(element.page || 1) : undefined,
+        drive_file_id: element.drive_file_id ? String(element.drive_file_id) : undefined,
+        // Meta
+        sender_user_id: socket.userData.id,
+        sender_name: userName,
+        ts: Date.now(),
+      };
+
+      // Remove undefined keys
+      Object.keys(normalizedElement).forEach(k => normalizedElement[k] === undefined && delete normalizedElement[k]);
+
+      // Upsert by element id
+      const existingIdx = state.data.elements.findIndex(e => e.id === normalizedElement.id);
+      if (existingIdx >= 0) {
+        state.data.elements[existingIdx] = normalizedElement;
+      } else {
+        if (state.data.elements.length > 2000) {
+          state.data.elements = state.data.elements.slice(state.data.elements.length - 2000);
+        }
+        state.data.elements.push(normalizedElement);
+      }
+
+      state.version = (Number(state.version || 0) || 0) + 1;
+      canvasStateCache.set(conversationId, state);
+      scheduleCanvasSave(conversationId);
+
+      io.to(room).emit('canvas_shape', {
+        conversation_id: conversationId,
+        element: normalizedElement,
+        version: state.version,
+      });
+    } catch (err) {
+      console.error('canvas_shape error:', err);
+    }
+  });
+
+  // ── canvas_move: move or resize an existing element by id ────────────────────
+  socket.on('canvas_move', async (data) => {
+    try {
+      const conversationId = Number(data?.conversation_id);
+      const elementId = String(data?.element_id || '');
+      if (!conversationId || !elementId) return;
+
+      const accessInfo = await socket.chatManager.canAccessConversation(conversationId);
+      if (!accessInfo.hasAccess || !accessInfo.canEdit) return;
+
+      const room = getConversationRoom(conversationId);
+      socket.join(room);
+
+      const state = await loadCanvasState(conversationId);
+      if (!Array.isArray(state.data?.elements)) return;
+
+      const idx = state.data.elements.findIndex(e => e.id === elementId);
+      if (idx < 0) {
+        // Also check strokes/texts by id for legacy elements
+        return;
+      }
+
+      const updates = {};
+      if (Number.isFinite(Number(data.x))) updates.x = Number(data.x);
+      if (Number.isFinite(Number(data.y))) updates.y = Number(data.y);
+      if (Number.isFinite(Number(data.w)) && data.w > 0) updates.w = Number(data.w);
+      if (Number.isFinite(Number(data.h)) && data.h > 0) updates.h = Number(data.h);
+      if (Number.isFinite(Number(data.angle))) updates.angle = Number(data.angle);
+
+      Object.assign(state.data.elements[idx], updates, { ts: Date.now() });
+
+      state.version = (Number(state.version || 0) || 0) + 1;
+      canvasStateCache.set(conversationId, state);
+      scheduleCanvasSave(conversationId);
+
+      io.to(room).emit('canvas_move', {
+        conversation_id: conversationId,
+        element_id: elementId,
+        ...updates,
+        version: state.version,
+      });
+    } catch (err) {
+      console.error('canvas_move error:', err);
+    }
+  });
+
+  // ── canvas_erase_element: delete one or more elements by id ──────────────────
+  socket.on('canvas_erase_element', async (data) => {
+    try {
+      const conversationId = Number(data?.conversation_id);
+      if (!conversationId) return;
+
+      const accessInfo = await socket.chatManager.canAccessConversation(conversationId);
+      if (!accessInfo.hasAccess || !accessInfo.canEdit) return;
+
+      const room = getConversationRoom(conversationId);
+      socket.join(room);
+
+      // element_ids can be a string or array of strings
+      const rawIds = Array.isArray(data?.element_ids)
+        ? data.element_ids
+        : [data?.element_id || data?.element_ids].filter(Boolean);
+      const ids = rawIds.map(String).filter(Boolean);
+      if (!ids.length) return;
+
+      const state = await loadCanvasState(conversationId);
+      if (!state.data || typeof state.data !== 'object') return;
+
+      let changed = false;
+
+      // Remove from elements array
+      if (Array.isArray(state.data.elements)) {
+        const before = state.data.elements.length;
+        state.data.elements = state.data.elements.filter(e => !ids.includes(String(e.id)));
+        if (state.data.elements.length !== before) changed = true;
+      }
+
+      // Remove from strokes array
+      if (Array.isArray(state.data.strokes)) {
+        const before = state.data.strokes.length;
+        state.data.strokes = state.data.strokes.filter(s => !ids.includes(String(s.id)));
+        if (state.data.strokes.length !== before) changed = true;
+      }
+
+      // Remove from texts array
+      if (Array.isArray(state.data.texts)) {
+        const before = state.data.texts.length;
+        state.data.texts = state.data.texts.filter(t => !ids.includes(String(t.id)));
+        if (state.data.texts.length !== before) changed = true;
+      }
+
+      if (!changed) return;
+
+      state.version = (Number(state.version || 0) || 0) + 1;
+      canvasStateCache.set(conversationId, state);
+      scheduleCanvasSave(conversationId);
+
+      io.to(room).emit('canvas_erase_element', {
+        conversation_id: conversationId,
+        element_ids: ids,
+        version: state.version,
+      });
+    } catch (err) {
+      console.error('canvas_erase_element error:', err);
+    }
+  });
+
+  // ── canvas_load_pdf: broadcast that a Drive PDF was opened in the canvas ─────
+  socket.on('canvas_load_pdf', async (data) => {
+    try {
+      const conversationId = Number(data?.conversation_id);
+      if (!conversationId) return;
+
+      const accessInfo = await socket.chatManager.canAccessConversation(conversationId);
+      if (!accessInfo.hasAccess) return;
+
+      const driveFileId = String(data?.drive_file_id || '');
+      const fileName = String(data?.file_name || '');
+      const pageCount = Math.max(1, Number(data?.page_count || 1));
+
+      if (!driveFileId) return;
+
+      const room = getConversationRoom(conversationId);
+      socket.join(room);
+
+      const userName = `${socket.userData.first_name || ''} ${socket.userData.last_name || ''}`.trim() || 'User';
+
+      // Store the current open PDF reference in canvas state
+      const state = await loadCanvasState(conversationId);
+      if (!state.data || typeof state.data !== 'object') {
+        state.data = { strokes: [], texts: [], doc_html: '', elements: [], open_pdf: null };
+      }
+      state.data.open_pdf = { drive_file_id: driveFileId, file_name: fileName, page_count: pageCount };
+
+      state.version = (Number(state.version || 0) || 0) + 1;
+      canvasStateCache.set(conversationId, state);
+      scheduleCanvasSave(conversationId);
+
+      io.to(room).emit('canvas_load_pdf', {
+        conversation_id: conversationId,
+        drive_file_id: driveFileId,
+        file_name: fileName,
+        page_count: pageCount,
+        opened_by: { user_id: socket.userData.id, name: userName },
+        version: state.version,
+      });
+    } catch (err) {
+      console.error('canvas_load_pdf error:', err);
+    }
+  });
+
+  // ── canvas_ai_write: broadcast AI-generated elements to all collaborators ─────
+  socket.on('canvas_ai_write', async (data) => {
+    try {
+      const conversationId = Number(data?.conversation_id);
+      if (!conversationId) return;
+
+      const accessInfo = await socket.chatManager.canAccessConversation(conversationId);
+      if (!accessInfo.hasAccess || !accessInfo.canEdit) return;
+
+      const rawElements = Array.isArray(data?.elements) ? data.elements : [];
+      if (!rawElements.length) return;
+
+      const room = getConversationRoom(conversationId);
+      socket.join(room);
+
+      const state = await loadCanvasState(conversationId);
+      if (!state.data || typeof state.data !== 'object') {
+        state.data = { strokes: [], texts: [], doc_html: '', elements: [] };
+      }
+      if (!Array.isArray(state.data.elements)) state.data.elements = [];
+
+      const ALLOWED_TYPES = ['shape', 'sticky', 'text'];
+      const userName = `${socket.userData.first_name || ''} ${socket.userData.last_name || ''}`.trim() || 'User';
+
+      const validated = rawElements
+        .filter(el => el && ALLOWED_TYPES.includes(String(el.type || '')))
+        .slice(0, 10)
+        .map(el => ({
+          id: String(el.id || `ai-${Date.now()}-${Math.random().toString(16).slice(2)}`),
+          type: String(el.type),
+          x: Math.max(0, Math.min(1, Number(el.x) || 0.1)),
+          y: Math.max(0, Math.min(1, Number(el.y) || 0.1)),
+          w: Math.max(0.01, Math.min(1, Number(el.w) || 0.2)),
+          h: Math.max(0.01, Math.min(1, Number(el.h) || 0.15)),
+          text: el.text ? String(el.text).slice(0, 1000) : undefined,
+          bg: el.bg ? String(el.bg) : undefined,
+          color: String(el.color || '#1a1a2e'),
+          font_size: Math.max(8, Math.min(72, Number(el.font_size || 14))),
+          bold: Boolean(el.bold),
+          shape: el.shape ? String(el.shape) : undefined,
+          fill: el.fill ? String(el.fill) : undefined,
+          stroke: el.stroke ? String(el.stroke) : undefined,
+          sender_user_id: socket.userData.id,
+          sender_name: userName,
+          ai_generated: true,
+          ts: Date.now(),
+        }))
+        .map(el => { Object.keys(el).forEach(k => el[k] === undefined && delete el[k]); return el; });
+
+      if (!validated.length) return;
+
+      // Merge into canvas state
+      for (const el of validated) {
+        const idx = state.data.elements.findIndex(e => e.id === el.id);
+        if (idx >= 0) state.data.elements[idx] = el;
+        else state.data.elements.push(el);
+      }
+
+      state.version = (Number(state.version || 0) || 0) + 1;
+      canvasStateCache.set(conversationId, state);
+      scheduleCanvasSave(conversationId);
+
+      io.to(room).emit('canvas_ai_write', {
+        conversation_id: conversationId,
+        elements: validated,
+        message: String(data?.message || '').slice(0, 200),
+        version: state.version,
+      });
+    } catch (err) {
+      console.error('canvas_ai_write error:', err);
+    }
+  });
+
+  // ── canvas_undo: pop last N elements contributed by this user ─────────────────
+  socket.on('canvas_undo', async (data) => {
+    try {
+      const conversationId = Number(data?.conversation_id);
+      if (!conversationId) return;
+
+      const accessInfo = await socket.chatManager.canAccessConversation(conversationId);
+      if (!accessInfo.hasAccess || !accessInfo.canEdit) return;
+
+      const room = getConversationRoom(conversationId);
+      socket.join(room);
+
+      const count = Math.max(1, Math.min(20, Number(data?.count || 1)));
+      const userId = socket.userData.id;
+
+      const state = await loadCanvasState(conversationId);
+      if (!state.data || typeof state.data !== 'object') return;
+
+      let removed = 0;
+      const removedIds = [];
+
+      // Remove from elements (newest first)
+      if (Array.isArray(state.data.elements) && removed < count) {
+        for (let i = state.data.elements.length - 1; i >= 0 && removed < count; i--) {
+          if (state.data.elements[i].sender_user_id === userId) {
+            removedIds.push(state.data.elements[i].id);
+            state.data.elements.splice(i, 1);
+            removed++;
+          }
+        }
+      }
+
+      // Remove from strokes (newest first)
+      if (Array.isArray(state.data.strokes) && removed < count) {
+        for (let i = state.data.strokes.length - 1; i >= 0 && removed < count; i--) {
+          if (state.data.strokes[i].sender_user_id === userId) {
+            removedIds.push(state.data.strokes[i].id);
+            state.data.strokes.splice(i, 1);
+            removed++;
+          }
+        }
+      }
+
+      // Remove from texts (newest first)
+      if (Array.isArray(state.data.texts) && removed < count) {
+        for (let i = state.data.texts.length - 1; i >= 0 && removed < count; i--) {
+          if (state.data.texts[i].sender_user_id === userId) {
+            removedIds.push(state.data.texts[i].id);
+            state.data.texts.splice(i, 1);
+            removed++;
+          }
+        }
+      }
+
+      if (!removed) return;
+
+      state.version = (Number(state.version || 0) || 0) + 1;
+      canvasStateCache.set(conversationId, state);
+      scheduleCanvasSave(conversationId);
+
+      io.to(room).emit('canvas_erase_element', {
+        conversation_id: conversationId,
+        element_ids: removedIds,
+        version: state.version,
+      });
+    } catch (err) {
+      console.error('canvas_undo error:', err);
     }
   });
 

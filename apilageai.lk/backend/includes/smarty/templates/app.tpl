@@ -152,118 +152,80 @@
 
     <!-- sidebar for notes -->
 
-    <div id="rightsidebar2" class="sidebar2 canvas-sidebar" data-canvas-mode="miro" aria-hidden="true">
+    <div id="rightsidebar2" class="sidebar2 canvas-sidebar canvas-v2-sidebar" aria-hidden="true">
+
+        <!-- Canvas v2 Header -->
         <div class="sidebar-header canvas-header">
-            <h3>Canvas</h3>
+            <h3>🎨 Canvas</h3>
             <div class="canvas-header-actions">
-                <button id="canvas-dock-btn" type="button" class="canvas-header-btn" aria-label="Minimize canvas to sidebar"><i class="fa-solid fa-window-minimize" aria-hidden="true"></i></button>
-                <button id="canvas-fullscreen-btn" type="button" class="canvas-header-btn" aria-label="Open canvas fullscreen"><i class="fa-solid fa-expand" aria-hidden="true"></i></button>
-                <button id="canvas-close-btn" type="button" class="canvas-close-btn" aria-label="Close canvas">&times;</button>
+                <span id="cv2-pdf-badge" class="cv2-pdf-badge" style="display:none;"></span>
+                <span id="cv2-drive-badge" class="cv2-drive-badge" style="display:none;">☁️ Drive</span>
+                <button id="canvas-fullscreen-btn" type="button" class="canvas-header-btn" title="Fullscreen"><i class="fa-solid fa-expand"></i></button>
+                <button id="canvas-close-btn" type="button" class="canvas-close-btn" title="Close">&times;</button>
             </div>
         </div>
 
-        <div class="canvas-miro-panel" id="canvas-miro-panel">
-            <div class="canvas-miro-controls">
-                <input id="miro-embed-url" class="canvas-miro-input" type="text" placeholder="Paste Miro board or live-embed link" autocomplete="off" />
-                <button id="miro-embed-apply" type="button" class="canvas-miro-btn">Load</button>
-                <button id="miro-embed-open" type="button" class="canvas-miro-btn" disabled>Open</button>
+        <!-- Tool strip -->
+        <div class="cv2-toolstrip" role="toolbar" aria-label="Canvas tools">
+            <div class="cv2-tool-group">
+                <button class="cv2-tool-btn active" data-tool="select" title="Select / Move"><i class="fa-solid fa-arrow-pointer"></i></button>
+                <button class="cv2-tool-btn" data-tool="pen" title="Pen"><i class="fa-solid fa-pen"></i></button>
+                <button class="cv2-tool-btn" data-tool="highlight" title="Highlighter"><i class="fa-solid fa-highlighter"></i></button>
             </div>
-            <div id="miro-embed-status" class="canvas-miro-status">Paste a Miro embed link to start.</div>
-            <iframe id="miro-embed-frame" class="canvas-miro-frame" title="Miro board" loading="lazy" allowfullscreen></iframe>
-        </div>
-
-        <div class="canvas-toolbar" role="toolbar" aria-label="Canvas tools">
-            <!-- Page Size Selection -->
-            <div class="canvas-toolbar-group">
-                <select id="canvas-page-size" class="canvas-page-size" aria-label="Page size" title="Page size">
-                    <option value="A4" selected>A4</option>
-                    <option value="Letter">Letter</option>
-                    <option value="Legal">Legal</option>
-                    <option value="A3">A3</option>
-                </select>
+            <div class="cv2-toolstrip-sep"></div>
+            <div class="cv2-tool-group">
+                <button class="cv2-tool-btn" id="cv2-btn-rect" title="Rectangle"><i class="fa-regular fa-square"></i></button>
+                <button class="cv2-tool-btn" id="cv2-btn-ellipse" title="Ellipse"><i class="fa-regular fa-circle"></i></button>
+                <button class="cv2-tool-btn" id="cv2-btn-arrow" title="Arrow"><i class="fa-solid fa-arrow-right"></i></button>
             </div>
-
-            <div class="canvas-toolbar-separator"></div>
-
-            <!-- Font Controls -->
-            <div class="canvas-toolbar-group">
-                <select id="canvas-font-size" class="canvas-font-size" aria-label="Font size" title="Font size">
-                    <option value="10">10</option>
-                    <option value="12">12</option>
-                    <option value="14">14</option>
-                    <option value="16" selected>16</option>
-                    <option value="18">18</option>
-                    <option value="20">20</option>
-                    <option value="24">24</option>
-                    <option value="28">28</option>
-                    <option value="32">32</option>
-                    <option value="36">36</option>
-                    <option value="48">48</option>
-                </select>
-
-                <button id="canvas-bold-btn" type="button" class="canvas-tool-btn" aria-pressed="false" aria-label="Bold" title="Bold (Ctrl+B)"><i class="fa-solid fa-bold" aria-hidden="true"></i></button>
-                <button id="canvas-italic-btn" type="button" class="canvas-tool-btn" aria-pressed="false" aria-label="Italic" title="Italic (Ctrl+I)"><i class="fa-solid fa-italic" aria-hidden="true"></i></button>
-                <button id="canvas-underline-btn" type="button" class="canvas-tool-btn" aria-pressed="false" aria-label="Underline" title="Underline (Ctrl+U)"><i class="fa-solid fa-underline" aria-hidden="true"></i></button>
+            <div class="cv2-toolstrip-sep"></div>
+            <div class="cv2-tool-group">
+                <button class="cv2-tool-btn" id="cv2-btn-sticky" title="Sticky Note">🗒</button>
+                <button class="cv2-tool-btn" id="cv2-btn-text" title="Text Box"><i class="fa-solid fa-font"></i></button>
             </div>
-
-            <div class="canvas-toolbar-separator"></div>
-
-            <!-- Color Controls -->
-            <div class="canvas-toolbar-group">
-                <input type="color" id="canvas-text-color" class="canvas-color-picker" value="#000000" aria-label="Text color" title="Text color" />
-                <button id="canvas-highlight-btn" type="button" class="canvas-tool-btn" aria-label="Highlight" title="Highlight (Ctrl+H)"><i class="fa-solid fa-highlighter" aria-hidden="true"></i></button>
-                <input type="color" id="canvas-highlight-color" class="canvas-color-picker" value="#ffff00" aria-label="Highlight color" title="Highlight color" />
+            <div class="cv2-toolstrip-sep"></div>
+            <div class="cv2-tool-group">
+                <button class="cv2-tool-btn" id="cv2-btn-erase" title="Erase selected"><i class="fa-solid fa-eraser"></i></button>
+                <button class="cv2-tool-btn" id="cv2-btn-undo" title="Undo (your last item)"><i class="fa-solid fa-rotate-left"></i></button>
+                <button class="cv2-tool-btn cv2-danger" id="cv2-btn-clear" title="Clear all"><i class="fa-solid fa-trash"></i></button>
             </div>
-
-            <div class="canvas-toolbar-separator"></div>
-
-            <!-- List Controls -->
-            <div class="canvas-toolbar-group">
-                <button id="canvas-bullet-btn" type="button" class="canvas-tool-btn" aria-label="Bullet list" title="Bullet list"><i class="fa-solid fa-list-ul" aria-hidden="true"></i></button>
-                <button id="canvas-numbered-btn" type="button" class="canvas-tool-btn" aria-label="Numbered list" title="Numbered list"><i class="fa-solid fa-list-ol" aria-hidden="true"></i></button>
-            </div>
-
-            <div class="canvas-toolbar-separator"></div>
-
-            <!-- Undo/Redo -->
-            <div class="canvas-toolbar-group">
-                <button id="canvas-undo-btn" type="button" class="canvas-tool-btn" aria-label="Undo" title="Undo (Ctrl+Z)"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></button>
-                <button id="canvas-redo-btn" type="button" class="canvas-tool-btn" aria-label="Redo" title="Redo (Ctrl+Y)"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i></button>
-            </div>
-
-            <div class="canvas-toolbar-separator"></div>
-
-            <!-- Advanced Features -->
-            <div class="canvas-toolbar-group">
-                <button id="canvas-ruler-toggle" type="button" class="canvas-tool-btn active" aria-pressed="true" aria-label="Toggle ruler" title="Show/Hide ruler"><i class="fa-solid fa-ruler-horizontal" aria-hidden="true"></i></button>
-                <button id="canvas-latex-btn" type="button" class="canvas-tool-btn" aria-label="Insert LaTeX" title="Insert LaTeX formula"><i class="fa-solid fa-square-root-alt" aria-hidden="true"></i></button>
-                <button id="canvas-format-markdown" type="button" class="canvas-tool-btn" aria-label="Format markdown" title="Auto-format as Markdown"><i class="fa-brands fa-markdown" aria-hidden="true"></i></button>
+            <div class="cv2-toolstrip-sep"></div>
+            <!-- Color + size -->
+            <div class="cv2-tool-group">
+                <input type="color" id="cv2-color" value="#1a1a2e" title="Stroke colour" class="cv2-color-input">
+                <input type="range" id="cv2-size" min="1" max="20" value="3" title="Brush size" class="cv2-size-slider">
             </div>
         </div>
 
-        <div class="canvas-stage" id="canvas-stage">
-            <div id="canvas-doc" class="canvas-doc" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Canvas document" spellcheck="true"></div>
-            <div id="canvas-empty-hint" class="canvas-empty-hint" aria-hidden="true">Write anything…</div>
-            <div id="canvas-cursors" class="canvas-cursors" aria-hidden="true"></div>
+        <!-- Drive + AI pill bar -->
+        <div class="cv2-pill-bar">
+            <button class="cv2-pill" id="cv2-drive-connect">🔗 Connect Drive</button>
+            <button class="cv2-pill" id="cv2-drive-save" disabled>💾 Save</button>
+            <button class="cv2-pill" id="cv2-drive-list" disabled>🗂 My Canvases</button>
+            <button class="cv2-pill" id="cv2-drive-list-pdfs" disabled>📄 Open PDF</button>
+            <button class="cv2-pill cv2-pill-ai" id="cv2-ai-toggle">🤖 AI</button>
         </div>
 
-        <!-- Legacy notes UI (kept hidden to avoid breaking older scripts) -->
-        <div class="sidebar-tabs legacy-notes" style="display:none;">
-            <button class="tab-button active" data-tab="questions">Questions</button>
-            <button class="tab-button" data-tab="blankqsheet">Note sheet</button>
-            <button id="exportPDF">Save</button>
-        </div>
-        <div class="sidebar-content legacy-notes" style="display:none;">
-            <div id="questionsTab" class="tab-content active">
-                <div id="generatedQuestions"></div>
-            </div>
-            <div id="blankqsheetTab" class="tab-content">
-                <textarea id="blankSheetTextarea" name="notes" placeholder="Paste your notes here..." aria-label="Notes" autocomplete="off"></textarea>
-                <button id="analyzeWithGemini">Create HW (apilageai)</button>
+        <!-- AI Panel (collapsible) -->
+        <div class="cv2-ai-panel" id="cv2-ai-panel" style="display:none;">
+            <div class="cv2-ai-header">🤖 Ask AI to edit this canvas</div>
+            <textarea id="cv2-ai-prompt" class="cv2-ai-input" rows="2" placeholder="e.g. Add 3 sticky notes with key points from the PDF…"></textarea>
+            <div class="cv2-ai-actions">
+                <button class="cv2-btn cv2-btn-primary" id="cv2-ai-send">Send</button>
+                <button class="cv2-btn cv2-btn-ghost" id="cv2-ai-suggest">💡 Suggest Edits</button>
             </div>
         </div>
+
+        <!-- Canvas stage -->
+        <div id="cv2-wrapper" class="cv2-wrapper">
+            <canvas id="cv2-canvas"></canvas>
+            <!-- Collaborator cursor overlay -->
+            <div id="cv2-cursors" class="cv2-cursors" aria-hidden="true"></div>
+        </div>
+
     </div>
-<!-- sidebar for notes END -->
+<!-- Canvas v2 sidebar END -->
+
     
   <!-- Desmos Graphing Sidebar -->
     <aside class="right-sidebar" id="rightSidebar">
@@ -1842,6 +1804,228 @@ body.guest-mode .main-content {
     display: none;
   }
 }
+</style>
+
+<!-- ===== Canvas v2: Fabric.js + PDF.js CDNs ===== -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js" integrity="sha512-CeIsOAsgJnmevfCi2C7Zsyy6bQKi43utIjdA87Q0lqm2lT8GCT6jJGqTTqF8p8BsSMuu7lSD+HqM7kNqGMLA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+  if (typeof pdfjsLib !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+</script>
+<script src="{$smarty.const.APP_URL}/assets/js/canvas_v2.js"></script>
+
+<script>
+// ── Canvas v2 boot ─────────────────────────────────────────────────────────────
+// We wait until the main app script has initialised the socket and set
+// window.socket + window.currentConversationId, then call CanvasV2.init().
+(function () {
+  var _interval = setInterval(function () {
+    if (window.socket && window.CanvasV2) {
+      clearInterval(_interval);
+      // Canvas is opened when the user clicks the canvas sidebar button.
+      // We hook into that event to lazy-init so Fabric loads after the panel is visible.
+      var sidebar = document.getElementById('rightsidebar2');
+      if (!sidebar) return;
+
+      function getCanvasConversationId() {
+        if (window.currentConversationId) return Number(window.currentConversationId) || 0;
+        if (typeof window.getConversationIdFromURL === 'function') {
+          return Number(window.getConversationIdFromURL()) || 0;
+        }
+        var match = window.location.pathname.match(/\/app\/chat\/(\d+)/);
+        return match ? Number(match[1]) || 0 : 0;
+      }
+
+      function ensureCanvasV2() {
+        if (!window.CanvasV2) return;
+        var cid = getCanvasConversationId();
+        if (!window._CanvasV2Inited) {
+          window._CanvasV2Inited = true;
+          CanvasV2.init(window.socket, cid || 0);
+          return;
+        }
+        if (typeof CanvasV2.setConversation === 'function') {
+          CanvasV2.setConversation(cid || 0);
+        }
+      }
+
+      function isCanvasSidebarHidden() {
+        return sidebar.getAttribute('aria-hidden') === 'true' ||
+               sidebar.style.display === 'none' ||
+               !sidebar.classList.contains('active');
+      }
+
+      var observer = new MutationObserver(function () {
+        if (!isCanvasSidebarHidden()) {
+          ensureCanvasV2();
+        }
+      });
+      observer.observe(sidebar, { attributes: true, attributeFilter: ['aria-hidden', 'class', 'style'] });
+
+      if (!isCanvasSidebarHidden()) {
+        ensureCanvasV2();
+      }
+
+      document.addEventListener('canvas_opened', function () {
+        ensureCanvasV2();
+      });
+    }
+  }, 300);
+
+  // AI toggle button
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('#cv2-ai-toggle')) {
+      var panel = document.getElementById('cv2-ai-panel');
+      if (panel) panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+    }
+    // Fullscreen for canvas v2
+    if (e.target.closest('#canvas-fullscreen-btn')) {
+      var wrapper = document.getElementById('cv2-wrapper');
+      if (wrapper) {
+        if (!document.fullscreenElement) wrapper.requestFullscreen().catch(function(){});
+        else document.exitFullscreen();
+      }
+    }
+  });
+})();
+</script>
+
+<!-- ===== Canvas v2 CSS ===== -->
+<style>
+/* Canvas v2 sidebar */
+.canvas-v2-sidebar { display: flex; flex-direction: column; overflow: hidden; }
+
+/* Toolstrip */
+.cv2-toolstrip {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding: 12px 14px; border-bottom: 1px solid var(--border-color, #e0e0e0);
+  background: var(--container-bg, #fff);
+}
+.cv2-tool-group { display: flex; gap: 3px; }
+.cv2-toolstrip-sep { width: 1px; height: 28px; background: var(--border-color, #ddd); margin: 0 6px; }
+.cv2-tool-btn {
+  width: 36px; height: 36px; border: 1px solid var(--border-color, #e5e7eb); border-radius: 10px;
+  background: var(--secondary-btn-bg, #fff); color: var(--secondary-btn-text, #475569);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 600;
+  transition: transform 0.15s ease, border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+.cv2-tool-btn:hover { transform: translateY(-1px); border-color: var(--primary-red, #e53e3e); color: var(--primary-red, #e53e3e); background: var(--sidebar-active-bg, #fef2f2); }
+.cv2-tool-btn.active,
+.cv2-tool-btn.is-active { border-color: var(--primary-red, #e53e3e); color: var(--primary-red, #e53e3e); background: var(--sidebar-active-bg, #fef2f2); }
+.cv2-tool-btn.cv2-danger:hover { border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,0.12); }
+.cv2-color-input {
+  width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--border-color, #e5e7eb);
+  background: var(--secondary-btn-bg, #fff); cursor: pointer; padding: 4px;
+}
+.cv2-size-slider { width: 80px; accent-color: var(--primary-red, #e53e3e); }
+
+/* Pill bar */
+.cv2-pill-bar {
+  display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 14px;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  background: var(--container-bg, #fff);
+}
+.cv2-pill {
+  padding: 6px 12px; border-radius: 10px; border: 1px solid var(--border-color, #e5e7eb);
+  background: var(--secondary-btn-bg, #fff); color: var(--secondary-btn-text, #475569);
+  font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.cv2-pill:hover:not([disabled]) {
+  border-color: var(--primary-red, #e53e3e);
+  color: var(--primary-red, #e53e3e);
+  background: var(--secondary-btn-hover-bg, #f9fafb);
+}
+.cv2-pill[disabled] { opacity: 0.4; cursor: not-allowed; }
+.cv2-pill-ai { background: var(--primary-red, #e53e3e); color:#fff; border-color: var(--primary-red, #e53e3e); }
+.cv2-pill-ai:hover { filter: brightness(1.05); }
+
+/* Badges in header */
+.cv2-pdf-badge, .cv2-drive-badge {
+  font-size: 11px; padding: 2px 8px; border-radius: 12px;
+  background: var(--sidebar-active-bg, #fef2f2); color: var(--primary-red, #e53e3e);
+  font-weight: 600; white-space: nowrap; max-width: 150px;
+  overflow: hidden; text-overflow: ellipsis;
+}
+
+/* AI Panel */
+.cv2-ai-panel {
+  flex-direction: column; gap: 8px; padding: 10px;
+  background: var(--sidebar-active-bg, #fef2f2);
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+.cv2-ai-header { font-size: 13px; font-weight: 600; color: var(--primary-red, #e53e3e); }
+.cv2-ai-input {
+  width: 100%; border: 1px solid var(--border-color, #ddd); border-radius: 10px;
+  padding: 8px 10px; font-size: 13px; resize: none; font-family: inherit;
+  background: var(--container-bg, #fff); color: var(--text-primary, #1a1a2e);
+  box-sizing: border-box;
+}
+.cv2-ai-actions { display: flex; gap: 8px; }
+.cv2-btn { padding: 6px 14px; border-radius: 8px; border: none; font-size: 13px; cursor: pointer; font-family: inherit; }
+.cv2-btn-primary { background: var(--primary-red, #e53e3e); color: #fff; }
+.cv2-btn-primary:hover { filter: brightness(1.1); }
+.cv2-btn-ghost { background: transparent; border: 1px solid var(--border-color, #ddd); color: var(--text-secondary, #666); }
+.cv2-btn-ghost:hover { border-color: var(--primary-red, #e53e3e); color: var(--primary-red, #e53e3e); }
+
+/* Canvas wrapper */
+.cv2-wrapper {
+  flex: 1; position: relative; overflow: hidden;
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.9), rgba(248, 250, 252, 0.6));
+  min-height: 300px;
+}
+.cv2-wrapper canvas { background: #ffffff; }
+[data-theme="dark"] .cv2-wrapper { background: #0b1220; }
+[data-theme="dark"] .cv2-wrapper canvas { background: #0b1220; }
+.cv2-wrapper canvas { display: block; }
+
+/* Collaborator cursors */
+.cv2-cursors { position: absolute; inset: 0; pointer-events: none; z-index: 20; }
+.cv2-cursor {
+  position: absolute; transform: translate(-2px, -2px);
+  display: flex; align-items: flex-start; gap: 4px;
+  transition: opacity 0.3s; pointer-events: none;
+}
+.cv2-cursor span {
+  background: rgba(0,0,0,0.7); color: #fff; font-size: 10px;
+  padding: 2px 5px; border-radius: 6px; white-space: nowrap; margin-top: 12px;
+}
+
+/* Drive file picker modal */
+.cv2-modal {
+  display: none; position: fixed; inset: 0; z-index: 9999;
+  align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+}
+.cv2-modal-inner {
+  background: var(--card-bg, #fff); border-radius: 16px;
+  padding: 24px; max-width: 420px; width: 90%; max-height: 70vh;
+  display: flex; flex-direction: column; gap: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+.cv2-modal-inner h4 { margin: 0; font-size: 16px; }
+.cv2-file-list { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.cv2-file-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  border-radius: 10px; border: 1px solid var(--border-color, #eee);
+  cursor: pointer; transition: background 0.15s;
+}
+.cv2-file-item:hover { background: rgba(229,62,62,0.08); border-color: var(--primary-red, #e53e3e); }
+.cv2-file-icon { font-size: 20px; }
+.cv2-file-item span { flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cv2-file-item small { font-size: 11px; color: var(--text-secondary, #888); }
+
+/* Toast notification */
+.cv2-toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: rgba(26,26,46,0.92); color: #fff; padding: 10px 20px;
+  border-radius: 20px; font-size: 14px; z-index: 99999;
+  opacity: 0; transition: opacity 0.25s, transform 0.25s; pointer-events: none;
+  backdrop-filter: blur(8px); max-width: 90vw; text-align: center;
+}
+.cv2-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 
 </body>
