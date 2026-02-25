@@ -21,7 +21,7 @@ if (!defined('APILAGE_LOADED')) {
 // ================================================================
 define('DB_HOST', 'localhost');
 define('DB_USER', 'apilageai_main_db');
-define('DB_PASS', 'h4ZNUDySX7QA2aE7g8EQ');  // CHANGE THIS!
+define('DB_PASS', 'XG3nxPBa5HH6v5Gqs7WT');  // CHANGE THIS!
 define('DB_NAME', 'apilageai_main_db');
 define('DB_PORT', 3306);
 define('DB_CHARSET', 'utf8mb4');
@@ -115,6 +115,14 @@ define('OPENAI_API_KEY', 'sk-proj-MvpcqbBoAaAmM5_SaszxxGeoRs0vwphsSLyjTwTDRGXOBn
 define('PAYABLE_SANDBOX', false);  // Set to true for testing
 define('PAYABLE_MERCHANT_KEY', 'B669783789CC996D');  // CHANGE THIS!
 define('PAYABLE_MERCHANT_TOKEN', '84CAE8510FBAD220D63EE313DEF2D1A3');  // CHANGE THIS!
+
+// ================================================================
+// PAYPAL PAYMENT GATEWAY (SANDBOX)
+// ================================================================
+define('PAYPAL_SANDBOX', false);
+define('PAYPAL_CLIENT_ID', 'AS_Jcs8rojCyLm5a1zDFbQ_pRMeH3d2kKtA1Iv6orOjpieqjkLv1jR-RunCZOnsIHby_8rKGqbOM2VVR');
+define('PAYPAL_SECRET', 'EPlD-B_VxLk6Tvx8nPWTbZCm_pPkUvG5DKRY-5CWicP4aX_sN0NsQ3VHYgqJCckBz6ic-8L_HMWAKKoa');
+define('PAYPAL_LKR_TO_USD_RATE', 0.0032);
 
 // ================================================================
 // ENCRYPTION KEYS

@@ -682,6 +682,7 @@
                                     <th>Amount</th>
                                     <th>Date</th>
                                     <th>Status</th>
+                                    <th>Receipt</th>
                                   </tr>
                                 </thead>
                                 <tbody id="billingHistoryBody"></tbody>

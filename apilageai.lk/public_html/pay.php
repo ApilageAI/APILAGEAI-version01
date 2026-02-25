@@ -7,7 +7,11 @@
  * @package ApilageAI
  */
 
-require_once __DIR__ . '/../backend/bootstrap.php'; 
+$bootstrapPath = __DIR__ . '/../backend/bootstrap.php';
+if (!file_exists($bootstrapPath)) {
+    $bootstrapPath = __DIR__ . '/../../backend/bootstrap.php';
+}
+require_once $bootstrapPath;
 
 // Require authentication
 if (!isset($user) || !$user->_logged_in) {
@@ -25,6 +29,8 @@ if ($amountRaw <= 0 || $amountRaw > 100000) {
     die("Invalid amount.");
 }
 $amount = number_format($amountRaw, 2, '.', '');
+$paypalEnabled = $amountRaw > 500;
+$paypalComingSoon = true;
 
 // Use config constants
 $merchant_key = PAYABLE_MERCHANT_KEY;
@@ -80,6 +86,10 @@ if ($hour >= 22 || $hour < 4) {
 
 <!-- Payable SDK v4 Live -->
 <script src="https://ipgsdk.payable.lk/sdk/v4/payable-checkout.js"></script>
+<?php if ($paypalEnabled && !$paypalComingSoon): ?>
+<!-- PayPal SDK -->
+<script src="https://www.paypal.com/sdk/js?client-id=<?php echo urlencode(PAYPAL_CLIENT_ID); ?>&currency=USD&intent=capture&components=buttons&locale=en_US"></script>
+<?php endif; ?>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
@@ -206,6 +216,15 @@ if ($hour >= 22 || $hour < 4) {
       font-size: 14px;
       color: var(--text-main);
     }
+
+    .summary-item.description {
+      align-items: flex-start;
+    }
+    .summary-item.description span:last-child {
+      max-width: 280px;
+      text-align: right;
+      line-height: 1.4;
+    }
     
     .summary-item.total {
       border-bottom: none;
@@ -255,30 +274,21 @@ if ($hour >= 22 || $hour < 4) {
       background-color: #FFF5F5; /* Very light red bg */
       border-radius: 6px;
       padding: 16px;
-      display: flex;
-      align-items: center;
+      display: grid;
+      gap: 10px;
       margin-bottom: 32px;
       position: relative;
     }
 
-    .radio-circle {
-      width: 18px;
-      height: 18px;
-      border: 5px solid var(--primary-color);
-      border-radius: 50%;
-      margin-right: 12px;
-      background: white;
+    .payment-method-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
     }
-
-    .card-icons {
-      margin-left: auto;
-      display: flex;
-      gap: 8px;
-    }
-    
-    .card-icon {
-      height: 20px;
-      opacity: 0.8;
+    .payment-method-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.4;
     }
 
     /* Pay Button */
@@ -325,6 +335,58 @@ if ($hour >= 22 || $hour < 4) {
       color: var(--text-main);
     }
 
+    /* Payment choice modal */
+    .payment-choice-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(17, 24, 39, 0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 999;
+      overflow-y: auto;
+    }
+    .payment-choice-modal.active {
+      display: flex;
+    }
+    .payment-choice-card {
+      width: 100%;
+      max-width: 520px;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 28px;
+      border: 1px solid var(--border-light);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      max-height: calc(100vh - 80px);
+      overflow-y: auto;
+    }
+    .payment-choice-card h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .payment-choice-card p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+    .payment-choice-actions {
+      display: grid;
+      gap: 14px;
+    }
+    .paypal-box {
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      padding: 12px;
+      background: #F9FAFB;
+    }
+    .paypal-note {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
   </style>
 </head>
 <body>
@@ -344,16 +406,20 @@ if ($hour >= 22 || $hour < 4) {
 
     <div class="order-summary">
       <div class="summary-item">
+        <span>Item</span>
+        <span>Credit Recharge</span>
+      </div>
+      <div class="summary-item description">
+        <span>Description</span>
+        <span>Recharged credits can be used for both ApilageAI API usage and AI services. Credits are valid for a lifetime and are non-transferable and non-refundable under any circumstances.</span>
+      </div>
+      <div class="summary-item">
         <span>Invoice ID</span>
         <span><?php echo $invoice_id; ?></span>
       </div>
       <div class="summary-item">
         <span>Customer</span>
         <span><?php echo htmlspecialchars($first_name); ?></span>
-      </div>
-      <div class="summary-item">
-        <span>Valid for</span>
-        <span>60 Days</span>
       </div>
       <div class="summary-item total">
         <span>Total due today</span>
@@ -376,30 +442,54 @@ if ($hour >= 22 || $hour < 4) {
 
     <div class="section-header">Payment method</div>
     <div class="payment-method-box">
-      <div class="radio-circle"></div>
-      <span style="font-weight: 500;">Payable Secure Checkout</span>
-      <div class="card-icons">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/Visa.svg" alt="Visa" height="20">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" height="20">
+      <div>
+        <div class="payment-method-title">Payable IPG (Recommended for Sri Lankan users)</div>
+        <div class="payment-method-desc">Pay securely using Visa or MasterCard (credit/debit). Supports Sri Lankan Rupees (LKR) only.</div>
+      </div>
+      <div>
+        <div class="payment-method-title">PayPal (Coming Soon)</div>
+        <div class="payment-method-desc">Pay using your PayPal wallet or Visa, MasterCard, Amex, and other supported credit/debit cards. Payments are processed in USD and may include additional fees. Minimum purchase: 500 credits.</div>
       </div>
     </div>
 
-    <button onclick="startPayment()" class="pay-btn">
-      Pay LKR <?php echo htmlspecialchars($amount); ?>
+    <button type="button" id="payButton" class="pay-btn">
+      Continue to payment &rarr;
     </button>
 
     <div class="legal-text">
       By confirming your payment, you allow ApilageAI to charge you for this invoice. 
       <br>We do not store your card details. 
-      <br>Payments are valid for 60 days.
+      <br>Credits are valid for lifetime.
     </div>
     
     <a href="<?php echo APP_URL; ?>/app" class="cancel-link">Cancel and return</a>
   </div>
 </div>
 
+<?php if ($paypalEnabled): ?>
+<div class="payment-choice-modal" id="paymentChoiceModal" aria-hidden="true">
+  <div class="payment-choice-card" role="dialog" aria-modal="true" aria-label="Choose payment method">
+    <h3>Choose payment method</h3>
+    <p>Select LKR Payable checkout or pay with PayPal in USD.</p>
+    <div class="payment-choice-actions">
+      <button type="button" class="pay-btn" id="payableOptionBtn">Continue with Payable &rarr;</button>
+      <div class="paypal-box">
+        <?php if ($paypalComingSoon): ?>
+          <div class="paypal-note"><strong>PayPal (Coming soon)</strong></div>
+          <div class="paypal-note">We are finalizing approvals. Please use LKR checkout for now.</div>
+        <?php else: ?>
+          <div class="paypal-note">Pay with PayPal or card (PayPal shows the conversion at checkout)</div>
+          <div id="paypal-button-container"></div>
+        <?php endif; ?>
+      </div>
+      <a href="#" class="cancel-link" id="closePaymentChoice">Cancel</a>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
+
 <script>
-function startPayment(){
+function startPayable(){
     const payment = {
         logoUrl: "<?php echo APP_URL; ?>/assets/images/logos/paylog2.png",
         returnUrl: "<?php echo APP_URL; ?>/app",
@@ -438,6 +528,114 @@ function startPayment(){
     // Payable v4 live call
     payablePayment(payment);
 }
+
+(function(){
+    const payBtn = document.getElementById('payButton');
+    if (!payBtn) return;
+    const paypalEnabled = <?php echo $paypalEnabled ? 'true' : 'false'; ?>;
+    if (!paypalEnabled) {
+        payBtn.addEventListener('click', startPayable);
+        return;
+    }
+
+    const modal = document.getElementById('paymentChoiceModal');
+    const payableOptionBtn = document.getElementById('payableOptionBtn');
+    const closeBtn = document.getElementById('closePaymentChoice');
+
+    const openModal = () => {
+      if (!modal) return;
+      modal.classList.add('active');
+      modal.setAttribute('aria-hidden', 'false');
+    };
+    const closeModal = () => {
+      if (!modal) return;
+      modal.classList.remove('active');
+      modal.setAttribute('aria-hidden', 'true');
+    };
+
+    payBtn.addEventListener('click', openModal);
+    if (closeBtn) {
+      closeBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        closeModal();
+      });
+    }
+    if (modal) {
+      modal.addEventListener('click', (event) => {
+        if (event.target === modal) closeModal();
+      });
+    }
+    if (payableOptionBtn) {
+      payableOptionBtn.addEventListener('click', () => {
+        closeModal();
+        startPayable();
+      });
+    }
+
+    const paypalComingSoon = <?php echo $paypalComingSoon ? 'true' : 'false'; ?>;
+    if (paypalComingSoon) {
+      return;
+    }
+    if (window.paypal && typeof window.paypal.Buttons === 'function') {
+      const invoiceId = "<?php echo $invoice_id; ?>";
+      const apiBase = "<?php echo APP_URL; ?>/api";
+      const parseJsonResponse = async (res) => {
+        const text = await res.text();
+        try {
+          return JSON.parse(text);
+        } catch (err) {
+          console.error('PayPal API non-JSON response:', text);
+          throw new Error('Unexpected server response. Please try again.');
+        }
+      };
+      window.paypal.Buttons({
+        createOrder: () => {
+          return fetch(apiBase + '/paypal_create_order.php', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ invoice_id: invoiceId })
+          }).then(async (res) => {
+            const data = await parseJsonResponse(res);
+            if (!res.ok || !data || data.success === false) {
+              throw new Error(data && data.message ? data.message : 'Unable to create PayPal order.');
+            }
+            return data;
+          }).then(data => {
+            if (!data || !data.success || !data.order_id) {
+              throw new Error(data && data.message ? data.message : 'Unable to create PayPal order.');
+            }
+            return data.order_id;
+          });
+        },
+        onApprove: (data) => {
+          return fetch(apiBase + '/paypal_capture_order.php', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ invoice_id: invoiceId, order_id: data.orderID })
+          }).then(async (res) => {
+            const result = await parseJsonResponse(res);
+            if (!res.ok || !result || result.success === false) {
+              throw new Error(result && result.message ? result.message : 'Unable to capture PayPal payment.');
+            }
+            return result;
+          }).then(result => {
+            if (!result || !result.success) {
+              throw new Error(result && result.message ? result.message : 'Unable to capture PayPal payment.');
+            }
+            window.location.href = "<?php echo APP_URL; ?>/receipt/" + encodeURIComponent(invoiceId);
+          }).catch(err => {
+            alert(err && err.message ? err.message : 'PayPal payment failed.');
+          });
+        },
+        onError: (err) => {
+          console.error('PayPal error', err);
+          alert('PayPal payment failed.');
+        }
+      }).render('#paypal-button-container');
+    }
+})();
 </script>
 
 </body>

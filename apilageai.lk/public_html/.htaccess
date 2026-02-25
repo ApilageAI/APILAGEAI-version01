@@ -7,7 +7,7 @@ Options -Indexes
   Header set X-Content-Type-Options "nosniff"
   Header set X-Frame-Options "DENY"
   Header set Referrer-Policy "strict-origin-when-cross-origin"
-  Header set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  Header set Permissions-Policy "camera=(), microphone=(), geolocation=(), unload=(self)"
   Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 </IfModule>
 
@@ -29,6 +29,9 @@ RedirectMatch 403 ^uploads/userdocs/
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
+
+  # Favicon fallback
+  RewriteRule ^favicon\.ico$ /assets/images/icon.png [L]
 
   # App routes
   RewriteRule ^app/?$ app.php [L,QSA]
@@ -64,6 +67,8 @@ RedirectMatch 403 ^uploads/userdocs/
 
   # Account routes
   RewriteRule ^account/security/?$ account_security.php [L,QSA]
+  RewriteRule ^receipt/([A-Za-z0-9_-]+)/?$ receipt.php?invoice=$1 [L,QSA]
+  RewriteRule ^how_apilageai_credit_works/?$ how_apilageai_credit_works.php [L,QSA]
 
   # Legal routes
   RewriteRule ^privacypolicy/?$ privacypolicy.php [L,QSA]

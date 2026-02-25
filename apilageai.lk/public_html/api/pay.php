@@ -86,25 +86,34 @@ try {
         // Continue anyway but log it
     }
 
+    $updated = false;
     if ((int)$tx['paid'] === 0) {
         // Mark as paid
-        $stmt = $db->prepare("UPDATE transactions SET paid = 1, updated_at = NOW(), payable_uid = ?, status_indicator = ? WHERE invoice_id = ?");
+        $stmt = $db->prepare("UPDATE transactions SET paid = 1, updated_at = NOW(), payable_uid = ?, status_indicator = ? WHERE invoice_id = ? AND paid = 0");
         $stmt->bind_param("sss", $uidParam, $resultIndicator, $invoiceId);
         $stmt->execute();
+        $updated = $stmt->affected_rows > 0;
         $stmt->close();
 
-        // Update user balance
-        $stmt = $db->prepare("UPDATE users SET balance = balance + ? WHERE id = ?");
-        $stmt->bind_param("di", $amount, $tx['user_id']);
-        $stmt->execute();
-        $stmt->close();
+        if ($updated) {
+            // Update user balance
+            $stmt = $db->prepare("UPDATE users SET balance = balance + ? WHERE id = ?");
+            $stmt->bind_param("di", $amount, $tx['user_id']);
+            $stmt->execute();
+            $stmt->close();
 
-        error_log("PAYMENT SUCCESS: invoice=$invoiceId, amount=$amount, user={$tx['user_id']}");
+            error_log("PAYMENT SUCCESS: invoice=$invoiceId, amount=$amount, user={$tx['user_id']}");
+        } else {
+            error_log("PAYMENT ALREADY PROCESSED (race): invoice=$invoiceId");
+        }
     } else {
         error_log("PAYMENT ALREADY PROCESSED: invoice=$invoiceId");
     }
 
     $db->commit();
+    if ($updated) {
+        send_payment_receipt($db, $invoiceId, $amount);
+    }
     header("Location: " . APP_URL . "/app?status=success");
     exit;
 

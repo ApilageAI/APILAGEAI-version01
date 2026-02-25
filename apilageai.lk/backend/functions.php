@@ -459,6 +459,77 @@ function get_email_template($template_name, $template_variables = []) {
 }
 
 /**
+ * send_payment_receipt
+ *
+ * @param mysqli $db
+ * @param string $invoiceId
+ * @param float|null $amountOverride
+ * @return bool
+ */
+function send_payment_receipt(mysqli $db, string $invoiceId, ?float $amountOverride = null): bool {
+    $invoiceId = preg_replace('/[^a-zA-Z0-9_-]/', '', $invoiceId);
+    if ($invoiceId === '') {
+        return false;
+    }
+
+    $stmt = $db->prepare(
+        "SELECT t.invoice_id, t.amount, t.created_at, t.updated_at,
+                u.email, u.first_name, u.last_name
+         FROM transactions t
+         JOIN users u ON u.id = t.user_id
+         WHERE t.invoice_id = ?
+         LIMIT 1"
+    );
+    if (!$stmt) {
+        return false;
+    }
+    $stmt->bind_param("s", $invoiceId);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if (!$row) {
+        return false;
+    }
+
+    $email = trim((string)($row['email'] ?? ''));
+    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return false;
+    }
+
+    $name = trim((string)($row['first_name'] ?? '') . ' ' . (string)($row['last_name'] ?? ''));
+    if ($name === '') {
+        $name = 'ApilageAI User';
+    }
+
+    $amountValue = (float)($amountOverride ?? $row['amount'] ?? 0);
+    if ($amountValue <= 0) {
+        $amountValue = (float)($row['amount'] ?? 0);
+    }
+    $amountFormatted = number_format($amountValue, 2);
+
+    $dateRaw = $row['updated_at'] ?? $row['created_at'] ?? null;
+    $timestamp = $dateRaw ? strtotime($dateRaw) : time();
+    $paymentDate = date('M d, Y', $timestamp);
+    $paymentTime = date('H:i', $timestamp);
+
+    $receiptLink = APP_URL . '/receipt/' . urlencode($invoiceId);
+    $creditLink = APP_URL . '/how_apilageai_credit_works';
+
+    $body = get_email_template('payment_receipt', [
+        'name' => $name,
+        'invoice_id' => $invoiceId,
+        'amount' => $amountFormatted,
+        'payment_date' => $paymentDate,
+        'payment_time' => $paymentTime,
+        'receipt_link' => $receiptLink,
+        'credit_link' => $creditLink
+    ]);
+
+    return _email($email, 'Payment Receipt - ApilageAI', $body);
+}
+
+/**
  * user_agent_array
  * 
  * @return array

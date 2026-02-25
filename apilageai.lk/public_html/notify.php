@@ -69,25 +69,34 @@ try {
           updated_at = NOW(),
           payable_uid = ?,
           status_indicator = ?
-      WHERE invoice_id = ?
+      WHERE invoice_id = ? AND paid = 0
     ");
     $u1->bind_param("sss", $tx_id, $order_id, $invoiceNo);
     $u1->execute();
+    $updated = $u1->affected_rows > 0;
     $u1->close();
 
-    // Update user balance
-    $userId = (int)$txn['user_id'];
-    $u2 = $db->prepare("UPDATE users SET balance = balance + ? WHERE id = ?");
-    $u2->bind_param("di", $amountPaid, $userId);
-    $u2->execute();
-    $u2->close();
+    if ($updated) {
+        // Update user balance
+        $userId = (int)$txn['user_id'];
+        $u2 = $db->prepare("UPDATE users SET balance = balance + ? WHERE id = ?");
+        $u2->bind_param("di", $amountPaid, $userId);
+        $u2->execute();
+        $u2->close();
+    }
 
     $db->commit();
     
-    error_log("Payment webhook success: invoice=$invoiceNo, user=$userId, amount=$amountPaid");
+    if ($updated) {
+        send_payment_receipt($db, $invoiceNo, $amountPaid);
+        error_log("Payment webhook success: invoice=$invoiceNo, user=$userId, amount=$amountPaid");
+        http_response_code(200);
+        echo "OK";
+    } else {
+        http_response_code(200);
+        echo "ALREADY_PAID";
+    }
 
-    http_response_code(200);
-    echo "OK";
 } catch (Exception $e) {
     $db->rollback();
     error_log("Payment webhook error: " . $e->getMessage());
