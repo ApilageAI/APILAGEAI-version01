@@ -90,6 +90,7 @@ define('APP_NAME', 'ApilageAI');
 define('APP_ENV', 'production');  // 'development' or 'production'
 define('APP_DEBUG', false);
 define('APP_TIMEZONE', 'Asia/Colombo');
+define('WHITEBOARD_TEAM_CLIENT_ID', '');  // Public client id from whiteboard.team
 
 // File uploads
 define('UPLOAD_MAX_SIZE', 5 * 1024 * 1024);  // 5MB

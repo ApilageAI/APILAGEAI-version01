@@ -1,0 +1,474 @@
+Whiteboard Team for developers
+Whiteboard Team is a visual collaboration platform. The API brings the power of the whiteboard to your app or platform.
+
+Quickstart
+Adding Whiteboard Team to your site is quick and easy. Just add this code to your HTML document:
+
+                    
+<body>
+    <div style="width: 600px; height: 550px;" id="wt-container"></div>
+
+    <script src="https://www.whiteboard.team/dist/api.js"></script>
+    <script type="text/javascript">
+        var wt = new api.WhiteboardTeam('#wt-container', {
+            clientId: '<your clientId>',
+            boardCode: '<board code>'
+        });
+    </script>
+</body>
+        
+    
+clientId: To use Whiteboard Team API, you need a client ID. Get your client credential
+
+boardCode: Each board is identified by a unique string code. It should be a unique and unguessable string
+
+Creating a whiteboard makes a remote request to Whiteboard Team, so it may take hundreds of milliseconds or more before the SDK emits the ready event. To find out when the whiteboard is ready to use, you can use one of two mechanisms: events or promises.
+
+The ready event emits when the whiteboard has been loaded and ready to use. It is a good place to have all other function callings.
+
+wt.addListener("ready", ctx => console.log("The whiteboard is ready and user is: ", ctx.uid ))
+Or, you can use a promise instead of an event.
+wt.waitUntilReady()
+    .then(ctx =>  console.log("The whiteboard is ready and user is: ", ctx.uid ))
+    .catch(error => console.log(error));
+IMPORTANT: Do not download the script to your site and host them yourself, this will break the functionality.
+
+API Reference
+To create a whiteboard, create a new instance of api.WhiteboardTeam() with a container element and preferred options.
+
+new api.WhiteboardTeam(element, {options})
+element [string | object] – contains a reference to the element in which whiteboard is
+{options} [object] – options object
+Options
+clientId [string]
+The public identifier for the application (Get your client credential). Here's an example:
+clientId: '42c8014a89e6ad83a13e26538f1a63b6'
+boardCode [string]
+Whiteboard will use its value as the board's unique code to create a new or load existing board. By default, this option is not set, it should be a unique and unguessable string. We strongly suggest using universally unique identifiers (UUID). Alternatively, URL query strings could identify board codes. For example, board SOMEUNIQUESTRING would have URL: http://yourdomain.com/yourpage?wtBoard=SOMEUNIQUESTRING.
+boardCode: '361249e0-feca-4acb-8483-66cf47dad409'
+participant.role [string]
+With this option, you can set the role of participant. valid roles are 'facilitator' and 'editor' who can edit and 'viewer' who can view only.
+
+ participant: {
+    role : 'editor'
+}
+participant.name [string]
+With this option, you can set the display name of the user.
+
+ participant: {
+    name : 'DisplayName'
+}
+participant.permissions [array]
+With this option, you can set permissions of the user. view_templates adds templates to the toolbar and view_chat adds chat to the board.
+
+participant: {
+    permissions : ["view_templates", "view_chat"]
+}
+board.tool [string]
+With this option you can set a default tool, valid tools are pan, pen, line, arrow, circle, filledCircle, rectangle, filledRectangle, text, stickyNote or select. Default of this option is pen. Here is an example:
+
+board: {
+    tool: 'pen'
+}
+board.thickness [number]
+With this option you can set a default thickness, thickness use for pen or border of shapes. Default of this option is 2. Here is an example:
+
+board: {
+    thickness: 1
+}
+board.colors [array]
+With this option you can replace your color sub-menu colors. It should be a array of hex colors. The default of this option is null. Here is an example:
+
+board: {
+    colors: ['#FF5733', '#3498DB', '#5B2C6F', '#212F3C']
+}
+board.color [string]
+With this option you can set a default color that will appear as the color button on the main menu. It doesn't have to be a part of your color sub-menu colors. It should be a hex color format. The default of this option is black. Here is an example:
+
+board: {
+    color: '#000000'
+}
+board.bgColor [string]
+With this option you can set a background color for the board. It should be a hex color format. Here is an example:
+
+board: {
+    bgColor: '#00AA5F'
+}
+board.bg [string]
+With this option you can set a default background for the board. The default of this option is 'Dot'. Valid backgrounds are 'None', 'Dot', 'Graph paper', 'Large grid', 'Small grid', 'Line' Here is an example:
+
+board: {
+    bg : 'Small grid'
+}
+Methods:
+zoomIn()
+Zooms the board in by one step.
+
+wt.zoomIn()
+zoomOut()
+Zooms the board out by one step.
+
+wt.zoomOut()
+resetZoom()
+Zooms the board to 100%
+
+wt.resetZoom()
+undo()
+Does undo of the previous own operation.
+
+wt.undo()
+redo()
+Does redo of the previous own undo.
+
+wt.redo()
+board.clear()
+clear the content of the board. It's undoable.
+
+wt.board.clear()
+fitToScreen()
+Repositions zoom level and pan position so that the entire content on the board is visible.
+
+wt.fitToScreen()
+removeCommand()
+Removes objects from the board.
+
+wt.removeCommand(commands);
+Parameters
+
+commands {array} - list of objects to remove
+notify()
+Shows a notification on the whiteboard.
+
+wt.notify(message);
+Parameters
+
+message {string} - text of the notification
+fullscreen()
+Fullsscreens the whiteboard.
+
+wt.fullscreen()
+drawLine()
+Draws a line or arrow on the board.
+
+wt.drawLine(points, color, lineWidth, type);
+Parameters
+
+points {array} - list of two points. Example [{x:100, y:100},{x:200, y:200}]
+color {string} - '#' followed by the 6 digit HEX code
+lineWidth {number} - width of the stroke in pixels relative to the canvas with zoom level 1
+type {string} - type of the line could be 'line' or 'arrow'
+drawPen()
+Draws shape defined as array of points
+
+wt.drawPen(points, color, lineWidth);
+Parameters
+
+points {array} - list of drawing points, one point is object of two numbers {x:x, y:y}
+color {string} - '#' followed by the 6 digit HEX code
+lineWidth {number} - width of the stroke in pixels relative to the canvas with zoom level 1
+drawRectangle()
+Draws a rectangle on the board
+
+wt.drawRectangle(x, y, w, h, stroke, lineWidth, fill);
+Parameters
+
+x {number} - X coordinate of the top left point of the rectangle
+Y {number} - Y coordinate of the top left point of the rectangle
+w {number} - width of the rectangle
+h {number} - height of the rectangle
+stroke {string} - border color. '#' followed by the 6 digit HEX code or null for no color
+lineWidth {number} - width of the stroke in pixels relative to the canvas with zoom level 1
+fill {string} - background color. '#' followed by the 6 digit HEX code or null for no color
+drawCircle()
+Draws a circle on the board
+
+wt.drawCircle(x, y, r, stroke, lineWidth, fill);
+Parameters
+
+x {number} - X coordinate of the middle point of the circle
+y {number} - Y coordinate of the middle point of the circle
+r {number} - radius of the circle
+stroke {string} - border color. '#' followed by the 6 digit HEX code or null for no color
+lineWidth {number} - width of the stroke in pixels relative to the canvas with zoom level 1
+fill {string} - background color. '#' followed by the 6 digit HEX code or null for no color
+drawText()
+Draws a text on the board
+
+wt.drawText(x, y, text, color, font, size);
+Parameters
+
+x {number} - X coordinate of the top left point of the text
+y {number} - Y coordinate of the top left point of the text
+text {string} - text to be drawn
+color {string} - '#' followed by the 6 digit HEX code
+font {string} - font of the text font
+size {number} - size of the text font
+drawStickyNote()
+Draws a sticky note on the board
+
+wt.drawStickyNote(x, y, w, h, text, color, size);
+Parameters
+
+x {number} - X coordinate of the top left point of the sticky note
+y {number} - Y coordinate of the top left point of the sticky note
+w {number} - width of the sticky note
+h {number} - height of the sticky note
+text {string} - text to be drawn
+color {string} - '#' followed by the 6 digit HEX code
+size {number} - size of the sticky note font
+drawImage()
+Place an image on the board.
+
+wt.drawImage(url,x,y);
+Place an image in the center of the viewport.
+
+wt.drawImage(url);
+Place an image in the center of the viewport and zoom to the image.
+
+wt.drawImage(url)
+.then(image=> {
+    wt.viewport.zoomTo(image);
+});
+Parameters
+
+url {string} - url of the image
+x {number} - X coordinate of the top left point of the image
+y {number} - Y coordinate of the top left point of the image
+Returns
+A promise contains the image's object.
+
+drawFrame()
+Draws a frame on the board
+
+wt.drawFrame(x, y, w, h, title, color );
+Parameters
+
+x {number} - X coordinate of the top left point of the frame
+y {number} - Y coordinate of the top left point of the frame
+w {number} - width of the frame
+h {number} - height of the frame
+title {string} - title to be drawn
+color {string} - '#' followed by the 6 digit HEX code, empty string for a transparent frame
+getImage()
+Get the image of board.
+
+wt.getImage(background).then(img => console.log(img));
+Parameters
+
+background {string} - 'white' uses white for background, 'default' uses board.bg for background , 'transparent' transparent background.
+Returns
+Promise with base65 image.
+
+getCurrentUser()
+Get the current user of the board.
+
+wt.getCurrentUser().then(user => console.log(user));
+Returns
+Promise with an object containing the user id.
+
+board.get()
+returns all shapes on the board.
+
+wt.board.get().then(shapes => console.log(shapes));
+Returns
+Array of shapes.
+
+destroy()
+Destroy the instance of the whiteboard.
+
+wt.destroy();
+Events:
+[obsolete] onReady(callback)
+The callback will call when the board has been loaded. Here's an example:
+
+wt.onReady(ctx => console.log(ctx));
+Callback Parameters
+
+ctx {object} - contains uid of the user
+[obsolete] onError(error)
+The callback will call when any error occurred. Here's an example:
+
+wt.onError(error => {
+    console.log(error.type, error.message);
+})
+Callback Parameters
+
+error {object} - contains error type and error message
+ready
+The event will emit when the board is fully loaded and ready to use.
+
+wt.addListener('ready', ctx => console.log('ready', ctx));
+Parameters
+
+ctx {object} - contains uid of the joined user
+error
+The event will emit when the board fails to load.
+
+wt.addListener('error', error => console.log('error', error));
+Parameters
+
+error {object} - contains the error message
+waitUntilReady()
+Returns a promise that tracks the whiteboard creation status.
+
+wt.waitUntilReady()
+    .then(ctx => console.log("The whiteboard is ready and user is: ", ctx.uid ))
+    .catch(error => console.log(error));
+user-joined
+The event will emit when any other participant joins the board.
+
+wt.addListener('user-joined', user => console.log('joined', user));
+Parameters
+
+user {object} - contains uid and display name of the user
+user-left
+The event will emit when any other participant leaves the board.
+
+wt.addListener('user-left', user => console.log('left', user));
+Parameters
+
+user {object} - contains uid and display name of the user
+user-mentioned
+The event will emit when a user mentioned on comment
+
+wt.addListener('user-mentioned', mention => console.log('user-mentioned', mention));
+Parameters
+
+mention {object} - contains:
+source {string} - it's always 'comment'
+collaborators {array} - list of names and ids of mentioned users
+REST APIs (V2)
+There is no separation between board id and code in API 2. So, 'Id' is the same 'code' you assigned in the JavaScript API.
+
+Pass client secret in Api-Key header:
+
+Api-Key: <SECRET_KEY>
+[GET] /api/v2/boards
+Gets all boards
+
+curl  -H "Api-Key: <SECRET_KEY>" -X GET "https://www.whiteboard.team/api/v2/boards?take=<take>&skip=<skip>"
+Parameters
+
+take [number] - the maximum number of items to return in a response. Optional, default is 10
+skip [number] - excludes the first N items from a response body. Optional, default is 0.
+Returns
+returns an object containing an array of boards and total counts of boards.
+
+                            
+{
+    "data": [
+        {
+            "id": "9725c0f7-8a4e-43ee-c87b-08d7a3020e76",
+            "name": "Sample Board",
+            "createdDate": "2020-01-27T12:00:49.1113226",
+            "lastUse": "2020-01-30T08:07:23.383282",
+            "lastChange": "2020-01-29T15:12:11.6749696",
+        }
+    ],
+    "totalCount": 1
+}
+[GET] /api/v2/boards/<BORAD_ID>
+Gets a board.
+
+curl  -H "Api-Key: <SECRET_KEY>" -X GET "https://www.whiteboard.team/api/v2/boards/<BORAD_ID>"
+Parameters
+BORAD_ID [string] - board id
+
+Returns
+returns a board object
+
+                            
+{
+    "id":"<BORAD_ID>",
+    "name": "Sample Board",
+    "createdDate": "2020-01-27T12:00:49.1113226",
+    "lastUse": "2020-01-29T19:17:15.5687596",
+    "lastChange": "2020-01-29T15:12:11.6749696",
+    "members": [
+        {
+            "id": "68ea8ac4-e21d-4c8b-9e3b-d977feee177e",
+            "joinedDate": "2020-01-27T12:00:49.1180617",
+            "isActive": true,
+            "role": "Editor"
+        },
+    ]
+}
+[GET] /api/v2/boards/<BORAD_ID>/comments/
+Gets board comments.
+
+curl  -H "Api-Key: <SECRET_KEY>" -X GET "https://www.whiteboard.team/api/v2/boards/<BORAD_ID>/comments/"
+Parameters
+BORAD_ID [string] - board id
+
+Returns
+returns an array of comments grouped by threads.
+
+                            
+[
+    {
+        "threadId": "63579364a81262d7d9eb7d82",
+        "comments": [
+            {
+                "id": "63579364a81262d7d9eb7d81",
+                "createdBy": "29174542-6827-441e-adbc-3af3475a15c1",
+                "createdDate": "2022-10-25T07:42:28.587+00:00",
+                "message": "a comment",
+                "name": "Editor"
+            }
+        ]
+    }
+]
+[POST] /api/v2/boards/<BORAD_ID>/duplicate/
+Duplicates a board
+
+curl  -H "Api-Key: <SECRET_KEY>" -H "Content-Type: application/json" -d "{\"newId\":\"<NEW_BORAD_ID>\",\"name\":\"<NEW_NAME>\",\"memberId\":\"<MEMBER_ID>\"}" -X POST "https://www.whiteboard.team/api/v2/boards/<BORAD_ID>/duplicate/"
+Parameters
+
+BORAD_ID [string] - board id
+NEW_BORAD_ID [string] - optinal. a new id for duplicated board
+MEMBER_ID [string] - optional, a member id associated with boards shapes
+NEW_NAME [string] - optional, name of the board
+Returns
+returns id of the board.
+
+{
+    "id": "appname-uauhOfzESiilU3x5IF4YydB3W"
+}
+[POST] /api/v2/boards/<BORAD_ID>/upload/
+uploads an image
+
+curl  -H "Api-Key: <SECRET_KEY>" -F MemberId=<MEMBER_ID> -F file=@<FILENAME> -X POST "https://www.whiteboard.team/api/v2/boards/<BORAD_ID>/upload/"
+Parameters
+
+BORAD_ID [string] - board id
+MEMBER_ID [string] - a member id
+FILENAME [string] - file path to upload
+[POST] /api/v2/boards
+creates a new board
+
+curl -H "Api-Key: <SECRET_KEY>" -H "Content-Type: application/json" -d "{\"newId\":\"<NEW_BORAD_ID>\",\"name\":\"<NAME>\","members\":<MEMBERS>}" -X POST "https://www.whiteboard.team/api/v2/boards"
+Parameters
+
+NEW_BORAD_ID [string] - optinal. a new id for board
+NAME [string] - optinal. name of the board
+MEMBERS [array] - optional. members of the board. Example: [{id:"37671d7b-06c7-4c73-82e2-26249ea082c3" , "role":"Editor" , "name" : "Member1"}]
+Returns
+returns id of the board.
+
+{
+    "id": "appname-uauhOfzESiilU3x5IF4YydB3W"
+}
+[DELETE] /api/v2/boards/<BORAD_ID>
+Deletes a board
+
+curl  -H "Api-Key: <SECRET_KEY>" -X DELETE "https://www.whiteboard.team/api/v2/boards/<BORAD_ID>/"
+Parameters
+
+BORAD_ID [string] - board id
+[DELETE] /api/v2/boards/<BORAD_ID>/commands
+Deletes a board's content
+
+curl  -H "Api-Key: <SECRET_KEY>" -X DELETE "https://www.whiteboard.team/api/v2/boards/<BORAD_ID>/commands/"
+Parameters
+
+BORAD_ID [string] - board id

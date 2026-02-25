@@ -152,79 +152,37 @@
 
     <!-- sidebar for notes -->
 
-    <div id="rightsidebar2" class="sidebar2 canvas-sidebar canvas-v2-sidebar" aria-hidden="true">
+    <div id="rightsidebar2" class="sidebar2 canvas-sidebar whiteboard-sidebar" aria-hidden="true">
 
-        <!-- Canvas v2 Header -->
+        <!-- Whiteboard Header -->
         <div class="sidebar-header canvas-header">
-            <h3>🎨 Canvas</h3>
+            <h3>🧩 Whiteboard</h3>
             <div class="canvas-header-actions">
-                <span id="cv2-pdf-badge" class="cv2-pdf-badge" style="display:none;"></span>
-                <span id="cv2-drive-badge" class="cv2-drive-badge" style="display:none;">☁️ Drive</span>
+                <button id="wt-save-btn" type="button" class="wt-header-btn" title="Save whiteboard">💾 Save</button>
+                <button id="wt-ai-toggle" type="button" class="wt-header-btn wt-header-btn-ai" title="AI edits">🤖 AI</button>
                 <button id="canvas-fullscreen-btn" type="button" class="canvas-header-btn" title="Fullscreen"><i class="fa-solid fa-expand"></i></button>
                 <button id="canvas-close-btn" type="button" class="canvas-close-btn" title="Close">&times;</button>
             </div>
         </div>
 
-        <!-- Tool strip -->
-        <div class="cv2-toolstrip" role="toolbar" aria-label="Canvas tools">
-            <div class="cv2-tool-group">
-                <button class="cv2-tool-btn active" data-tool="select" title="Select / Move"><i class="fa-solid fa-arrow-pointer"></i></button>
-                <button class="cv2-tool-btn" data-tool="pen" title="Pen"><i class="fa-solid fa-pen"></i></button>
-                <button class="cv2-tool-btn" data-tool="highlight" title="Highlighter"><i class="fa-solid fa-highlighter"></i></button>
-            </div>
-            <div class="cv2-toolstrip-sep"></div>
-            <div class="cv2-tool-group">
-                <button class="cv2-tool-btn" id="cv2-btn-rect" title="Rectangle"><i class="fa-regular fa-square"></i></button>
-                <button class="cv2-tool-btn" id="cv2-btn-ellipse" title="Ellipse"><i class="fa-regular fa-circle"></i></button>
-                <button class="cv2-tool-btn" id="cv2-btn-arrow" title="Arrow"><i class="fa-solid fa-arrow-right"></i></button>
-            </div>
-            <div class="cv2-toolstrip-sep"></div>
-            <div class="cv2-tool-group">
-                <button class="cv2-tool-btn" id="cv2-btn-sticky" title="Sticky Note">🗒</button>
-                <button class="cv2-tool-btn" id="cv2-btn-text" title="Text Box"><i class="fa-solid fa-font"></i></button>
-            </div>
-            <div class="cv2-toolstrip-sep"></div>
-            <div class="cv2-tool-group">
-                <button class="cv2-tool-btn" id="cv2-btn-erase" title="Erase selected"><i class="fa-solid fa-eraser"></i></button>
-                <button class="cv2-tool-btn" id="cv2-btn-undo" title="Undo (your last item)"><i class="fa-solid fa-rotate-left"></i></button>
-                <button class="cv2-tool-btn cv2-danger" id="cv2-btn-clear" title="Clear all"><i class="fa-solid fa-trash"></i></button>
-            </div>
-            <div class="cv2-toolstrip-sep"></div>
-            <!-- Color + size -->
-            <div class="cv2-tool-group">
-                <input type="color" id="cv2-color" value="#1a1a2e" title="Stroke colour" class="cv2-color-input">
-                <input type="range" id="cv2-size" min="1" max="20" value="3" title="Brush size" class="cv2-size-slider">
-            </div>
-        </div>
-
-        <!-- Drive + AI pill bar -->
-        <div class="cv2-pill-bar">
-            <button class="cv2-pill" id="cv2-drive-connect">🔗 Connect Drive</button>
-            <button class="cv2-pill" id="cv2-drive-save" disabled>💾 Save</button>
-            <button class="cv2-pill" id="cv2-drive-list" disabled>🗂 My Canvases</button>
-            <button class="cv2-pill" id="cv2-drive-list-pdfs" disabled>📄 Open PDF</button>
-            <button class="cv2-pill cv2-pill-ai" id="cv2-ai-toggle">🤖 AI</button>
-        </div>
-
         <!-- AI Panel (collapsible) -->
-        <div class="cv2-ai-panel" id="cv2-ai-panel" style="display:none;">
-            <div class="cv2-ai-header">🤖 Ask AI to edit this canvas</div>
-            <textarea id="cv2-ai-prompt" class="cv2-ai-input" rows="2" placeholder="e.g. Add 3 sticky notes with key points from the PDF…"></textarea>
-            <div class="cv2-ai-actions">
-                <button class="cv2-btn cv2-btn-primary" id="cv2-ai-send">Send</button>
-                <button class="cv2-btn cv2-btn-ghost" id="cv2-ai-suggest">💡 Suggest Edits</button>
+        <div class="wt-ai-panel" id="wt-ai-panel" style="display:none;">
+            <div class="wt-ai-header">🤖 Ask AI to edit this whiteboard</div>
+            <textarea id="wt-ai-prompt" class="wt-ai-input" rows="2" placeholder="e.g. Summarize the board as 3 sticky notes…"></textarea>
+            <div class="wt-ai-actions">
+                <button class="wt-btn wt-btn-primary" id="wt-ai-send">Send</button>
+                <button class="wt-btn wt-btn-ghost" id="wt-ai-suggest">💡 Suggest Edits</button>
             </div>
         </div>
 
-        <!-- Canvas stage -->
-        <div id="cv2-wrapper" class="cv2-wrapper">
-            <canvas id="cv2-canvas"></canvas>
-            <!-- Collaborator cursor overlay -->
-            <div id="cv2-cursors" class="cv2-cursors" aria-hidden="true"></div>
+        <!-- Whiteboard container -->
+        <div class="wt-wrapper">
+            <div id="wt-container" class="wt-container" aria-label="Whiteboard" role="application"></div>
+            <div id="wt-status" class="wt-status">Loading whiteboard…</div>
         </div>
 
     </div>
-<!-- Canvas v2 sidebar END -->
+<!-- Whiteboard sidebar END -->
 
     
   <!-- Desmos Graphing Sidebar -->
@@ -1171,6 +1129,7 @@
   window.APP_BASE_URL = '{$smarty.const.APP_URL}';
   window.NODE_API_BASE = '{$smarty.const.NODE_API_BASE}';
   window.IS_GUEST = {if $is_guest}true{else}false{/if};
+  window.WHITEBOARD_TEAM_CLIENT_ID = '{$smarty.const.WHITEBOARD_TEAM_CLIENT_ID}';
 </script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/libs/dialog-js/main.min.js?V=01.03.04.2025"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/mp.min.js?V=01.22.22.2025"></script>
@@ -1181,7 +1140,6 @@
 <script type="module" src="{$smarty.const.APP_URL}/assets/scripts/gm.min.js?V=12.20.10.2025"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/ob.js?V=10.26.09.2025{get_hash_token()}"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/report-data.js?V=1.25.01.2026{get_hash_token()}"></script>
-<script src="{$smarty.const.APP_URL}/assets/scripts/canvo.min.js?V=1.25.01.2026{get_hash_token()}"></script>
 <script>
   (function () {
     const params = new URLSearchParams(window.location.search);
@@ -1806,226 +1764,95 @@ body.guest-mode .main-content {
 }
 </style>
 
-<!-- ===== Canvas v2: Fabric.js + PDF.js CDNs ===== -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js" integrity="sha512-CeIsOAsgJnmevfCi2C7Zsyy6bQKi43utIjdA87Q0lqm2lT8GCT6jJGqTTqF8p8BsSMuu7lSD+HqM7kNqGMLA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script>
-  if (typeof pdfjsLib !== 'undefined') {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  }
-</script>
+<!-- ===== Whiteboard Team SDK ===== -->
+<script src="https://www.whiteboard.team/dist/api.js"></script>
 <script src="{$smarty.const.APP_URL}/assets/js/canvas_v2.js"></script>
 
-<script>
-// ── Canvas v2 boot ─────────────────────────────────────────────────────────────
-// We wait until the main app script has initialised the socket and set
-// window.socket + window.currentConversationId, then call CanvasV2.init().
-(function () {
-  var _interval = setInterval(function () {
-    if (window.socket && window.CanvasV2) {
-      clearInterval(_interval);
-      // Canvas is opened when the user clicks the canvas sidebar button.
-      // We hook into that event to lazy-init so Fabric loads after the panel is visible.
-      var sidebar = document.getElementById('rightsidebar2');
-      if (!sidebar) return;
-
-      function getCanvasConversationId() {
-        if (window.currentConversationId) return Number(window.currentConversationId) || 0;
-        if (typeof window.getConversationIdFromURL === 'function') {
-          return Number(window.getConversationIdFromURL()) || 0;
-        }
-        var match = window.location.pathname.match(/\/app\/chat\/(\d+)/);
-        return match ? Number(match[1]) || 0 : 0;
-      }
-
-      function ensureCanvasV2() {
-        if (!window.CanvasV2) return;
-        var cid = getCanvasConversationId();
-        if (!window._CanvasV2Inited) {
-          window._CanvasV2Inited = true;
-          CanvasV2.init(window.socket, cid || 0);
-          return;
-        }
-        if (typeof CanvasV2.setConversation === 'function') {
-          CanvasV2.setConversation(cid || 0);
-        }
-      }
-
-      function isCanvasSidebarHidden() {
-        return sidebar.getAttribute('aria-hidden') === 'true' ||
-               sidebar.style.display === 'none' ||
-               !sidebar.classList.contains('active');
-      }
-
-      var observer = new MutationObserver(function () {
-        if (!isCanvasSidebarHidden()) {
-          ensureCanvasV2();
-        }
-      });
-      observer.observe(sidebar, { attributes: true, attributeFilter: ['aria-hidden', 'class', 'style'] });
-
-      if (!isCanvasSidebarHidden()) {
-        ensureCanvasV2();
-      }
-
-      document.addEventListener('canvas_opened', function () {
-        ensureCanvasV2();
-      });
-    }
-  }, 300);
-
-  // AI toggle button
-  document.addEventListener('click', function (e) {
-    if (e.target.closest('#cv2-ai-toggle')) {
-      var panel = document.getElementById('cv2-ai-panel');
-      if (panel) panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
-    }
-    // Fullscreen for canvas v2
-    if (e.target.closest('#canvas-fullscreen-btn')) {
-      var wrapper = document.getElementById('cv2-wrapper');
-      if (wrapper) {
-        if (!document.fullscreenElement) wrapper.requestFullscreen().catch(function(){});
-        else document.exitFullscreen();
-      }
-    }
-  });
-})();
-</script>
-
-<!-- ===== Canvas v2 CSS ===== -->
+<!-- ===== Whiteboard Sidebar CSS ===== -->
 <style>
-/* Canvas v2 sidebar */
-.canvas-v2-sidebar { display: flex; flex-direction: column; overflow: hidden; }
+.whiteboard-sidebar { display: flex; flex-direction: column; overflow: hidden; }
 
-/* Toolstrip */
-.cv2-toolstrip {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
-  padding: 12px 14px; border-bottom: 1px solid var(--border-color, #e0e0e0);
-  background: var(--container-bg, #fff);
-}
-.cv2-tool-group { display: flex; gap: 3px; }
-.cv2-toolstrip-sep { width: 1px; height: 28px; background: var(--border-color, #ddd); margin: 0 6px; }
-.cv2-tool-btn {
-  width: 36px; height: 36px; border: 1px solid var(--border-color, #e5e7eb); border-radius: 10px;
-  background: var(--secondary-btn-bg, #fff); color: var(--secondary-btn-text, #475569);
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 600;
+.wt-header-btn {
+  border: 1px solid var(--border-color, #e5e7eb);
+  background: var(--secondary-btn-bg, #fff);
+  color: var(--secondary-btn-text, #475569);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
   transition: transform 0.15s ease, border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
-.cv2-tool-btn:hover { transform: translateY(-1px); border-color: var(--primary-red, #e53e3e); color: var(--primary-red, #e53e3e); background: var(--sidebar-active-bg, #fef2f2); }
-.cv2-tool-btn.active,
-.cv2-tool-btn.is-active { border-color: var(--primary-red, #e53e3e); color: var(--primary-red, #e53e3e); background: var(--sidebar-active-bg, #fef2f2); }
-.cv2-tool-btn.cv2-danger:hover { border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,0.12); }
-.cv2-color-input {
-  width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--border-color, #e5e7eb);
-  background: var(--secondary-btn-bg, #fff); cursor: pointer; padding: 4px;
-}
-.cv2-size-slider { width: 80px; accent-color: var(--primary-red, #e53e3e); }
-
-/* Pill bar */
-.cv2-pill-bar {
-  display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 14px;
-  border-bottom: 1px solid var(--border-color, #e0e0e0);
-  background: var(--container-bg, #fff);
-}
-.cv2-pill {
-  padding: 6px 12px; border-radius: 10px; border: 1px solid var(--border-color, #e5e7eb);
-  background: var(--secondary-btn-bg, #fff); color: var(--secondary-btn-text, #475569);
-  font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap;
-}
-.cv2-pill:hover:not([disabled]) {
+.wt-header-btn:hover {
+  transform: translateY(-1px);
   border-color: var(--primary-red, #e53e3e);
   color: var(--primary-red, #e53e3e);
-  background: var(--secondary-btn-hover-bg, #f9fafb);
+  background: var(--sidebar-active-bg, #fef2f2);
 }
-.cv2-pill[disabled] { opacity: 0.4; cursor: not-allowed; }
-.cv2-pill-ai { background: var(--primary-red, #e53e3e); color:#fff; border-color: var(--primary-red, #e53e3e); }
-.cv2-pill-ai:hover { filter: brightness(1.05); }
-
-/* Badges in header */
-.cv2-pdf-badge, .cv2-drive-badge {
-  font-size: 11px; padding: 2px 8px; border-radius: 12px;
-  background: var(--sidebar-active-bg, #fef2f2); color: var(--primary-red, #e53e3e);
-  font-weight: 600; white-space: nowrap; max-width: 150px;
-  overflow: hidden; text-overflow: ellipsis;
+.wt-header-btn-ai {
+  border-color: var(--primary-red, #e53e3e);
+  background: var(--primary-red, #e53e3e);
+  color: #fff;
+}
+.wt-header-btn-ai:hover {
+  filter: brightness(1.05);
+  color: #fff;
 }
 
-/* AI Panel */
-.cv2-ai-panel {
-  flex-direction: column; gap: 8px; padding: 10px;
+.wt-ai-panel {
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 14px;
   background: var(--sidebar-active-bg, #fef2f2);
   border-bottom: 1px solid var(--border-color, #e0e0e0);
 }
-.cv2-ai-header { font-size: 13px; font-weight: 600; color: var(--primary-red, #e53e3e); }
-.cv2-ai-input {
-  width: 100%; border: 1px solid var(--border-color, #ddd); border-radius: 10px;
-  padding: 8px 10px; font-size: 13px; resize: none; font-family: inherit;
-  background: var(--container-bg, #fff); color: var(--text-primary, #1a1a2e);
+.wt-ai-header { font-size: 13px; font-weight: 600; color: var(--primary-red, #e53e3e); }
+.wt-ai-input {
+  width: 100%;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 13px;
+  resize: none;
+  font-family: inherit;
+  background: var(--container-bg, #fff);
+  color: var(--text-primary, #1a1a2e);
   box-sizing: border-box;
 }
-.cv2-ai-actions { display: flex; gap: 8px; }
-.cv2-btn { padding: 6px 14px; border-radius: 8px; border: none; font-size: 13px; cursor: pointer; font-family: inherit; }
-.cv2-btn-primary { background: var(--primary-red, #e53e3e); color: #fff; }
-.cv2-btn-primary:hover { filter: brightness(1.1); }
-.cv2-btn-ghost { background: transparent; border: 1px solid var(--border-color, #ddd); color: var(--text-secondary, #666); }
-.cv2-btn-ghost:hover { border-color: var(--primary-red, #e53e3e); color: var(--primary-red, #e53e3e); }
+.wt-ai-actions { display: flex; gap: 8px; }
+.wt-btn { padding: 6px 14px; border-radius: 8px; border: none; font-size: 13px; cursor: pointer; font-family: inherit; }
+.wt-btn-primary { background: var(--primary-red, #e53e3e); color: #fff; }
+.wt-btn-primary:hover { filter: brightness(1.1); }
+.wt-btn-ghost { background: transparent; border: 1px solid var(--border-color, #ddd); color: var(--text-secondary, #666); }
+.wt-btn-ghost:hover { border-color: var(--primary-red, #e53e3e); color: var(--primary-red, #e53e3e); }
 
-/* Canvas wrapper */
-.cv2-wrapper {
-  flex: 1; position: relative; overflow: hidden;
+.wt-wrapper {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
   background: linear-gradient(180deg, rgba(248, 250, 252, 0.9), rgba(248, 250, 252, 0.6));
-  min-height: 300px;
 }
-.cv2-wrapper canvas { background: #ffffff; }
-[data-theme="dark"] .cv2-wrapper { background: #0b1220; }
-[data-theme="dark"] .cv2-wrapper canvas { background: #0b1220; }
-.cv2-wrapper canvas { display: block; }
+[data-theme="dark"] .wt-wrapper { background: #0b1220; }
 
-/* Collaborator cursors */
-.cv2-cursors { position: absolute; inset: 0; pointer-events: none; z-index: 20; }
-.cv2-cursor {
-  position: absolute; transform: translate(-2px, -2px);
-  display: flex; align-items: flex-start; gap: 4px;
-  transition: opacity 0.3s; pointer-events: none;
-}
-.cv2-cursor span {
-  background: rgba(0,0,0,0.7); color: #fff; font-size: 10px;
-  padding: 2px 5px; border-radius: 6px; white-space: nowrap; margin-top: 12px;
+.wt-container {
+  width: 100%;
+  height: 100%;
 }
 
-/* Drive file picker modal */
-.cv2-modal {
-  display: none; position: fixed; inset: 0; z-index: 9999;
-  align-items: center; justify-content: center;
-  background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+.wt-status {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  background: rgba(15, 23, 42, 0.75);
+  color: #fff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
 }
-.cv2-modal-inner {
-  background: var(--card-bg, #fff); border-radius: 16px;
-  padding: 24px; max-width: 420px; width: 90%; max-height: 70vh;
-  display: flex; flex-direction: column; gap: 12px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
-}
-.cv2-modal-inner h4 { margin: 0; font-size: 16px; }
-.cv2-file-list { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 6px; }
-.cv2-file-item {
-  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
-  border-radius: 10px; border: 1px solid var(--border-color, #eee);
-  cursor: pointer; transition: background 0.15s;
-}
-.cv2-file-item:hover { background: rgba(229,62,62,0.08); border-color: var(--primary-red, #e53e3e); }
-.cv2-file-icon { font-size: 20px; }
-.cv2-file-item span { flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cv2-file-item small { font-size: 11px; color: var(--text-secondary, #888); }
-
-/* Toast notification */
-.cv2-toast {
-  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
-  background: rgba(26,26,46,0.92); color: #fff; padding: 10px 20px;
-  border-radius: 20px; font-size: 14px; z-index: 99999;
-  opacity: 0; transition: opacity 0.25s, transform 0.25s; pointer-events: none;
-  backdrop-filter: blur(8px); max-width: 90vw; text-align: center;
-}
-.cv2-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+.wt-status.visible { opacity: 1; }
 </style>
 
 </body>

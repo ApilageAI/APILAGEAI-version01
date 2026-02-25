@@ -11,7 +11,9 @@
  *     "conversation_id": 123,
  *     "prompt":          "Summarise the key points as 3 sticky notes",
  *     "canvas_doc_text": "...text extracted from open Drive PDF...",  // optional
- *     "canvas_image":    "data:image/png;base64,..."                 // optional
+ *     "canvas_image":    "data:image/png;base64,...",                // optional
+ *     "board_shapes":    [...],                                      // optional
+ *     "board_image":     "data:image/png;base64,..."                 // optional
  *   }
  *
  * Response:
@@ -50,6 +52,8 @@ $conversationId = (int)($input['conversation_id'] ?? 0);
 $prompt = trim((string)($input['prompt'] ?? ''));
 $docText = mb_substr(trim((string)($input['canvas_doc_text'] ?? '')), 0, 8000);
 $canvasImage = (string)($input['canvas_image'] ?? ''); // may be empty
+$boardShapes = $input['board_shapes'] ?? null;
+$boardImage = (string)($input['board_image'] ?? '');
 $mode = trim((string)($input['mode'] ?? 'write')); // write | suggest
 if (!$conversationId || !$prompt) {
     http_response_code(400);
@@ -58,7 +62,7 @@ if (!$conversationId || !$prompt) {
 }
 // ── Build Gemini prompt ───────────────────────────────────────────────────────
 $systemInstructions = <<<SYSTEM
-You are an AI assistant embedded inside a collaborative whiteboard canvas.
+You are an AI assistant embedded inside a collaborative whiteboard.
 Your job is to help users add content to the canvas based on their request.
 Rules:
 1. Always respond with ONLY a valid JSON object — no markdown, no extra text.
@@ -85,6 +89,23 @@ Prefer warm, readable colours. Max 10 elements per response.SYSTEM;
 $textPrompt = "User request: $prompt";
 if ($docText) {
     $textPrompt .= "\n\nOpen document text:\n$docText";
+}
+$shapeText = '';
+if (is_array($boardShapes)) {
+    $shapeText = json_encode($boardShapes, JSON_UNESCAPED_SLASHES);
+    $shapeText = mb_substr($shapeText, 0, 8000);
+    if ($shapeText) {
+        $textPrompt .= "\n\nCurrent whiteboard shapes (JSON):\n" . $shapeText;
+    }
+}
+$boardImage = trim($boardImage);
+if ($boardImage && !$canvasImage) {
+    $canvasImage = $boardImage;
+}
+if ($canvasImage && !str_starts_with($canvasImage, 'data:image/')) {
+    if (preg_match('/^[A-Za-z0-9+\\/=_-]+$/', $canvasImage)) {
+        $canvasImage = 'data:image/png;base64,' . $canvasImage;
+    }
 }
 $apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' . GEMINI_API_KEY;
 // Build parts array
