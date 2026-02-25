@@ -158,20 +158,8 @@
         <div class="sidebar-header canvas-header">
             <h3>🧩 Whiteboard</h3>
             <div class="canvas-header-actions">
-                <button id="wt-save-btn" type="button" class="wt-header-btn" title="Save whiteboard">💾 Save</button>
-                <button id="wt-ai-toggle" type="button" class="wt-header-btn wt-header-btn-ai" title="AI edits">🤖 AI</button>
                 <button id="canvas-fullscreen-btn" type="button" class="canvas-header-btn" title="Fullscreen"><i class="fa-solid fa-expand"></i></button>
                 <button id="canvas-close-btn" type="button" class="canvas-close-btn" title="Close">&times;</button>
-            </div>
-        </div>
-
-        <!-- AI Panel (collapsible) -->
-        <div class="wt-ai-panel" id="wt-ai-panel" style="display:none;">
-            <div class="wt-ai-header">🤖 Ask AI to edit this whiteboard</div>
-            <textarea id="wt-ai-prompt" class="wt-ai-input" rows="2" placeholder="e.g. Summarize the board as 3 sticky notes…"></textarea>
-            <div class="wt-ai-actions">
-                <button class="wt-btn wt-btn-primary" id="wt-ai-send">Send</button>
-                <button class="wt-btn wt-btn-ghost" id="wt-ai-suggest">💡 Suggest Edits</button>
             </div>
         </div>
 
@@ -1772,59 +1760,17 @@ body.guest-mode .main-content {
 <style>
 .whiteboard-sidebar { display: flex; flex-direction: column; overflow: hidden; }
 
-.wt-header-btn {
-  border: 1px solid var(--border-color, #e5e7eb);
-  background: var(--secondary-btn-bg, #fff);
-  color: var(--secondary-btn-text, #475569);
-  border-radius: 10px;
-  padding: 6px 10px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
-}
-.wt-header-btn:hover {
-  transform: translateY(-1px);
-  border-color: var(--primary-red, #e53e3e);
-  color: var(--primary-red, #e53e3e);
-  background: var(--sidebar-active-bg, #fef2f2);
-}
-.wt-header-btn-ai {
-  border-color: var(--primary-red, #e53e3e);
-  background: var(--primary-red, #e53e3e);
-  color: #fff;
-}
-.wt-header-btn-ai:hover {
-  filter: brightness(1.05);
-  color: #fff;
+.whiteboard-sidebar .canvas-header {
+  background: transparent;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: none;
 }
 
-.wt-ai-panel {
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px 14px;
-  background: var(--sidebar-active-bg, #fef2f2);
-  border-bottom: 1px solid var(--border-color, #e0e0e0);
+.whiteboard-sidebar .canvas-header h3 {
+  color: #f8fafc;
+  text-shadow: 0 1px 2px rgba(15, 23, 42, 0.5);
 }
-.wt-ai-header { font-size: 13px; font-weight: 600; color: var(--primary-red, #e53e3e); }
-.wt-ai-input {
-  width: 100%;
-  border: 1px solid var(--border-color, #ddd);
-  border-radius: 10px;
-  padding: 8px 10px;
-  font-size: 13px;
-  resize: none;
-  font-family: inherit;
-  background: var(--container-bg, #fff);
-  color: var(--text-primary, #1a1a2e);
-  box-sizing: border-box;
-}
-.wt-ai-actions { display: flex; gap: 8px; }
-.wt-btn { padding: 6px 14px; border-radius: 8px; border: none; font-size: 13px; cursor: pointer; font-family: inherit; }
-.wt-btn-primary { background: var(--primary-red, #e53e3e); color: #fff; }
-.wt-btn-primary:hover { filter: brightness(1.1); }
-.wt-btn-ghost { background: transparent; border: 1px solid var(--border-color, #ddd); color: var(--text-secondary, #666); }
-.wt-btn-ghost:hover { border-color: var(--primary-red, #e53e3e); color: var(--primary-red, #e53e3e); }
 
 .wt-wrapper {
   position: relative;

@@ -89,9 +89,16 @@ Element types you can return:
   ellipse:     { "type": "shape", "shape": "ellipse", "x": 0.0-1.0, "y": 0.0-1.0,
                   "w": 0.0-1.0, "h": 0.0-1.0,
                   "fill": "#fce4ec", "stroke": "#c62828", "stroke_width": 2 }
+  line:        { "type": "line", "x1": 0.0-1.0, "y1": 0.0-1.0, "x2": 0.0-1.0, "y2": 0.0-1.0,
+                  "color": "#1565c0", "stroke_width": 2 }
+  arrow:       { "type": "arrow", "x1": 0.0-1.0, "y1": 0.0-1.0, "x2": 0.0-1.0, "y2": 0.0-1.0,
+                  "color": "#1565c0", "stroke_width": 2 }
+  pen path:    { "type": "pen", "points": [{"x":0.1,"y":0.2},{"x":0.2,"y":0.3}], "color": "#1565c0", "stroke_width": 2 }
+  frame:       { "type": "frame", "x": 0.0-1.0, "y": 0.0-1.0, "w": 0.0-1.0, "h": 0.0-1.0,
+                  "title": "Frame title", "color": "#94a3b8" }
 Coordinates (x, y, w, h) are fractions of canvas size (0.0 = left/top, 1.0 = right/bottom).
 Space elements sensibly so they do not overlap — spread them across the canvas.
-Prefer warm, readable colours. Max 10 elements per response.SYSTEM;
+Prefer warm, readable colours. For flowcharts, use rectangles + arrows. Max 10 elements per response.SYSTEM;
 // Build content parts for Gemini
 $textPrompt = "User request: $prompt";
 if ($docText) {
@@ -190,7 +197,7 @@ if (!is_array($parsed)) {
     exit;
 }
 // ── Sanitise & cap elements ───────────────────────────────────────────────────
-$allowedTypes = ['sticky', 'text', 'shape'];
+$allowedTypes = ['sticky', 'text', 'shape', 'line', 'arrow', 'pen', 'frame'];
 $allowedShapes = ['rect', 'ellipse'];
 $elements = [];
 foreach ((array)($parsed['elements'] ?? []) as $el) {
@@ -227,6 +234,48 @@ foreach ((array)($parsed['elements'] ?? []) as $el) {
         $safe['fill'] = preg_match('/^#[0-9a-fA-F]{3,6}$/', $el['fill'] ?? '') ? $el['fill'] : '#e3f2fd';
         $safe['stroke'] = preg_match('/^#[0-9a-fA-F]{3,6}$/', $el['stroke'] ?? '') ? $el['stroke'] : '#1565c0';
         $safe['stroke_width'] = max(1, min(8, (int)($el['stroke_width'] ?? 2)));
+    }
+    elseif ($type === 'line' || $type === 'arrow') {
+        $safe['x1'] = max(0.0, min(1.0, (float)($el['x1'] ?? 0.1)));
+        $safe['y1'] = max(0.0, min(1.0, (float)($el['y1'] ?? 0.1)));
+        $safe['x2'] = max(0.0, min(1.0, (float)($el['x2'] ?? 0.3)));
+        $safe['y2'] = max(0.0, min(1.0, (float)($el['y2'] ?? 0.3)));
+        $safe['color'] = preg_match('/^#[0-9a-fA-F]{3,6}$/', $el['color'] ?? '') ? $el['color'] : '#1565c0';
+        $safe['stroke_width'] = max(1, min(8, (int)($el['stroke_width'] ?? 2)));
+        if (isset($el['points']) && is_array($el['points'])) {
+            $points = [];
+            foreach ($el['points'] as $p) {
+                if (!is_array($p)) continue;
+                $points[] = [
+                    'x' => max(0.0, min(1.0, (float)($p['x'] ?? 0.1))),
+                    'y' => max(0.0, min(1.0, (float)($p['y'] ?? 0.1))),
+                ];
+                if (count($points) >= 2) break;
+            }
+            if ($points) $safe['points'] = $points;
+        }
+    }
+    elseif ($type === 'pen') {
+        $safe['color'] = preg_match('/^#[0-9a-fA-F]{3,6}$/', $el['color'] ?? '') ? $el['color'] : '#1565c0';
+        $safe['stroke_width'] = max(1, min(8, (int)($el['stroke_width'] ?? 2)));
+        $points = [];
+        if (isset($el['points']) && is_array($el['points'])) {
+            foreach ($el['points'] as $p) {
+                if (!is_array($p)) continue;
+                $points[] = [
+                    'x' => max(0.0, min(1.0, (float)($p['x'] ?? 0.1))),
+                    'y' => max(0.0, min(1.0, (float)($p['y'] ?? 0.1))),
+                ];
+                if (count($points) >= 64) break;
+            }
+        }
+        if ($points) $safe['points'] = $points;
+    }
+    elseif ($type === 'frame') {
+        $safe['w'] = max(0.05, min(0.9, (float)($el['w'] ?? 0.3)));
+        $safe['h'] = max(0.05, min(0.9, (float)($el['h'] ?? 0.2)));
+        $safe['title'] = mb_substr((string)($el['title'] ?? 'Frame'), 0, 80);
+        $safe['color'] = preg_match('/^#[0-9a-fA-F]{3,6}$/', $el['color'] ?? '') ? $el['color'] : '#94a3b8';
     }
     $elements[] = $safe;
     if (count($elements) >= 10)

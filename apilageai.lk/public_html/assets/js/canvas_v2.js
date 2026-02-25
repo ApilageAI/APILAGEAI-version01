@@ -17,6 +17,16 @@
     let retryCount = 0;
     let isConnecting = false;
     const MAX_RETRIES = 4;
+    let autoSaveTimer = null;
+    let autoSaveInFlight = false;
+    let autoSaveSoonTimer = null;
+    let cachedBoardImage = '';
+    let cachedBoardText = '';
+    let lastSnapshotAt = 0;
+    let lastAiTriggerAt = 0;
+    let lastAiTriggerText = '';
+    let aiTriggerInFlight = false;
+    const DEBUG_WB = !!window.DEBUG_WHITEBOARD;
 
     const APP_URL = window.APP_URL || window.APP_BASE_URL || '';
     const CLIENT_ID = window.WHITEBOARD_TEAM_CLIENT_ID || '';
@@ -25,6 +35,8 @@
     const BASE_H = 900;
     const ORIGIN_X = 120;
     const ORIGIN_Y = 120;
+    const AUTO_SAVE_INTERVAL = 45000;
+    const SNAPSHOT_INTERVAL = 30000;
 
     function getConversationId() {
         if (window.currentConversationId) return Number(window.currentConversationId) || 0;
@@ -101,6 +113,55 @@
         return data || {};
     }
 
+    function extractBoardText(shapes) {
+        if (!Array.isArray(shapes)) return '';
+        const texts = [];
+        shapes.forEach((shape) => {
+            if (!shape || typeof shape !== 'object') return;
+            const t = String(shape.text || shape.title || shape.label || '').trim();
+            if (t) texts.push(t);
+        });
+        return texts.join('\n').slice(0, 6000);
+    }
+
+    async function refreshBoardSnapshot(force = false) {
+        const now = Date.now();
+        if (!force && now - lastSnapshotAt < SNAPSHOT_INTERVAL) {
+            return { shapes: null, image: null };
+        }
+        if (!wt || !isReady) return { shapes: null, image: null };
+        try {
+            const [shapes, image] = await Promise.all([getBoardShapes(), getBoardImage()]);
+            if (image) cachedBoardImage = image;
+            if (shapes) cachedBoardText = extractBoardText(shapes);
+            lastSnapshotAt = now;
+            return { shapes, image };
+        } catch (_) {
+            return { shapes: null, image: null };
+        }
+    }
+
+    function scheduleAutoSaveSoon() {
+        if (autoSaveSoonTimer) clearTimeout(autoSaveSoonTimer);
+        autoSaveSoonTimer = setTimeout(() => {
+            autoSaveSoonTimer = null;
+            saveWhiteboard({ silent: true });
+        }, 2500);
+    }
+
+    function startAutoSave() {
+        if (autoSaveTimer) return;
+        autoSaveTimer = setInterval(() => {
+            if (!isReady || autoSaveInFlight) return;
+            saveWhiteboard({ silent: true });
+        }, AUTO_SAVE_INTERVAL);
+    }
+
+    function stopAutoSave() {
+        if (autoSaveTimer) clearInterval(autoSaveTimer);
+        autoSaveTimer = null;
+    }
+
     async function loadBoardCode() {
         const res = await apiPost({ action: 'get', conversation_id: conversationId });
         const ok = res && (res.success === true || res.e === false);
@@ -108,6 +169,32 @@
             throw new Error(res?.error || res?.m || 'Failed to load board');
         }
         return String(res.board_code || res.boardCode || '');
+    }
+
+    function waitForReady(timeoutMs = 12000) {
+        if (isReady) return Promise.resolve(true);
+        return new Promise((resolve) => {
+            const start = Date.now();
+            const tick = () => {
+                if (isReady) return resolve(true);
+                if (Date.now() - start > timeoutMs) return resolve(false);
+                setTimeout(tick, 200);
+            };
+            tick();
+        });
+    }
+
+    async function ensureWhiteboardReady(timeoutMs = 12000) {
+        const cid = getConversationId();
+        if (!cid) return false;
+        if (conversationId !== cid) {
+            setConversation(cid);
+        }
+        if (isReady) return true;
+        if (!initInFlight && !isConnecting) {
+            initWhiteboard(cid);
+        }
+        return waitForReady(timeoutMs);
     }
 
     function scheduleRetry(reason) {
@@ -189,6 +276,10 @@
                 },
             });
 
+            if (DEBUG_WB) {
+                console.info('[Whiteboard] init', { conversationId, boardCode });
+            }
+
             isReady = false;
             isConnecting = true;
             const currentInit = ++initSeq;
@@ -205,6 +296,8 @@
                 retryCount = 0;
                 clearTimeout(readyTimeoutId);
                 showStatus('Whiteboard ready', 1200);
+                startAutoSave();
+                refreshBoardSnapshot(true);
             });
             wt.addListener('error', (error) => {
                 if (initSeq !== currentInit) return;
@@ -212,6 +305,16 @@
                 showStatus('Whiteboard connection failed. Retrying…', 0);
                 isConnecting = false;
                 scheduleRetry('error');
+            });
+            wt.addListener('user-joined', (user) => {
+                const name = String(user?.name || user?.displayName || user?.display_name || 'User').trim();
+                showStatus(`${name} joined`, 1200);
+                if (DEBUG_WB) console.info('[Whiteboard] user-joined', user);
+            });
+            wt.addListener('user-left', (user) => {
+                const name = String(user?.name || user?.displayName || user?.display_name || 'User').trim();
+                showStatus(`${name} left`, 1200);
+                if (DEBUG_WB) console.info('[Whiteboard] user-left', user);
             });
 
             // Promise-based readiness (as per Whiteboard Team docs) as a fallback.
@@ -224,6 +327,8 @@
                         retryCount = 0;
                         clearTimeout(readyTimeoutId);
                         showStatus('Whiteboard ready', 1200);
+                        startAutoSave();
+                        refreshBoardSnapshot(true);
                     })
                     .catch((err) => {
                         if (initSeq !== currentInit) return;
@@ -279,27 +384,39 @@
         }
     }
 
-    async function saveWhiteboard() {
+    async function saveWhiteboard(options = {}) {
         if (!conversationId) return;
         if (!wt || !isReady) {
-            showStatus('Whiteboard not ready');
+            if (!options.silent) showStatus('Whiteboard not ready');
             return;
         }
-        showStatus('Saving…', 1200);
+        if (autoSaveInFlight) return;
+        autoSaveInFlight = true;
+        if (!options.silent) showStatus('Saving…', 1200);
         try {
-            const [shapes, image] = await Promise.all([getBoardShapes(), getBoardImage()]);
+            let shapes = options.shapes || null;
+            let image = options.image || null;
+            if (!shapes || !image) {
+                const snap = await refreshBoardSnapshot(true);
+                shapes = shapes || snap.shapes || [];
+                image = image || snap.image || '';
+            }
             const res = await apiPost({
                 action: 'save',
                 conversation_id: conversationId,
                 shapes,
                 image,
             });
-            if (res && res.success) showStatus('Saved to server');
-            else if (res && res.e === false) showStatus('Saved to server');
-            else showStatus(res?.error || res?.m || 'Save failed');
+            if (!options.silent) {
+                if (res && res.success) showStatus('Saved to server');
+                else if (res && res.e === false) showStatus('Saved to server');
+                else showStatus(res?.error || res?.m || 'Save failed');
+            }
         } catch (e) {
             console.error(e);
-            showStatus('Save failed');
+            if (!options.silent) showStatus('Save failed');
+        } finally {
+            autoSaveInFlight = false;
         }
     }
 
@@ -337,6 +454,45 @@
             } else {
                 wt.drawRectangle(x, y, w, h, stroke, width, fill);
             }
+            return;
+        }
+
+        if (el.type === 'line' || el.type === 'arrow') {
+            const color = String(el.color || '#1565c0');
+            const width = Math.max(1, Math.min(12, Number(el.stroke_width || 2)));
+            const x1 = ORIGIN_X + (Number(el.x1) || 0.1) * BASE_W;
+            const y1 = ORIGIN_Y + (Number(el.y1) || 0.1) * BASE_H;
+            const x2 = ORIGIN_X + (Number(el.x2) || 0.3) * BASE_W;
+            const y2 = ORIGIN_Y + (Number(el.y2) || 0.3) * BASE_H;
+            const points = Array.isArray(el.points)
+                ? el.points.map(p => ({
+                    x: ORIGIN_X + (Number(p?.x) || 0.1) * BASE_W,
+                    y: ORIGIN_Y + (Number(p?.y) || 0.1) * BASE_H,
+                })).slice(0, 2)
+                : [{ x: x1, y: y1 }, { x: x2, y: y2 }];
+            wt.drawLine(points, color, width, el.type === 'arrow' ? 'arrow' : 'line');
+            return;
+        }
+
+        if (el.type === 'pen') {
+            const color = String(el.color || '#1565c0');
+            const width = Math.max(1, Math.min(12, Number(el.stroke_width || 2)));
+            const points = Array.isArray(el.points) ? el.points : [];
+            if (points.length >= 2) {
+                const mapped = points.map(p => ({
+                    x: ORIGIN_X + (Number(p?.x) || 0.1) * BASE_W,
+                    y: ORIGIN_Y + (Number(p?.y) || 0.1) * BASE_H,
+                }));
+                wt.drawPen(mapped, color, width);
+            }
+            return;
+        }
+
+        if (el.type === 'frame') {
+            const title = String(el.title || 'Frame');
+            const color = String(el.color || '#94a3b8');
+            wt.drawFrame(x, y, w, h, title, color);
+            return;
         }
     }
 
@@ -346,21 +502,25 @@
         if (wt && typeof wt.fitToScreen === 'function') {
             try { wt.fitToScreen(); } catch (_) { }
         }
+        scheduleAutoSaveSoon();
     }
 
-    async function sendAIRequest() {
-        const promptEl = document.getElementById('wt-ai-prompt');
-        const prompt = promptEl?.value?.trim();
-        if (!prompt) return;
-        if (!conversationId) return;
-        if (!wt || !isReady) {
-            showStatus('Whiteboard not ready');
-            return;
+    async function runWhiteboardAI(prompt, options = {}) {
+        const cleanPrompt = String(prompt || '').trim();
+        if (!cleanPrompt) return null;
+        const cid = conversationId || getConversationId();
+        if (!cid) return null;
+        if (conversationId !== cid) {
+            setConversation(cid);
         }
-
-        const sendBtn = document.getElementById('wt-ai-send');
-        if (sendBtn) sendBtn.disabled = true;
-        showStatus('AI thinking…', 1500);
+        if (!wt || !isReady) {
+            const ok = await ensureWhiteboardReady(12000);
+            if (!ok || !wt || !isReady) {
+                if (!options.silent) showStatus('Whiteboard not ready');
+                return null;
+            }
+        }
+        if (!options.silent) showStatus('AI thinking…', 1500);
 
         try {
             const [shapes, image] = await Promise.all([getBoardShapes(), getBoardImage()]);
@@ -369,8 +529,8 @@
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    conversation_id: conversationId,
-                    prompt,
+                    conversation_id: cid,
+                    prompt: cleanPrompt,
                     board_shapes: shapes,
                     board_image: image,
                 }),
@@ -385,22 +545,32 @@
             }
             if (!res.ok || !data) {
                 const msg = data?.error || data?.m || (text && text.trim() ? 'AI error (non-JSON response)' : 'AI error');
-                showStatus(msg);
-                return;
+                if (!options.silent) showStatus(msg);
+                return null;
             }
             if (!data.success) {
-                showStatus(data.error || 'AI error');
-                return;
+                if (!options.silent) showStatus(data.error || 'AI error');
+                return null;
             }
             applyElements(data.elements || []);
-            showStatus(`AI: ${data.message || 'Done'}`);
-            if (promptEl) promptEl.value = '';
+            if (!options.silent) showStatus(`AI: ${data.message || 'Done'}`);
+            return data;
         } catch (e) {
             console.error(e);
-            showStatus('AI request failed');
-        } finally {
-            if (sendBtn) sendBtn.disabled = false;
+            if (!options.silent) showStatus('AI request failed');
         }
+        return null;
+    }
+
+    async function sendAIRequest() {
+        const promptEl = document.getElementById('wt-ai-prompt');
+        const prompt = promptEl?.value?.trim();
+        if (!prompt) return;
+        const sendBtn = document.getElementById('wt-ai-send');
+        if (sendBtn) sendBtn.disabled = true;
+        const data = await runWhiteboardAI(prompt, { silent: false });
+        if (data && promptEl) promptEl.value = '';
+        if (sendBtn) sendBtn.disabled = false;
     }
 
     function bindUI() {
@@ -486,5 +656,106 @@
     bindUI();
     setupAutoBoot();
 
-    window.CanvasV2 = { init: initWhiteboard, setConversation };
+    function hasWhiteboardMention(text) {
+        return /(^|\s)@whiteboard(?=[\s\.,!?]|$)/i.test(text || '');
+    }
+
+    function stripWhiteboardMention(text) {
+        return String(text || '')
+            .replace(/(^|\s)@whiteboard(?=[\s\.,!?]|$)/gi, '$1')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+    }
+
+    async function triggerWhiteboardAIFromText(raw, options = {}) {
+        if (!hasWhiteboardMention(raw)) return false;
+        const cleaned = stripWhiteboardMention(raw);
+        if (!cleaned) return true;
+        const now = Date.now();
+        if (aiTriggerInFlight && cleaned === lastAiTriggerText && now - lastAiTriggerAt < 2000) {
+            return true;
+        }
+        aiTriggerInFlight = true;
+        lastAiTriggerText = cleaned;
+        lastAiTriggerAt = now;
+        try {
+            await runWhiteboardAI(cleaned, { silent: true, ...options });
+        } finally {
+            aiTriggerInFlight = false;
+        }
+        return true;
+    }
+
+    function hookChatWhiteboard() {
+        if (window.__whiteboardChatHooked) return;
+        if (typeof window.sendMessage !== 'function') return;
+        const originalSend = window.sendMessage;
+        window.sendMessage = async function (...args) {
+            const inputEl = document.getElementById('message-input');
+            const raw = inputEl ? String(inputEl.value || '') : '';
+            const shouldApply = await triggerWhiteboardAIFromText(raw, { silent: true });
+            if (shouldApply && inputEl) {
+                inputEl.value = stripWhiteboardMention(raw);
+            }
+            return originalSend.apply(this, args);
+        };
+        window.__whiteboardChatHooked = true;
+    }
+
+    function bindChatSendHooks() {
+        if (window.__whiteboardSendHooksBound) return;
+        const onSendIntent = async () => {
+            const inputEl = document.getElementById('message-input');
+            const raw = inputEl ? String(inputEl.value || '') : '';
+            const applied = await triggerWhiteboardAIFromText(raw, { silent: true });
+            if (applied && inputEl) inputEl.value = stripWhiteboardMention(raw);
+        };
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('#send-button')) {
+                onSendIntent();
+            }
+        }, true);
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                const inputEl = document.getElementById('message-input');
+                if (inputEl && document.activeElement === inputEl) {
+                    onSendIntent();
+                }
+            }
+        }, true);
+        window.__whiteboardSendHooksBound = true;
+    }
+
+    function registerWhiteboardMention() {
+        if (typeof window.getMentionCandidates !== 'function') return;
+        if (window.getMentionCandidates._wbPatched) return;
+        const original = window.getMentionCandidates;
+        window.getMentionCandidates = function () {
+            const list = original() || [];
+            const exists = list.some(item => String(item?.name || '').toLowerCase() === 'whiteboard');
+            if (!exists) {
+                list.unshift({ userId: -99, name: 'whiteboard', image: '', isBot: true });
+            }
+            return list;
+        };
+        window.getMentionCandidates._wbPatched = true;
+    }
+
+    function installChatHooks() {
+        hookChatWhiteboard();
+        registerWhiteboardMention();
+        bindChatSendHooks();
+        setTimeout(() => {
+            hookChatWhiteboard();
+            registerWhiteboardMention();
+            bindChatSendHooks();
+        }, 1200);
+    }
+
+    window.CanvasV2 = { init: initWhiteboard, setConversation, runWhiteboardAI };
+    window.getCanvasSnapshotDataUrl = () => cachedBoardImage || '';
+    window.getCanvasDocPlainText = () => cachedBoardText || '';
+    window.whiteboardAiFromChat = runWhiteboardAI;
+
+    installChatHooks();
 })();

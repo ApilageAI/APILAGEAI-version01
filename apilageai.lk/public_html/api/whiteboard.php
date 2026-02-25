@@ -151,6 +151,12 @@ function ensure_board_code($db, int $conversationId): array {
     $data['whiteboard'] = $whiteboard;
 
     save_canvas_record($db, $conversationId, $data);
+    // Re-read to guard against race conditions on first insert.
+    [, $fresh] = load_canvas_record($db, $conversationId);
+    if (is_array($fresh['whiteboard'] ?? null) && !empty($fresh['whiteboard']['board_code'])) {
+        $boardCode = (string)$fresh['whiteboard']['board_code'];
+        $data = $fresh;
+    }
     return [$boardCode, $data];
 }
 
