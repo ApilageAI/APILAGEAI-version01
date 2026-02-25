@@ -52,8 +52,13 @@ function user_can_access_conversation($db, int $conversationId, int $userId): bo
          WHERE c.conversation_id = ? AND (c.user_id = ? OR p.user_id IS NOT NULL)
          LIMIT 1'
     );
-    $stmt->execute([$userId, $conversationId, $userId]);
-    return (bool)$stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$stmt) return false;
+    $stmt->bind_param('iii', $userId, $conversationId, $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $hasRow = $result && $result->num_rows > 0;
+    $stmt->close();
+    return $hasRow;
 }
 
 if (!user_can_access_conversation($db, $conversationId, (int)$user->_data['id'])) {
@@ -61,26 +66,75 @@ if (!user_can_access_conversation($db, $conversationId, (int)$user->_data['id'])
     returnJSON(['e' => true, 'm' => 'No access to this conversation']);
 }
 
+function ensure_canvas_table($db): void {
+    static $checked = false;
+    if ($checked) return;
+    $checked = true;
+    try {
+        $ok = $db->query(
+            "CREATE TABLE IF NOT EXISTS conversation_canvas (
+                conversation_id BIGINT NOT NULL PRIMARY KEY,
+                data LONGTEXT NOT NULL,
+                version INT NOT NULL DEFAULT 0,
+                updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+        );
+        if (!$ok) {
+            throw new Exception('Failed to ensure conversation_canvas table');
+        }
+    } catch (Throwable $e) {
+        throw $e;
+    }
+}
+
 function load_canvas_record($db, int $conversationId): array {
+    ensure_canvas_table($db);
     $stmt = $db->prepare('SELECT data FROM conversation_canvas WHERE conversation_id = ? LIMIT 1');
-    $stmt->execute([$conversationId]);
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$stmt) return [null, []];
+    $stmt->bind_param('i', $conversationId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result ? $result->fetch_assoc() : null;
+    $stmt->close();
     if (!$row) return [null, []];
     $data = json_decode($row['data'] ?? '', true);
     return [$row['data'], is_array($data) ? $data : []];
 }
 
 function save_canvas_record($db, int $conversationId, array $payload): void {
+    ensure_canvas_table($db);
     $json = json_encode($payload, JSON_UNESCAPED_SLASHES);
-    $stmt = $db->prepare('SELECT conversation_id FROM conversation_canvas WHERE conversation_id = ? LIMIT 1');
-    $stmt->execute([$conversationId]);
-    if ($stmt->fetch(PDO::FETCH_ASSOC)) {
-        $stmt = $db->prepare('UPDATE conversation_canvas SET data = ? WHERE conversation_id = ?');
-        $stmt->execute([$json, $conversationId]);
-    } else {
-        $stmt = $db->prepare('INSERT INTO conversation_canvas (conversation_id, data) VALUES (?, ?)');
-        $stmt->execute([$conversationId, $json]);
+    if ($json === false) {
+        $json = '{}';
     }
+    $stmt = $db->prepare('SELECT conversation_id FROM conversation_canvas WHERE conversation_id = ? LIMIT 1');
+    if (!$stmt) {
+        throw new Exception('Failed to prepare canvas lookup');
+    }
+    $stmt->bind_param('i', $conversationId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $exists = $result && $result->num_rows > 0;
+    $stmt->close();
+
+    if ($exists) {
+        $stmt = $db->prepare('UPDATE conversation_canvas SET data = ? WHERE conversation_id = ?');
+        if (!$stmt) {
+            throw new Exception('Failed to prepare canvas update');
+        }
+        $stmt->bind_param('si', $json, $conversationId);
+        $stmt->execute();
+        $stmt->close();
+        return;
+    }
+
+    $stmt = $db->prepare('INSERT INTO conversation_canvas (conversation_id, data) VALUES (?, ?)');
+    if (!$stmt) {
+        throw new Exception('Failed to prepare canvas insert');
+    }
+    $stmt->bind_param('is', $conversationId, $json);
+    $stmt->execute();
+    $stmt->close();
 }
 
 function ensure_board_code($db, int $conversationId): array {
@@ -127,6 +181,10 @@ try {
     http_response_code(400);
     returnJSON(['e' => true, 'm' => 'Unknown action']);
 } catch (Throwable $e) {
+    error_log('whiteboard.php error: ' . $e->getMessage());
+    $message = (defined('APP_DEBUG') && APP_DEBUG)
+        ? 'Server error: ' . $e->getMessage()
+        : 'Server error. Please try again later.';
     http_response_code(500);
-    returnJSON(['e' => true, 'm' => 'Server error']);
+    returnJSON(['e' => true, 'm' => $message]);
 }

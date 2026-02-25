@@ -28,6 +28,10 @@
  *
  * @package ApilageAI
  */
+define('APILAGE_EXPECTS_JSON', true);
+ini_set('display_errors', '0');
+ini_set('display_startup_errors', '0');
+error_reporting(E_ALL);
 require_once __DIR__ . '/../../backend/bootstrap.php';
 header('Content-Type: application/json');
 // ── Auth & method ──────────────────────────────────────────────────────────────
@@ -50,7 +54,10 @@ if (!is_array($input)) {
 }
 $conversationId = (int)($input['conversation_id'] ?? 0);
 $prompt = trim((string)($input['prompt'] ?? ''));
-$docText = mb_substr(trim((string)($input['canvas_doc_text'] ?? '')), 0, 8000);
+$docTextRaw = trim((string)($input['canvas_doc_text'] ?? ''));
+$docText = function_exists('mb_substr')
+    ? mb_substr($docTextRaw, 0, 8000)
+    : substr($docTextRaw, 0, 8000);
 $canvasImage = (string)($input['canvas_image'] ?? ''); // may be empty
 $boardShapes = $input['board_shapes'] ?? null;
 $boardImage = (string)($input['board_image'] ?? '');
@@ -102,7 +109,7 @@ $boardImage = trim($boardImage);
 if ($boardImage && !$canvasImage) {
     $canvasImage = $boardImage;
 }
-if ($canvasImage && !str_starts_with($canvasImage, 'data:image/')) {
+if ($canvasImage && strpos($canvasImage, 'data:image/') !== 0) {
     if (preg_match('/^[A-Za-z0-9+\\/=_-]+$/', $canvasImage)) {
         $canvasImage = 'data:image/png;base64,' . $canvasImage;
     }
@@ -111,7 +118,7 @@ $apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-fl
 // Build parts array
 $parts = [['text' => $textPrompt]];
 // If a canvas screenshot was sent, include it as an inline image
-if ($canvasImage && str_starts_with($canvasImage, 'data:image/')) {
+if ($canvasImage && strpos($canvasImage, 'data:image/') === 0) {
     $commaPos = strpos($canvasImage, ',');
     if ($commaPos !== false) {
         $mimeMatch = [];

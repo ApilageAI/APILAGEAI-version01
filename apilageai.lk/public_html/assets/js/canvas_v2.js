@@ -10,6 +10,13 @@
     let boardCode = null;
     let isReady = false;
     let initInFlight = false;
+    let sdkLoadPromise = null;
+    let initSeq = 0;
+    let readyTimeoutId = null;
+    let retryTimer = null;
+    let retryCount = 0;
+    let isConnecting = false;
+    const MAX_RETRIES = 4;
 
     const APP_URL = window.APP_URL || window.APP_BASE_URL || '';
     const CLIENT_ID = window.WHITEBOARD_TEAM_CLIENT_ID || '';
@@ -41,7 +48,39 @@
         el.textContent = message;
         el.classList.add('visible');
         clearTimeout(el._timer);
-        el._timer = setTimeout(() => el.classList.remove('visible'), duration);
+        if (duration && duration > 0) {
+            el._timer = setTimeout(() => el.classList.remove('visible'), duration);
+        }
+    }
+
+    function ensureSdkLoaded() {
+        if (window.api && window.api.WhiteboardTeam) return Promise.resolve(true);
+        if (sdkLoadPromise) return sdkLoadPromise;
+
+        sdkLoadPromise = new Promise((resolve, reject) => {
+            const existing = document.querySelector('script[data-wt-sdk]') ||
+                document.querySelector('script[src*="whiteboard.team/dist/api.js"]');
+            if (existing) {
+                existing.addEventListener('load', () => resolve(true), { once: true });
+                existing.addEventListener('error', () => reject(new Error('Whiteboard SDK failed to load')), { once: true });
+            } else {
+                const script = document.createElement('script');
+                script.src = 'https://www.whiteboard.team/dist/api.js';
+                script.async = true;
+                script.dataset.wtSdk = '1';
+                script.onload = () => resolve(true);
+                script.onerror = () => reject(new Error('Whiteboard SDK failed to load'));
+                document.head.appendChild(script);
+            }
+
+            // Safety timeout
+            setTimeout(() => {
+                if (window.api && window.api.WhiteboardTeam) resolve(true);
+                else reject(new Error('Whiteboard SDK not available'));
+            }, 8000);
+        });
+
+        return sdkLoadPromise;
     }
 
     async function apiPost(payload) {
@@ -51,41 +90,87 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
         });
-        return res.json();
+        let data = null;
+        try {
+            data = await res.json();
+        } catch (_) { }
+        if (!res.ok) {
+            const msg = data?.error || data?.m || `Request failed (${res.status})`;
+            throw new Error(msg);
+        }
+        return data || {};
     }
 
     async function loadBoardCode() {
         const res = await apiPost({ action: 'get', conversation_id: conversationId });
-        if (!res || !res.success) {
-            throw new Error(res?.error || 'Failed to load board');
+        const ok = res && (res.success === true || res.e === false);
+        if (!ok) {
+            throw new Error(res?.error || res?.m || 'Failed to load board');
         }
-        return String(res.board_code || '');
+        return String(res.board_code || res.boardCode || '');
+    }
+
+    function scheduleRetry(reason) {
+        if (retryTimer || initInFlight) return;
+        if (retryCount >= MAX_RETRIES) {
+            showStatus('Whiteboard connection failed. Please try again.', 0);
+            return;
+        }
+        retryCount += 1;
+        const delay = Math.min(8000, 1200 * retryCount);
+        showStatus('Reconnecting whiteboard…', 0);
+        retryTimer = setTimeout(() => {
+            retryTimer = null;
+            try { wt?.destroy?.(); } catch (_) { }
+            wt = null;
+            isReady = false;
+            isConnecting = false;
+            initWhiteboard(conversationId);
+        }, delay);
     }
 
     async function initWhiteboard(convId) {
         if (initInFlight) return;
         initInFlight = true;
         try {
+            const prevConversationId = conversationId;
             conversationId = Number(convId || 0) || null;
             if (!conversationId) {
-                showStatus('Open a chat to use the whiteboard');
+                showStatus('Open a chat to use the whiteboard', 0);
                 return;
             }
             if (!CLIENT_ID) {
-                showStatus('Missing Whiteboard Team client id');
+                showStatus('Missing Whiteboard Team client id', 0);
+                return;
+            }
+            if (prevConversationId !== conversationId) {
+                retryCount = 0;
+            }
+            showStatus('Loading whiteboard…', 0);
+            try {
+                await ensureSdkLoaded();
+            } catch (err) {
+                console.error('Whiteboard SDK error', err);
+                showStatus('Whiteboard SDK not loaded', 0);
                 return;
             }
             if (!window.api || !window.api.WhiteboardTeam) {
-                showStatus('Whiteboard SDK not loaded');
+                showStatus('Whiteboard SDK not loaded', 0);
                 return;
             }
 
             const container = document.getElementById('wt-container');
             if (!container) return;
 
-            boardCode = await loadBoardCode();
+            try {
+                boardCode = await loadBoardCode();
+            } catch (err) {
+                console.error('Whiteboard load error', err);
+                showStatus(err?.message || 'Failed to load board', 0);
+                return;
+            }
             if (!boardCode) {
-                showStatus('Failed to resolve board');
+                showStatus('Failed to resolve board', 0);
                 return;
             }
 
@@ -105,14 +190,49 @@
             });
 
             isReady = false;
+            isConnecting = true;
+            const currentInit = ++initSeq;
+            clearTimeout(readyTimeoutId);
+            readyTimeoutId = setTimeout(() => {
+                if (initSeq !== currentInit || isReady) return;
+                scheduleRetry('timeout');
+            }, 20000);
+
             wt.addListener('ready', () => {
+                if (initSeq !== currentInit) return;
                 isReady = true;
-                showStatus('Whiteboard ready');
+                isConnecting = false;
+                retryCount = 0;
+                clearTimeout(readyTimeoutId);
+                showStatus('Whiteboard ready', 1200);
             });
             wt.addListener('error', (error) => {
+                if (initSeq !== currentInit) return;
                 console.error('Whiteboard error', error);
-                showStatus('Whiteboard failed to load');
+                showStatus('Whiteboard connection failed. Retrying…', 0);
+                isConnecting = false;
+                scheduleRetry('error');
             });
+
+            // Promise-based readiness (as per Whiteboard Team docs) as a fallback.
+            if (typeof wt.waitUntilReady === 'function') {
+                wt.waitUntilReady()
+                    .then(() => {
+                        if (initSeq !== currentInit || isReady) return;
+                        isReady = true;
+                        isConnecting = false;
+                        retryCount = 0;
+                        clearTimeout(readyTimeoutId);
+                        showStatus('Whiteboard ready', 1200);
+                    })
+                    .catch((err) => {
+                        if (initSeq !== currentInit) return;
+                        console.error('Whiteboard waitUntilReady error', err);
+                        showStatus('Whiteboard connection failed. Retrying…', 0);
+                        isConnecting = false;
+                        scheduleRetry('wait');
+                    });
+            }
         } finally {
             initInFlight = false;
         }
@@ -120,7 +240,7 @@
 
     function setConversation(id) {
         const nextId = Number(id || 0) || null;
-        if (nextId === conversationId) return;
+        if (nextId === conversationId && wt && (isReady || isConnecting || initInFlight)) return;
         initWhiteboard(nextId);
     }
 
@@ -175,7 +295,8 @@
                 image,
             });
             if (res && res.success) showStatus('Saved to server');
-            else showStatus(res?.error || 'Save failed');
+            else if (res && res.e === false) showStatus('Saved to server');
+            else showStatus(res?.error || res?.m || 'Save failed');
         } catch (e) {
             console.error(e);
             showStatus('Save failed');
@@ -254,7 +375,19 @@
                     board_image: image,
                 }),
             });
-            const data = await res.json();
+            let data = null;
+            let text = '';
+            try {
+                text = await res.text();
+                data = text ? JSON.parse(text) : null;
+            } catch (_) {
+                data = null;
+            }
+            if (!res.ok || !data) {
+                const msg = data?.error || data?.m || (text && text.trim() ? 'AI error (non-JSON response)' : 'AI error');
+                showStatus(msg);
+                return;
+            }
             if (!data.success) {
                 showStatus(data.error || 'AI error');
                 return;
@@ -304,13 +437,25 @@
         const sidebar = document.getElementById('rightsidebar2');
         if (!sidebar) return;
 
+        let lastPrefetchId = null;
+
         const syncConversation = () => {
             const cid = getConversationId();
-            if (!cid) return;
-            if (cid !== conversationId) setConversation(cid);
+            if (!cid) {
+                if (isSidebarVisible(sidebar)) showStatus('Open a chat to use the whiteboard', 0);
+                return;
+            }
+            if (cid !== conversationId || !wt) setConversation(cid);
         };
 
         const observer = new MutationObserver(() => {
+            if (!isSidebarVisible(sidebar)) {
+                const activeEl = document.activeElement;
+                if (activeEl && sidebar.contains(activeEl)) {
+                    try { activeEl.blur(); } catch (_) { }
+                }
+                return;
+            }
             if (!isSidebarVisible(sidebar)) return;
             if (!conversationId) {
                 syncConversation();
@@ -326,6 +471,16 @@
             if (!isSidebarVisible(sidebar)) return;
             syncConversation();
         }, 1200);
+
+        // Pre-warm in the background so opening the sidebar feels instant.
+        setInterval(() => {
+            if (isSidebarVisible(sidebar)) return;
+            const cid = getConversationId();
+            if (!cid) return;
+            if (cid === lastPrefetchId && wt && (isReady || isConnecting)) return;
+            lastPrefetchId = cid;
+            setConversation(cid);
+        }, 6000);
     }
 
     bindUI();

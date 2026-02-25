@@ -90,7 +90,8 @@ define('APP_NAME', 'ApilageAI');
 define('APP_ENV', 'production');  // 'development' or 'production'
 define('APP_DEBUG', false);
 define('APP_TIMEZONE', 'Asia/Colombo');
-define('WHITEBOARD_TEAM_CLIENT_ID', '');  // Public client id from whiteboard.team
+define('WHITEBOARD_TEAM_CLIENT_ID', 'a1465b3d61c7269058f8ac25f09c8980');  // Public client id from whiteboard.team
+define('WHITEBOARD_TEAM_CLIENT_SECRET', 'fd235309e1f65941d1b53c6c595ad798');  // Server-side secret for REST API usage
 
 // File uploads
 define('UPLOAD_MAX_SIZE', 5 * 1024 * 1024);  // 5MB

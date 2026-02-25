@@ -27,6 +27,10 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.APP_URL || ''
 const appBaseUrl = (process.env.APP_URL || process.env.PUBLIC_BASE_URL || '').trim();
 const nodeApiBase = (process.env.NODE_API_BASE || appBaseUrl).trim();
 const wsBase = nodeApiBase ? nodeApiBase.replace(/^http/i, 'ws') : '';
+const whiteboardOrigins = [
+    'https://www.whiteboard.team',
+    'wss://www.whiteboard.team',
+];
 
 const config = {
     // Security headers
@@ -34,14 +38,17 @@ const config = {
         // Content Security Policy
         csp: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'"].concat(appBaseUrl ? [appBaseUrl] : []),
+            scriptSrc: ["'self'", "'unsafe-inline'"]
+                .concat(appBaseUrl ? [appBaseUrl] : [])
+                .concat(whiteboardOrigins.filter((o) => o.startsWith('https://'))),
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             imgSrc: ["'self'", "data:", "https:", "blob:"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
             connectSrc: ["'self'"].concat(
                 nodeApiBase ? [nodeApiBase] : [],
                 wsBase ? [wsBase] : [],
-                allowedOrigins
+                allowedOrigins,
+                whiteboardOrigins
             ),
             frameSrc: ["'none'"],
             objectSrc: ["'none'"],
