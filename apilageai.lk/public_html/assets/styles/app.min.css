@@ -8590,6 +8590,29 @@ select:focus {
     cursor: not-allowed;
 }
 
+.excalidraw-action-btn i {
+    font-size: 11px;
+}
+
+.excalidraw-action-btn.excalidraw-fullscreen-btn {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #ffffff;
+}
+
+.excalidraw-action-btn.excalidraw-fullscreen-btn:hover {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+}
+
+[data-theme="dark"] .excalidraw-action-btn.excalidraw-fullscreen-btn {
+    background: linear-gradient(135deg, #818cf8, #a78bfa);
+    color: #0f172a;
+}
+
+[data-theme="dark"] .excalidraw-action-btn.excalidraw-fullscreen-btn:hover {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #ffffff;
+}
+
 .excalidraw-box-body {
     padding: 8px;
     overflow: hidden;
