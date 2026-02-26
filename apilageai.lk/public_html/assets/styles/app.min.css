@@ -6519,6 +6519,37 @@ body[data-theme="dark"] .theme-toggle-btn .dark-icon {
     font-style: italic;
 }
 
+.thinking-status--local {
+    background: rgba(255, 255, 255, 0.65);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.thinking-status--local .status-text {
+    font-weight: 600;
+    color: #666666;
+}
+
+@supports (-webkit-background-clip: text) or (background-clip: text) {
+    .thinking-status--local .status-text {
+        background: linear-gradient(90deg, #6f6f6f 0%, #ffffff 50%, #6f6f6f 100%);
+        background-size: 200% 100%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        animation: thinkingShine 1.4s linear infinite;
+    }
+}
+
+@keyframes thinkingShine {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
 @keyframes statusPulse {
 
     0%,
@@ -6635,6 +6666,15 @@ body[data-theme="dark"] .theme-toggle-btn .dark-icon {
 [data-theme="dark"] .thinking-status {
     background: rgba(255, 255, 255, 0.05);
     color: #aaa;
+}
+
+[data-theme="dark"] .thinking-status--local {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .thinking-status--local .status-text {
+    color: #c7c7c7;
 }
 
 [data-theme="dark"] .citations-section {
