@@ -1052,6 +1052,18 @@ select:focus {
     .sidebar-icon-btn:active {
         transform: scale(0.95);
     }
+
+    .navbar-right .notification-btn,
+    .navbar-right .streak-indicator {
+        width: 34px;
+        height: 34px;
+    }
+
+    .navbar-right .notification-btn img,
+    .navbar-right .streak-indicator img {
+        width: 20px;
+        height: 20px;
+    }
 }
 
 @media (max-width: 955px) {
@@ -1616,6 +1628,7 @@ body.guest-mode #toggleGraphBtn,
 body.guest-mode #enebleThink,
 body.guest-mode #open-conversation-gallery,
 body.guest-mode #open-share-modal,
+body.guest-mode #shareRocketBtn,
 body.guest-mode #mindmap-open-btn,
 body.guest-mode #mcqblust-gameyard-icon,
 body.guest-mode #collab-mic-toggle,
@@ -1748,6 +1761,20 @@ body.guest-mode .main-content {
 }
 .navbar-right {
   position: relative;
+}
+
+.navbar-right .notification-btn img,
+.navbar-right .streak-indicator img {
+  width: 24px;
+  height: 24px;
+}
+
+.navbar-right .streak-indicator {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 12px;
 }
 .streak-indicator {
   appearance: none;
@@ -2190,5 +2217,33 @@ body.guest-mode .main-content {
 
   .preferencebox-sidebar nav a i {
     display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .navbar-right .notification-btn,
+  .navbar-right .streak-indicator {
+    width: 30px;
+    height: 30px;
+  }
+
+  .navbar-right .notification-btn img,
+  .navbar-right .streak-indicator img {
+    width: 18px;
+    height: 18px;
+  }
+
+  .navbar-right .streak-indicator {
+    padding: 0;
+    border-radius: 10px;
+  }
+}
+
+@media (min-width: 956px) {
+  .sidebar.hidden .sidebar-but:hover::after,
+  .sidebar.hidden .sidebar-but:hover::before,
+  .sidebar-action-row .mindmap-btn[title]:hover::after,
+  .sidebar-action-row .nav-icon-btn[title]:hover::after {
+    z-index: 1000002;
   }
 }

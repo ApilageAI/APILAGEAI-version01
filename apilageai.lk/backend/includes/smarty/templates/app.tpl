@@ -902,7 +902,7 @@
     <div class="navbar-center">
         <div id="modelSwitcher" class="model-switcher">
           <div class="brand-model">
-            Chat
+            Apilageai
             <sup><span id="currentModelLabel"></span></sup>
           </div>
           <div class="dropdown">
@@ -916,6 +916,12 @@
 
     <!-- Right side: Notification Bell -->
     <div class="navbar-right">
+        <button id="shareRocketBtn" class="notification-btn share-rocket-btn" type="button" aria-label="Share chat">
+            <picture>
+                <source srcset="https://fonts.gstatic.com/s/e/notoemoji/latest/1f680/512.webp" type="image/webp">
+                <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f680/512.gif" alt="🚀" width="32" height="32">
+            </picture>
+        </button>
         <button id="streakIndicator" class="streak-indicator" type="button" aria-label="Learning streak" aria-haspopup="dialog" aria-expanded="false">
             <span class="streak-emoji" aria-hidden="true">
                 <picture>
