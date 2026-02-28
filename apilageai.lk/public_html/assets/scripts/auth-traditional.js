@@ -26,9 +26,11 @@
 
   const captchaIds = { login: null, signup: null, forgot: null };
   const captchaTokens = { login: '', signup: '', forgot: '' };
+  const captchaIssuedAt = { login: 0, signup: 0, forgot: 0 };
   const captchaWaiters = { login: [], signup: [], forgot: [] };
   const captchaExecuting = { login: false, signup: false, forgot: false };
   const captchaPromises = { login: null, signup: null, forgot: null };
+  const CAPTCHA_MAX_AGE_MS = 60000;
 
   const RESEND_COOLDOWN_SECONDS = 50;
   let resendCooldown = 0;
@@ -132,7 +134,13 @@
   }
 
   async function getCaptchaToken(name, widgetId) {
-    if (captchaTokens[name]) return captchaTokens[name];
+    const now = Date.now();
+    if (captchaTokens[name] && (now - captchaIssuedAt[name]) < CAPTCHA_MAX_AGE_MS) {
+      const token = captchaTokens[name];
+      captchaTokens[name] = '';
+      captchaIssuedAt[name] = 0;
+      return token;
+    }
     if (!window.turnstile) return '';
     if (widgetId === null) initCaptchaWidgets();
     const id = captchaIds[name];
@@ -141,6 +149,9 @@
       return captchaPromises[name];
     }
 
+    if (captchaTokens[name]) {
+      resetCaptcha(name, id);
+    }
     captchaExecuting[name] = true;
     const promise = new Promise((resolve) => {
       const timer = setTimeout(() => {
@@ -162,14 +173,18 @@
       }
     });
     captchaPromises[name] = promise;
-    return promise;
+    const token = await promise;
+    captchaTokens[name] = '';
+    captchaIssuedAt[name] = 0;
+    return token;
   }
 
   function resetCaptcha(name, widgetId) {
-    if (!window.turnstile || widgetId === null) return;
     captchaTokens[name] = '';
+    captchaIssuedAt[name] = 0;
     captchaExecuting[name] = false;
     captchaPromises[name] = null;
+    if (!window.turnstile || widgetId === null) return;
     try { turnstile.reset(widgetId); } catch (_) {}
   }
 
@@ -212,10 +227,13 @@
   if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (loginForm.dataset.submitting === 'true') return;
+      loginForm.dataset.submitting = 'true';
       clearAlerts();
       const captcha = await getCaptchaToken('login', captchaIds.login);
       if (!captcha) {
         showAlert(loginAlert, 'Please complete the captcha.', 'error');
+        loginForm.dataset.submitting = 'false';
         return;
       }
 
@@ -234,6 +252,7 @@
             ? parsed.raw
             : 'Login failed. Please try again.';
           showAlert(loginAlert, msg, 'error');
+          loginForm.dataset.submitting = 'false';
           return;
         }
         if (result.e) {
@@ -246,14 +265,17 @@
             resendBtn.onclick = () => resendVerification(result.email, loginAlert);
             if (resendWrap) resendWrap.style.display = 'block';
           }
+          loginForm.dataset.submitting = 'false';
           return;
         }
         showAlert(loginAlert, 'Login successful. Redirecting...', 'success');
         setTimeout(() => { window.location.href = `${appBase}/app`; }, 800);
+        loginForm.dataset.submitting = 'false';
       } catch (err) {
         showLoading(false);
         resetCaptcha('login', captchaIds.login);
         showAlert(loginAlert, 'Login failed. Please try again.', 'error');
+        loginForm.dataset.submitting = 'false';
       }
     });
   }
@@ -261,10 +283,13 @@
   if (signupForm) {
     signupForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (signupForm.dataset.submitting === 'true') return;
+      signupForm.dataset.submitting = 'true';
       clearAlerts();
       const captcha = await getCaptchaToken('signup', captchaIds.signup);
       if (!captcha) {
         showAlert(signupAlert, 'Please complete the captcha.', 'error');
+        signupForm.dataset.submitting = 'false';
         return;
       }
 
@@ -275,14 +300,17 @@
       const validPassword = /^.{5,}$/.test(password);
       if (!validPassword) {
         showAlert(signupAlert, 'Password must be at least 5 characters.', 'error');
+        signupForm.dataset.submitting = 'false';
         return;
       }
       if (password !== confirmPassword) {
         showAlert(signupAlert, 'Passwords do not match.', 'error');
+        signupForm.dataset.submitting = 'false';
         return;
       }
       if (!/^\+?[0-9]{10,15}$/.test(phone.replace(/\s/g, ''))) {
         showAlert(signupAlert, 'Please enter a valid phone number (10-15 digits).', 'error');
+        signupForm.dataset.submitting = 'false';
         return;
       }
 
@@ -301,6 +329,7 @@
             ? parsed.raw
             : 'Registration failed. Please try again.';
           showAlert(signupAlert, msg, 'error');
+          signupForm.dataset.submitting = 'false';
           return;
         }
         if (result.e) {
@@ -309,14 +338,17 @@
             ? `${result.m || 'Registration failed.'}\n${result._debug_output}`
             : (result.m || 'Registration failed.');
           showAlert(signupAlert, msg, 'error');
+          signupForm.dataset.submitting = 'false';
           return;
         }
         resetCaptcha('signup', captchaIds.signup);
         showSignupSuccess();
+        signupForm.dataset.submitting = 'false';
       } catch (err) {
         showLoading(false);
         resetCaptcha('signup', captchaIds.signup);
         showAlert(signupAlert, 'Registration failed. Please try again.', 'error');
+        signupForm.dataset.submitting = 'false';
       }
     });
   }
@@ -324,10 +356,13 @@
   if (forgotForm) {
     forgotForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (forgotForm.dataset.submitting === 'true') return;
+      forgotForm.dataset.submitting = 'true';
       clearAlerts();
       const captcha = await getCaptchaToken('forgot', captchaIds.forgot);
       if (!captcha) {
         showAlert(forgotAlert, 'Please complete the captcha.', 'error');
+        forgotForm.dataset.submitting = 'false';
         return;
       }
 
@@ -346,6 +381,7 @@
             ? parsed.raw
             : 'Failed to send reset link. Please try again.';
           showAlert(forgotAlert, msg, 'error');
+          forgotForm.dataset.submitting = 'false';
           return;
         }
         if (result.e) {
@@ -354,14 +390,17 @@
             ? `${result.m || 'Failed to send reset link.'}\n${result._debug_output}`
             : (result.m || 'Failed to send reset link.');
           showAlert(forgotAlert, msg, 'error');
+          forgotForm.dataset.submitting = 'false';
           return;
         }
         showAlert(forgotAlert, result.m || 'Reset instructions sent. Check your email.', 'success');
         resetCaptcha('forgot', captchaIds.forgot);
+        forgotForm.dataset.submitting = 'false';
       } catch (err) {
         showLoading(false);
         resetCaptcha('forgot', captchaIds.forgot);
         showAlert(forgotAlert, 'Failed to send reset link. Please try again.', 'error');
+        forgotForm.dataset.submitting = 'false';
       }
     });
   }
@@ -416,6 +455,7 @@
 
   function resolveToken(name, token) {
     captchaTokens[name] = token || '';
+    captchaIssuedAt[name] = token ? Date.now() : 0;
     captchaExecuting[name] = false;
     captchaPromises[name] = null;
     const waiters = captchaWaiters[name];
