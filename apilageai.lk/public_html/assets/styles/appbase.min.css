@@ -797,10 +797,26 @@ td {
 
 /* Mobile: completely hide sidebar */
 @media (max-width: 955px) {
-    .sidebar.hidden {
-        transform: translateX(-100%);
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100dvh;
+        width: min(84vw, 320px);
         min-width: 0;
-        width: 0;
+        transform: translate3d(-100%, 0, 0);
+        transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+        will-change: transform;
+        contain: layout paint;
+        z-index: 9997;
+    }
+
+    .sidebar.hidden {
+        transform: translate3d(-100%, 0, 0);
+    }
+
+    .sidebar:not(.hidden) {
+        transform: translate3d(0, 0, 0);
     }
 
     .sidebar.hidden~.main-content {
@@ -1697,5 +1713,4 @@ td {
     border-top-color: #4285f4;
     animation: spin 1s ease-in-out infinite;
 }
-
 

@@ -34,6 +34,56 @@
     overflow-y: auto;
 }
 
+.sidebar-item-wrapper {
+    content-visibility: auto;
+    contain-intrinsic-size: 48px 44px;
+}
+
+.sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.35);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 9996;
+}
+
+.sidebar-overlay.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+body.sidebar-open .sidebar-overlay {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+body:not(.sidebar-open) .sidebar-overlay {
+    opacity: 0;
+    pointer-events: none;
+}
+
+body.sidebar-open {
+    overflow: hidden;
+}
+
+@keyframes sidebarContentFade {
+    from {
+        opacity: 0;
+        transform: translateX(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.sidebar:not(.hidden) .sidebar-items,
+.sidebar:not(.hidden) .sidebar-sections {
+    animation: sidebarContentFade 0.2s ease 0.06s both;
+}
+
 /* Clean Enterprise Sidebar Buttons */
 .sidebar-but {
     display: flex;
@@ -449,6 +499,26 @@
 
 .navbar-right {
     justify-content: flex-end;
+}
+
+/* Left-align brand/model switcher */
+.navbar {
+    justify-content: flex-start;
+}
+
+.navbar-left {
+    flex: 0 0 auto;
+}
+
+.navbar-center {
+    flex: 0 1 auto;
+    justify-content: flex-start;
+    margin-left: 8px;
+}
+
+.navbar-right {
+    margin-left: auto;
+    flex: 0 0 auto;
 }
 
 
@@ -984,12 +1054,37 @@ select:focus {
     }
 }
 
+@media (max-width: 955px) {
+    .sidebar {
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+        width: clamp(240px, 60vw, 320px);
+    }
+
+    .sidebar-overlay {
+        display: none !important;
+    }
+
+    .navbar-left .sidebar-close-btn {
+        display: none !important;
+    }
+}
+
+@media (min-width: 956px) {
+    .sidebar:not(.hidden) ~ .main-content .navbar {
+        left: 260px;
+    }
+
+    .sidebar.hidden ~ .main-content .navbar {
+        left: 70px;
+    }
+}
+
 /* Sidebar Specific Mobile Fixes */
 @media (max-width: 600px) {
     .sidebar {
-        width: 100%;
-        max-width: 100%;
-        min-width: unset;
+        width: clamp(240px, 60vw, 320px);
+        max-width: 320px;
+        min-width: 0;
     }
 
     .sidebar.closed {
@@ -998,6 +1093,16 @@ select:focus {
 
     .sidebar-backn {
         display: flex !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sidebar,
+    .sidebar-overlay,
+    .sidebar-items,
+    .sidebar-sections {
+        transition: none !important;
+        animation: none !important;
     }
 }
 

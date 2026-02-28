@@ -890,6 +890,9 @@
             </a>
         </div>
         {/if}
+        <button id="sidebarCloseBtn" class="sidebar-icon-btn sidebar-close-btn" aria-label="Close sidebar" style="display: none;">
+            <i class="fa fa-chevron-left" aria-hidden="true"></i>
+        </button>
         <button id="toggleSidebar" class="sidebar-icon-btn" aria-label="Toggle sidebar" style="display: none;">
             <i class="fa fa-chevron-right" aria-hidden="true"></i>
         </button>
