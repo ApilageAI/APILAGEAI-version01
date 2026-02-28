@@ -133,6 +133,8 @@
       <img
         src="{$user->_data.image|user_image_url}"
         alt="{$user->_data.first_name|default:'Guest'} Avatar"
+        loading="eager"
+        decoding="async"
         onerror="this.onerror=null;this.src='{$smarty.const.APP_URL}/assets/images/user.png';"
       />
     </div>
@@ -391,6 +393,8 @@
                               id="profilePhoto"
                               src="{$user->_data.image|user_image_url}"
                               alt="{$user->_data.first_name|default:'Guest'} Avatar"
+                              loading="lazy"
+                              decoding="async"
                               onerror="this.onerror=null;this.src='{$smarty.const.APP_URL}/assets/images/user.png';"
                             />
                             <div>
