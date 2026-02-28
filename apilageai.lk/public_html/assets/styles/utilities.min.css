@@ -2006,11 +2006,6 @@ body.guest-mode .main-content {
     background: var(--sidebar-bg);
   }
 
-  .preferencebox-sidebar nav ul {
-    display: flex;
-    gap: 8px;
-  }
-
   .preferencebox-sidebar nav a {
     white-space: nowrap;
     border: 1px solid var(--border-color);
