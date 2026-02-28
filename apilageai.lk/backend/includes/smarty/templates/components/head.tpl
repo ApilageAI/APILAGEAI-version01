@@ -98,8 +98,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cascadia+Code:ital,wght@0,200..700;1,200..700&display=swap" rel="stylesheet">
             <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-            <!-- Prism plugin for line numbers -->
-<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+            <!-- Prism plugin for line numbers (CSS only; JS lazy-loaded) -->
 <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
             <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
                 <!-- html2canvas for saving as PNG -->
@@ -116,7 +115,7 @@ window.MathJax = {
   }
 };
 </script>
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+<!-- MathJax script is lazy-loaded on demand -->
 
 <!-- Marked.js -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -126,11 +125,8 @@ window.MathJax = {
  <link rel="stylesheet" type="text/css" href="{$smarty.const.APP_URL}/assets/styles/gm.min.css?V={get_hash_number()}">
  <link rel="stylesheet" type="text/css" href="{$smarty.const.APP_URL}/assets/styles/ob.css?V={get_hash_number()}">
   <link rel="stylesheet" type="text/css" href="{$smarty.const.APP_URL}/assets/styles/canvo.min.css?V={get_hash_number()}">
-<!-- Prism.js for syntax highlighting -->
+<!-- Prism.js for syntax highlighting (JS lazy-loaded) -->
 <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
 
 
             <link rel="stylesheet" type="text/css" href="{$smarty.const.APP_URL}/assets/styles/appbase.min.css?V={get_hash_number()}">
