@@ -1,6 +1,5 @@
 {include file="components/head.tpl"}
 <script src="https://cdn.socket.io/4.8.1/socket.io.min.js" integrity="sha384-mkQ3/7FUtcGyoppY6bz/PORYoGqOl7/aSUMn2ymDOJcapfS6PHqxhRTMh1RR0Q6+" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 
 <div id="app-loading-overlay" class="app-loading-overlay" aria-hidden="false">
     <div class="app-loading-card">
@@ -1121,7 +1120,9 @@
 </script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/libs/dialog-js/main.min.js?V=01.03.04.2025"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/mp.min.js?V=01.22.22.2025"></script>
-<script src="{$smarty.const.APP_URL}/assets/scripts/app.min.js?V=1.30.01.2026{get_hash_token()}"></script>
+<script src="{$smarty.const.APP_URL}/assets/scripts/appbase.min.js?V=1.30.01.2026{get_hash_token()}"></script>
+<script src="{$smarty.const.APP_URL}/assets/scripts/functions.min.js?V=1.30.01.2026{get_hash_token()}"></script>
+<script src="{$smarty.const.APP_URL}/assets/scripts/utilities.min.js?V=1.30.01.2026{get_hash_token()}"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/prefrence.min.js?V=1.25.2.2026{get_hash_token()}"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/learning-streak.js?V=1.00.00.2026{get_hash_token()}"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/notifications.js?V=03.01.10.2025"></script>
