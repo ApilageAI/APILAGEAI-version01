@@ -145,13 +145,13 @@ body.sidebar-open {
 }
 
 .sidebar-footer-userinfo:hover {
-    background: var(--gray-light);
+    background: transparent;
     border-radius: 18px;
 }
 
 
 [data-theme="dark"] .sidebar-footer-userinfo:hover {
-    background: var(--sidebar-hover);
+    background: transparent;
 }
 
 .sidebar-footer-userinfo .user-avatar {
@@ -197,6 +197,85 @@ body.sidebar-open {
     height: 100%;
     border-radius: 4px;
     transition: width 0.3s ease;
+}
+
+.sidebar-footer {
+    position: relative;
+}
+
+.sidebar-user-menu {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 72px;
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 6px;
+    display: none;
+    z-index: 1000005;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+}
+
+.sidebar-user-menu.is-visible {
+    display: block;
+}
+
+.sidebar-user-menu-item {
+    width: 100%;
+    border: none;
+    background: transparent;
+    text-align: left;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-user-menu-item:hover {
+    background: var(--gray-light);
+    color: var(--primary-red);
+}
+
+.sidebar-user-menu-item i {
+    width: 16px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.sidebar-user-menu-item:hover i {
+    color: var(--primary-red);
+}
+
+.sidebar-user-menu-divider {
+    height: 1px;
+    margin: 6px 8px;
+    background: var(--border-color);
+}
+
+@media (min-width: 956px) {
+    .sidebar.hidden .sidebar-user-menu {
+        left: calc(100% + 8px);
+        right: auto;
+        bottom: 8px;
+        width: 200px;
+    }
+}
+
+[data-theme="dark"] .sidebar-user-menu {
+    background: var(--card-bg, #111827);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .sidebar-user-menu-item:hover {
+    background: var(--sidebar-hover);
 }
 
 
@@ -731,30 +810,30 @@ body.sidebar-open {
 
 /* New Chat Button - Primary CTA */
 .sidebar-but.new-chat-btn {
-    background: var(--primary-red);
-    color: white;
+    background: transparent;
+    color: var(--text-secondary);
     border: none;
     margin-bottom: 4px;
 }
 
 .sidebar-but.new-chat-btn .sidebar-but-icon,
 .sidebar-but.new-chat-btn i {
-    color: white !important;
+    color: inherit !important;
 }
 
 .sidebar-but.new-chat-btn:hover {
-    background: var(--primary-red-hover);
+    background: var(--gray-light);
 }
 
 .sidebar-but.new-chat-btn .sidebar-but-shortcut {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.3);
-    color: white;
+    background: var(--card-bg);
+    border-color: var(--border-color);
+    color: var(--text-secondary);
 }
 
 [data-theme="dark"] .sidebar-but.new-chat-btn {
-    background: linear-gradient(135deg, var(--primary-red) 0%, var(--primary-red-hover) 100%);
-    color: white;
+    background: transparent;
+    color: var(--text-secondary);
 }
 
 
@@ -764,6 +843,13 @@ body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+}
+
+html,
+.app-container,
+.main-content {
+    overflow-x: hidden;
 }
 
 .main-content {
@@ -2090,6 +2176,32 @@ body.guest-mode .main-content {
 .sidebar,
 .sidebar-items {
   overflow-x: hidden;
+}
+
+@media (min-width: 956px) {
+  .sidebar.hidden {
+    overflow: visible;
+    z-index: 1000001;
+  }
+
+  .sidebar.hidden .sidebar-items {
+    overflow: visible;
+  }
+}
+
+@media (min-width: 956px) {
+  .sidebar.hidden .sidebar-but-text,
+  .sidebar.hidden .sidebar-but-shortcut,
+  .sidebar.hidden .sidebar-section-label {
+    display: none !important;
+  }
+
+  .sidebar.hidden .sidebar-but {
+    justify-content: center;
+    padding-left: 10px;
+    padding-right: 10px;
+    gap: 0;
+  }
 }
 .sidebar-but .sidebar-but-shortcut {
   position: relative;

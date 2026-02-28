@@ -128,7 +128,7 @@
         <i class="fa fa-bullseye" aria-hidden="true"></i>
         <span class="minimize-text">Focused</span>
     </button>
-  <div class="sidebar-footer-userinfo" id="sidebarUserInfo" title="Open settings">
+  <div class="sidebar-footer-userinfo" id="sidebarUserInfo" title="Account menu" role="button" aria-haspopup="menu" aria-expanded="false">
     <div class="user-avatar">
       <img
         src="{$user->_data.image|user_image_url}"
@@ -145,6 +145,25 @@
         <div class="credit-bar-fill" id="sidebar-credit-bar" style="width: 0%;"></div>
       </div>
     </div>
+  </div>
+  <div id="sidebarUserMenu" class="sidebar-user-menu" role="menu" aria-hidden="true">
+    <button class="sidebar-user-menu-item" type="button" data-action="upgrade">
+      <i class="fa fa-arrow-up" aria-hidden="true"></i>
+      Upgrade credit
+    </button>
+    <button class="sidebar-user-menu-item" type="button" data-action="settings">
+      <i class="fa fa-cog" aria-hidden="true"></i>
+      Open setting
+    </button>
+    <button class="sidebar-user-menu-item" type="button" data-action="help">
+      <i class="fa fa-question-circle" aria-hidden="true"></i>
+      Help
+    </button>
+    <div class="sidebar-user-menu-divider" role="separator" aria-hidden="true"></div>
+    <button class="sidebar-user-menu-item" type="button" data-action="logout">
+      <i class="fa fa-sign-out-alt" aria-hidden="true"></i>
+      Log Out
+    </button>
   </div>
 </div>
 
@@ -1147,10 +1166,12 @@
     const params = new URLSearchParams(window.location.search);
     if (params.get('open') !== 'preferences') return;
     const trigger = () => {
-      const userInfo = document.getElementById('sidebarUserInfo');
-      if (userInfo) {
-        userInfo.click();
+      if (typeof window.openPreferenceBox === 'function') {
+        window.openPreferenceBox('general');
+        return;
       }
+      const userInfo = document.getElementById('sidebarUserInfo');
+      if (userInfo) userInfo.click();
     };
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => setTimeout(trigger, 0));
