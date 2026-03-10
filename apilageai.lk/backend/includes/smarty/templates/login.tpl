@@ -14,8 +14,8 @@
   </div>
 </div>
 
-<div class="auth-page">
-  <div class="auth-shell" data-auth-state="{$auth_state}">
+<div class="auth-page auth-page--landing">
+  <div class="auth-shell auth-shell--landing" data-auth-state="{$auth_state}">
     <header class="auth-header">
       <div class="auth-brand">
         <img src="{$smarty.const.APP_URL}/assets/images/icon.png" alt="ApilageAI" class="auth-logo" width="44" height="44" style="width:44px;height:44px;" />

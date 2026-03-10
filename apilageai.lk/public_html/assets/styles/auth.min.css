@@ -38,7 +38,13 @@
     --auth-accent: #1d4ed8;
     --auth-accent-soft: #dbeafe;
     --auth-input-bg: #f9fafb;
-    --auth-overlay: rgba(15,23,42,0.35)
+    --auth-overlay: rgba(15,23,42,0.35);
+
+    /* Brand tokens (align with main.min.css) */
+    --brand-dark: #172554;
+    --brand-red: #FF3B30;
+    --brand-blue: #38BDF8;
+    --brand-blueLight: #BAE6FD
 }
 
 * {
@@ -747,6 +753,46 @@ input[type=file].hidden {
     content: none
 }
 
+/* Login page (homepage-inspired) */
+.auth-page--landing {
+    --auth-primary: var(--brand-dark);
+    --auth-primary-hover: var(--brand-dark);
+    --auth-accent: var(--brand-red);
+    --auth-accent-soft: rgba(255,59,48,0.16);
+    --auth-border: var(--brand-dark);
+    --auth-muted: rgba(23,37,84,0.7);
+    --auth-input-bg: #ffffff;
+    --auth-card: #ffffff;
+    background-image: radial-gradient(var(--brand-blueLight) 1px,transparent 1px);
+    background-size: 22px 22px;
+    overflow: hidden
+}
+
+.auth-page--landing::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg,rgba(186,230,253,0.45),rgba(255,255,255,0.85) 45%,rgba(255,255,255,1));
+    z-index: 0;
+    pointer-events: none
+}
+
+[data-theme="dark"] .auth-page--landing {
+    --auth-primary: #f8fafc;
+    --auth-primary-hover: #ffffff;
+    --auth-accent: var(--brand-blue);
+    --auth-accent-soft: rgba(56,189,248,0.2);
+    --auth-border: rgba(248,250,252,0.7);
+    --auth-muted: rgba(248,250,252,0.7);
+    --auth-input-bg: rgba(15,23,42,0.85);
+    --auth-card: rgba(2,6,23,0.7);
+    background-image: radial-gradient(rgba(56,189,248,0.15) 1px,transparent 1px)
+}
+
+[data-theme="dark"] .auth-page--landing::before {
+    background: linear-gradient(135deg,rgba(2,6,23,0.92),rgba(15,23,42,0.88))
+}
+
 .auth-shell {
     width: min(620px,94vw);
     background: transparent;
@@ -757,6 +803,43 @@ input[type=file].hidden {
     position: relative;
     z-index: 1;
     animation: authPop .6s ease
+}
+
+.auth-shell--landing {
+    background: var(--auth-card);
+    border: 2px solid var(--auth-primary);
+    border-radius: 24px;
+    box-shadow: 6px 6px 0 var(--auth-primary);
+    padding: 34px 36px 30px
+}
+
+.auth-page--landing .auth-brand {
+    font-weight: 800;
+    letter-spacing: .01em
+}
+
+.auth-page--landing .auth-kicker {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 2px solid var(--auth-primary);
+    background: var(--brand-blueLight);
+    font-weight: 700
+}
+
+[data-theme="dark"] .auth-page--landing .auth-kicker {
+    background: rgba(56,189,248,0.2)
+}
+
+.auth-page--landing .auth-headline h1 {
+    font-size: 32px;
+    font-weight: 800
+}
+
+.auth-page--landing .auth-headline h1 span {
+    color: var(--brand-red)
 }
 
 .auth-shell-narrow {
@@ -875,6 +958,17 @@ input[type=file].hidden {
     box-shadow: 0 12px 24px rgba(15,23,42,.12)
 }
 
+.auth-page--landing .auth-provider {
+    border-width: 2px;
+    background: var(--auth-card);
+    box-shadow: 2px 2px 0 var(--auth-primary)
+}
+
+.auth-page--landing .auth-provider:hover {
+    border-color: var(--auth-primary);
+    box-shadow: 6px 6px 0 var(--auth-primary)
+}
+
 .auth-ghost {
     display: inline-flex;
     align-items: center;
@@ -893,6 +987,19 @@ input[type=file].hidden {
 .auth-ghost:hover {
     border-color: var(--auth-accent);
     color: var(--auth-accent)
+}
+
+.auth-page--landing .auth-ghost {
+    border-style: solid;
+    border-width: 2px;
+    box-shadow: 2px 2px 0 var(--auth-primary);
+    background: var(--auth-card)
+}
+
+.auth-page--landing .auth-ghost:hover {
+    border-color: var(--auth-primary);
+    color: var(--auth-primary);
+    box-shadow: 6px 6px 0 var(--auth-primary)
 }
 
 .auth-page .auth-divider {
@@ -927,6 +1034,12 @@ input[type=file].hidden {
     display: inline-block;
     padding: 0 10px;
     background: var(--auth-bg)
+}
+
+.auth-page--landing .auth-divider::before,
+.auth-page--landing .auth-divider::after {
+    background: var(--auth-primary);
+    opacity: .2
 }
 
 .auth-shell[data-auth-state="forgot"] .auth-providers,
@@ -969,6 +1082,16 @@ input[type=file].hidden {
     border-color: rgba(29,78,216,.5);
     box-shadow: 0 0 0 3px rgba(29,78,216,.12);
     background: var(--auth-card)
+}
+
+.auth-page--landing .auth-field input {
+    border-width: 2px;
+    border-color: var(--auth-primary);
+    box-shadow: 2px 2px 0 var(--auth-primary)
+}
+
+.auth-page--landing .auth-field input:focus {
+    box-shadow: 3px 3px 0 var(--auth-primary)
 }
 
 .auth-password {
@@ -1047,6 +1170,22 @@ input[type=file].hidden {
 .auth-submit:hover {
     transform: translateY(-1px);
     box-shadow: 0 12px 22px rgba(15,23,42,.18)
+}
+
+.auth-page--landing .auth-submit {
+    background: var(--brand-red);
+    border: 2px solid var(--auth-primary);
+    box-shadow: 4px 4px 0 var(--auth-primary)
+}
+
+.auth-page--landing .auth-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 8px 8px 0 var(--auth-primary)
+}
+
+.auth-page--landing .auth-submit:disabled {
+    box-shadow: 2px 2px 0 var(--auth-primary);
+    opacity: .75
 }
 
 .auth-submit-outline {
@@ -1356,6 +1495,11 @@ input[type=file].hidden {
 @media (max-width: 640px) {
     .auth-shell {
         padding: 28px 22px 26px
+    }
+
+    .auth-shell--landing {
+        padding: 26px 20px 24px;
+        box-shadow: 4px 4px 0 var(--auth-primary)
     }
 
     .auth-providers {
