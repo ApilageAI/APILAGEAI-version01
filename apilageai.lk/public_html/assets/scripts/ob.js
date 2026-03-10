@@ -12,10 +12,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
     const steps = document.querySelectorAll('.onboard-step');
-    const dots = document.querySelectorAll('.onboard-progress-dot');
     const nextBtn = document.getElementById('next-btn');
     const backBtn = document.getElementById('back-btn');
-    const continueBtn = document.getElementById('continue-btn');
+    const progressFill = document.getElementById('onboard-progress-fill');
+    const progressLabel = document.getElementById('onboard-progress-label');
+    const planButtons = document.querySelectorAll('[data-onboard-plan]');
     const errorMessage = document.getElementById('error-message');
     const form = document.getElementById('onboarding-form');
     const interestsInput = document.getElementById('interests-hidden-input');
@@ -90,12 +91,23 @@ document.addEventListener('DOMContentLoaded', () => {
         return window.SCHOOL_SET.has(normalizeSchoolName(value));
     };
 
+    const updateProgress = (stepIndex) => {
+        const total = steps.length || 1;
+        const percent = Math.round(((stepIndex + 1) / total) * 100);
+        if (progressFill) {
+            progressFill.style.width = `${percent}%`;
+        }
+        if (progressLabel) {
+            progressLabel.textContent = `Step ${stepIndex + 1} of ${total}`;
+        }
+    };
+
     const showStep = (stepIndex) => {
         steps.forEach((step, index) => step.classList.toggle('active', index === stepIndex));
-        dots.forEach((dot, index) => dot.classList.toggle('active', index === stepIndex));
-        backBtn.classList.toggle('invisible', stepIndex === 0);
+        updateProgress(stepIndex);
+        backBtn.disabled = stepIndex === 0;
+        backBtn.classList.toggle('is-disabled', stepIndex === 0);
         nextBtn.classList.toggle('hidden', stepIndex === steps.length - 1);
-        continueBtn.classList.toggle('hidden', stepIndex !== steps.length - 1);
         errorMessage.textContent = '';
     };
 
@@ -148,35 +160,35 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    continueBtn.addEventListener('click', (e) => {
-        e.preventDefault();
+    const saveOnboarding = async (redirectUrl) => {
         if (!validateStep(currentStep)) return;
-
         const data = {
             school: form.school.value,
             not_student: form.not_student.checked ? 1 : 0,
             interests: interestsInput.value,
             preference: preferenceInput.value
         };
-
-        fetch(`${baseUrl}/save_onboarding.php`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        })
-        .then(res => res.json())
-        .then(response => {
+        try {
+            const res = await fetch(`${baseUrl}/save_onboarding.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const response = await res.json();
             if (response.success) {
-                lightbox.classList.remove('visible'); // hide lightbox after completion
-            } else {
-                alert(response.message || 'Failed to save onboarding data.');
+                if (redirectUrl) {
+                    window.location.href = redirectUrl;
+                } else {
+                    lightbox.classList.remove('visible');
+                }
+                return;
             }
-        })
-        .catch(err => {
+            alert(response.message || 'Failed to save onboarding data.');
+        } catch (err) {
             console.error(err);
             alert('Error saving onboarding data.');
-        });
-    });
+        }
+    };
 
     // Interests selection
     document.querySelectorAll('.onboard-focus-card').forEach(card => {
@@ -202,6 +214,13 @@ document.addEventListener('DOMContentLoaded', () => {
             preferenceInput.value = selectedPreference;
             document.querySelectorAll('.onboard-preference-card').forEach(c => c.classList.remove('selected'));
             card.classList.add('selected');
+        });
+    });
+
+    planButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const payUrl = button.dataset.payUrl || '';
+            saveOnboarding(payUrl);
         });
     });
 

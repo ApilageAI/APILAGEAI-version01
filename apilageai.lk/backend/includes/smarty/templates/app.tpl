@@ -248,31 +248,49 @@
 
     <div id="onboarding-lightbox" class="onboard-lightbox">
         <div class="onboard-card">
-            
+            <div class="onboard-header">
+                <div class="onboard-stream">
+                    <div class="onboard-stream-line" aria-live="polite">
+                        <span class="onboard-stream-text">Hello {$user->_data['first_name']|default:'there'} just few steps to go</span>
+                        <span class="onboard-stream-cursor" aria-hidden="true"></span>
+                    </div>
+                </div>
+                <div class="onboard-progress">
+                    <div class="onboard-progress-row">
+                        <button type="button" id="back-btn" class="onboard-button onboard-back-btn">Go back</button>
+                        <div class="onboard-progress-track">
+                            <div id="onboard-progress-fill" class="onboard-progress-fill"></div>
+                        </div>
+                    </div>
+                    <div id="onboard-progress-label" class="onboard-progress-label">Step 1 of 4</div>
+                </div>
+            </div>
+
             <form id="onboarding-form" class="onboard-steps-container">
                 <input type="hidden" name="interests" id="interests-hidden-input">
                 <input type="hidden" name="preference" id="preference-hidden-input">
 
                 <!-- Step 1: School -->
                 <div id="step-0" class="onboard-step">
-                    <div class="onboard-icon-wrapper"><i class="fas fa-rocket onboard-icon"></i></div>
-                    <h2>Welcome to අපිලගේ AI</h2>
-                    <p>Let's personalize your AI experience in a few simple steps to get you started.</p>
-                    <input name="school" id="school-input" type="text" class="onboard-input" list="school-list" autocomplete="off" placeholder="ඔයාගේ School එක හෝ University එක?">
-                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 6px;">
-                        Search and select your school from the list.
-                    </div>
+                    <div class="onboard-step-badge">Step 1</div>
+                    <h2>Select your school from the list</h2>
+                    <p>Choose your school or university. If you are not a student, mark it below.</p>
+                    <label class="onboard-label" for="school-input">School or University</label>
+                    <input name="school" id="school-input" type="text" class="onboard-input" list="school-list" autocomplete="off" placeholder="Start typing your school name">
+                    <div class="onboard-helper">Select your school from the list.</div>
                     <div class="onboard-checkbox-container">
-                        <input id="not-student-checkbox" type="checkbox" name="not_student">
-                        <label for="not-student-checkbox">මම student කෙනක් නෙමයි</label>
+                        <label class="onboard-checkbox" for="not-student-checkbox">
+                            <input id="not-student-checkbox" type="checkbox" name="not_student">
+                            <span>I'm not a student / My school is not listed</span>
+                        </label>
                     </div>
                 </div>
 
                 <!-- Step 2: Focused Areas -->
                 <div id="step-1" class="onboard-step">
-                     <div class="onboard-icon-wrapper"><i class="fas fa-crosshairs onboard-icon"></i></div>
-                    <h2>What are your interests?</h2>
-                    <p id="focus-area-subtitle">ඔයා වැඩිපුර AI පාවිච්චි කරන්නේ මොන වගේ දේවල් වලටද?</p>
+                    <div class="onboard-step-badge">Step 2</div>
+                    <h2>{$user->_data['first_name']|default:'Friend'}, what are your interests?</h2>
+                    <p id="focus-area-subtitle">Select at least 3 interests so we can personalize your experience.</p>
                     <div class="onboard-focus-grid">
                         <div class="onboard-focus-card" data-interest="science"><div class="onboard-icon-wrapper"><i class="fas fa-flask onboard-icon"></i></div><p>Science</p></div>
                         <div class="onboard-focus-card" data-interest="life"><div class="onboard-icon-wrapper"><i class="fas fa-heart-pulse onboard-icon"></i></div><p>Life</p></div>
@@ -285,9 +303,9 @@
 
                 <!-- Step 3: AI Preference -->
                 <div id="step-2" class="onboard-step">
-                    <div class="onboard-icon-wrapper"><i class="fas fa-robot onboard-icon"></i></div>
+                    <div class="onboard-step-badge">Step 3</div>
                     <h2>AI Personality</h2>
-                    <p>අපිලගේ AI මොනවගේද ඔයාත් එක්ක කතා කරන්න ඕන?</p>
+                    <p>Choose how you want ApilageAI to respond when chatting with you.</p>
                     <div class="onboard-preference-list">
                         <div class="onboard-preference-card" data-preference="friendly"><i class="fas fa-hand-holding-heart onboard-icon"></i><div><h3>Friendly & Casual</h3><p>Engaging and conversational.</p></div></div>
                         <div class="onboard-preference-card" data-preference="educational"><i class="fas fa-book-open onboard-icon"></i><div><h3>Informative</h3><p>Knowledgeable and fact-based.</p></div></div>
@@ -298,31 +316,51 @@
 
                 <!-- Step 4: All Ready -->
                 <div id="step-3" class="onboard-step">
-                    <div class="onboard-icon-wrapper"><i class="fas fa-check onboard-icon"></i></div>
-                    <h2>ඔක්කොම හරි මෙන්න ඔයාටම ගැලපෙන අපිලගේ AI</h2>
-                    <p>Apilage AI එක්ක Chat කරන්න පටන් ගන්න මෙන්න අහන්න දේවල් කිහිපයක්</p>
-                    <div class="onboard-prompt-list">
-                        <div class="onboard-prompt-example">"මට මේ පාර term test එකේ ළකුණු වැඩි කරගන්න ක්‍රමයක් කියන්න."</div>
-                        <div class="onboard-prompt-example">"මට සිංහල O/L syllabus එකේ සංධි ටික කෙටි සටහනක් දෙන්න"</div>
-                        <div class="onboard-prompt-example">"මගේ ඉස්කෝලේ grade 12 , Physics past papers වල වැඩිපුර මොනවද අහලා තියෙන්නේ?"</div>
+                    <div class="onboard-complete onboard-complete--center">
+                        <div class="onboard-complete-icon"><i class="fa-solid fa-circle-check"></i></div>
+                        <h2>You are all catching up</h2>
+                        <p>You're all set. Choose how you want to continue.</p>
                     </div>
+                    <div class="onboard-free-cta">
+                        <button type="button" class="onboard-button onboard-next-btn onboard-free-btn" data-onboard-plan="free">
+                            Continue to Chat Free
+                        </button>
+                    </div>
+                    <hr class="onboard-divider" />
+                    <div class="onboard-pro-title">Try pro version</div>
+                    <div class="onboard-plan-grid onboard-plan-grid--pro">
+                        <button type="button" class="onboard-plan onboard-plan--tag" data-onboard-plan="starter" data-pay-url="{$smarty.const.APP_URL}/pay/199.99">
+                            <div class="onboard-plan-tagline">Starter</div>
+                            <div class="onboard-plan-price">Rs 199.99</div>
+                            <ul class="onboard-plan-features">
+                                <li>Unlimited Chats</li>
+                                <li>Unlimited Image Analysis</li>
+                                <li>Unlimited Image Generation</li>
+                                <li>Access to all models</li>
+                                <li>Access to graphing &amp; code generation</li>
+                            </ul>
+                            <span class="onboard-plan-cta">One time recharge</span>
+                        </button>
+                        <button type="button" class="onboard-plan onboard-plan--tag" data-onboard-plan="unlock" data-pay-url="{$smarty.const.APP_URL}/pay/499.99">
+                            <div class="onboard-plan-tagline">Unlock more features</div>
+                            <div class="onboard-plan-price">LKR 499.99</div>
+                            <ul class="onboard-plan-features">
+                                <li>150,000 AI Tokens</li>
+                                <li>API Access Included</li>
+                                <li>Valid for 60 days</li>
+                                <li>Access to latest releases</li>
+                                <li>Access to video generation model (Coming soon)</li>
+                            </ul>
+                            <span class="onboard-plan-cta">Best for power users</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="onboard-step-actions">
+                    <div id="error-message" class="onboard-error-message"></div>
+                    <button type="button" id="next-btn" class="onboard-button onboard-next-btn">Next</button>
                 </div>
             </form>
-
-            <div class="onboard-footer">
-                <button id="back-btn" class="onboard-button onboard-back-btn invisible">Back</button>
-                <div class="onboard-footer-center">
-                    <div id="error-message" class="onboard-error-message"></div>
-                    <div class="onboard-progress-dots">
-                        <div id="dot-0" class="onboard-progress-dot"></div>
-                        <div id="dot-1" class="onboard-progress-dot"></div>
-                        <div id="dot-2" class="onboard-progress-dot"></div>
-                        <div id="dot-3" class="onboard-progress-dot"></div>
-                    </div>
-                </div>
-                <button id="next-btn" class="onboard-button onboard-next-btn">Next</button>
-                <button id="continue-btn" class="onboard-button onboard-continue-btn hidden">Continue</button>
-            </div>
         </div>
     </div>
     <datalist id="school-list"></datalist>
