@@ -57,13 +57,10 @@
               <div class="text-lg md:text-xl font-bold text-brand-dark mb-4">Get started free</div>
               <div class="flex flex-col md:flex-row items-center justify-center gap-4">
                 <a href="{$smarty.const.APP_URL}/auth/google" class="btn-secondary w-full md:w-auto !py-3 !px-6">
-                  <i class="fab fa-google mr-2"></i> Continue with Google
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Google_Favicon_2025.svg/250px-Google_Favicon_2025.svg.png" alt="Google" width="18" height="18" style="width:18px;height:18px;margin-right:8px;vertical-align:middle;" /> Continue with Google
                 </a>
                 <a href="{$smarty.const.APP_URL}/auth/login?mode=register" class="btn-secondary w-full md:w-auto !py-3 !px-6">
                   <i class="fa fa-envelope mr-2"></i> Continue with Email
-                </a>
-                <a href="{$smarty.const.APP_URL}/auth/facebook" class="btn-secondary w-full md:w-auto !py-3 !px-6">
-                  <i class="fab fa-facebook mr-2"></i> Continue with Facebook
                 </a>
               </div>
             </div>

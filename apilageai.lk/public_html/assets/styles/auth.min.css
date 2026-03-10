@@ -926,19 +926,35 @@ input[type=file].hidden {
 }
 
 .auth-providers {
-    display: grid;
-    grid-template-columns: repeat(3,minmax(0,1fr));
+    display: flex;
+    flex-direction: column;
     gap: 12px;
     margin-bottom: 16px
 }
 
+.auth-provider-badge {
+    position: absolute;
+    top: -10px;
+    right: 12px;
+    background: #dbeafe;
+    color: #1d4ed8;
+    border: 1px solid #93c5fd;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 999px;
+    letter-spacing: .01em
+}
+
 .auth-provider {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 14px 10px;
+    gap: 10px;
+    width: 100%;
+    padding: 14px 16px;
+    position: relative;
     border-radius: 16px;
     border: 1px solid var(--auth-border);
     text-decoration: none;
@@ -948,8 +964,11 @@ input[type=file].hidden {
     transition: transform .2s ease,box-shadow .2s ease,border-color .2s ease
 }
 
-.auth-provider i {
-    font-size: 20px
+.auth-provider i,
+.auth-provider img {
+    font-size: 20px;
+    width: 20px;
+    height: 20px
 }
 
 .auth-provider:hover {

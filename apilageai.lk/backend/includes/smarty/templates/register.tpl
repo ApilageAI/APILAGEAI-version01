@@ -28,10 +28,7 @@
             <div class="social-login">
                 <div class="social-buttons">
                   <a href="{$smarty.const.APP_URL}/auth/google" class="social-button animate-slide-up" style="animation-delay: 0.55s">
-                        <i class="fa-brands fa-google"></i> <span>Google</span>
-                    </a>
-                    <a href="https://globbook.com/api/oauth?app_id=56532326578385" class="social-button animate-slide-up" style="animation-delay: 0.5s">
-                      <i class="fa-solid fa-earth-asia"></i><span>Globbook</span>
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Google_Favicon_2025.svg/250px-Google_Favicon_2025.svg.png" alt="Google" width="20" height="20" style="width:20px;height:20px;margin-right:8px;vertical-align:middle;" /> <span>Google</span>
                     </a>
                 </div>
             </div>

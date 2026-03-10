@@ -21,8 +21,8 @@
   const resendWrap = document.getElementById('resendWrap');
 
   const loginGoogle = document.getElementById('loginGoogle');
-  const loginGlobbook = document.getElementById('loginGlobbook');
-  const loginFacebook = document.getElementById('loginFacebook');
+  const emailToggle = document.getElementById('toggleEmailAuth');
+  const emailPanels = document.querySelectorAll('[data-email-panel]');
 
   const captchaIds = { login: null, signup: null, forgot: null };
   const captchaTokens = { login: '', signup: '', forgot: '' };
@@ -45,6 +45,8 @@
     });
     if (authShell) authShell.dataset.authState = name;
     clearAlerts();
+    hideEmailPanels();
+    updateEmailToggle(name);
   }
 
   function clearAlerts() {
@@ -63,6 +65,46 @@
     el.textContent = message;
     el.style.display = 'block';
     el.className = `auth-alert ${type}`;
+  }
+
+  function hideEmailPanels() {
+    emailPanels.forEach((panel) => {
+      panel.style.display = 'none';
+      panel.setAttribute('aria-hidden', 'true');
+    });
+  }
+
+  function showEmailPanel(name) {
+    if (!name) return;
+    hideEmailPanels();
+    const panel = document.querySelector(`[data-email-panel="${name}"]`);
+    if (!panel) return;
+    panel.style.display = 'block';
+    panel.setAttribute('aria-hidden', 'false');
+    const firstInput = panel.querySelector('input, select, textarea');
+    if (firstInput) firstInput.focus();
+  }
+
+  function updateEmailToggle(state) {
+    if (!emailToggle) return;
+    if (state === 'login') {
+      emailToggle.dataset.emailTarget = 'login';
+      const label = emailToggle.querySelector('span');
+      if (label) label.textContent = 'Log in with Email';
+      emailToggle.setAttribute('aria-label', 'Log in with Email');
+      emailToggle.style.display = '';
+      return;
+    }
+    if (state === 'signup') {
+      emailToggle.dataset.emailTarget = 'signup';
+      const label = emailToggle.querySelector('span');
+      if (label) label.textContent = 'Sign up with Email';
+      emailToggle.setAttribute('aria-label', 'Sign up with Email');
+      emailToggle.style.display = '';
+      return;
+    }
+    emailToggle.dataset.emailTarget = '';
+    emailToggle.style.display = 'none';
   }
 
   function getInitialPanel() {
@@ -543,8 +585,6 @@
   }
 
   const googleUrl = `${appBase}/auth/google`;
-  const globbookUrl = 'https://globbook.com/api/oauth?app_id=56532326578385';
-  const facebookUrl = `${appBase}/auth/facebook`;
 
   function bindSocial(btn, url, alertTarget) {
     if (!btn) return;
@@ -553,14 +593,19 @@
       if (url) {
         window.location.href = url;
       } else if (alertTarget) {
-        showAlert(alertTarget, 'Facebook login is coming soon.', 'error');
+        showAlert(alertTarget, 'Login provider unavailable. Please try again.', 'error');
       }
     });
   }
 
   bindSocial(loginGoogle, googleUrl, loginAlert);
-  bindSocial(loginGlobbook, globbookUrl, loginAlert);
-  bindSocial(loginFacebook, facebookUrl, loginAlert);
+  if (emailToggle) {
+    emailToggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = emailToggle.dataset.emailTarget || 'login';
+      showEmailPanel(target);
+    });
+  }
 
   if (resendBtn) resendBtn.addEventListener('click', resendVerificationFromLogin);
   if (successResendBtn) successResendBtn.addEventListener('click', resendVerificationFromSuccess);

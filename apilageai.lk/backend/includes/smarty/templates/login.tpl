@@ -47,12 +47,6 @@
           Google sign-in failed. Please try again.
         {elseif $smarty.get.error == 'google_already_linked'}
           This Google account is already linked to another user.
-        {elseif $smarty.get.error == 'facebook_auth_failed'}
-          Facebook sign-in failed. Please try again.
-        {elseif $smarty.get.error == 'facebook_already_linked'}
-          This Facebook account is already linked to another user.
-        {elseif $smarty.get.error == 'facebook_email_required'}
-          Facebook did not provide an email address. Please use another login method.
         {elseif $smarty.get.error == 'disposable_email_not_allowed'}
           Disposable email addresses are not allowed for social sign-in.
         {elseif $smarty.get.error == 'magic_expired'}
@@ -65,124 +59,127 @@
 
     <div class="auth-providers">
       <a class="auth-provider" id="loginGoogle" href="{$smarty.const.APP_URL}/auth/google" aria-label="Continue with Google">
-        <i class="fa-brands fa-google"></i>
+        <span class="auth-provider-badge auth-provider-badge--easy">Easy</span>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Google_Favicon_2025.svg/250px-Google_Favicon_2025.svg.png" alt="Google" width="20" height="20" style="width:20px;height:20px;" />
         <span>Google</span>
       </a>
-      <a class="auth-provider" id="loginFacebook" href="{$smarty.const.APP_URL}/auth/facebook" aria-label="Continue with Facebook">
-        <i class="fa-brands fa-facebook"></i>
-        <span>Facebook</span>
+      <a class="auth-provider" id="toggleEmailAuth" href="#" data-email-target="login" aria-label="Log in with Email">
+        <i class="fa-regular fa-envelope"></i>
+        <span>Log in with Email</span>
       </a>
-      <a class="auth-provider" id="loginGlobbook" href="https://globbook.com/api/oauth?app_id=56532326578385" aria-label="Continue with Globbook">
-        <i class="fa-solid fa-earth-asia"></i>
-        <span>Globbook</span>
+      <a class="auth-provider" id="loginGuest" href="{$smarty.const.APP_URL}/auth/guest" aria-label="Continue without account">
+        <span class="auth-provider-badge auth-provider-badge--limited">Limited acess</span>
+        <i class="fa-regular fa-user"></i>
+        <span>Continue without account</span>
       </a>
     </div>
 
-    <a class="auth-ghost" id="loginGuest" href="{$smarty.const.APP_URL}/auth/guest">Continue without account</a>
-
-    <div class="auth-divider"><span>or continue with email</span></div>
-
     <div class="auth-panel" data-auth-panel="login" {if $auth_state != 'login'}style="display:none;"{/if}>
-      <form id="loginForm" class="auth-form">
-        <div class="auth-field">
-          <label>Email</label>
-          <input type="email" name="e" autocomplete="email" autocapitalize="none" required placeholder="name@company.com" />
-        </div>
-
-        <div class="auth-field">
-          <label>Password</label>
-          <div class="auth-password">
-            <input type="password" id="loginPassword" name="p" autocomplete="current-password" required placeholder="Enter your password" />
-            <button type="button" id="toggleLoginPassword" aria-label="Toggle password visibility"><i class="fa-regular fa-eye"></i></button>
+      <div class="auth-email-panel" data-email-panel="login" style="display:none;">
+        <form id="loginForm" class="auth-form">
+          <div class="auth-field">
+            <label>Email</label>
+            <input type="email" name="e" autocomplete="email" autocapitalize="none" required placeholder="name@company.com" />
           </div>
-        </div>
 
-        <div class="auth-captcha">
-          <div id="loginCaptcha" class="cf-turnstile" data-sitekey="{$smarty.const.RECAPTCHA_SITE_KEY}"></div>
-        </div>
+          <div class="auth-field">
+            <label>Password</label>
+            <div class="auth-password">
+              <input type="password" id="loginPassword" name="p" autocomplete="current-password" required placeholder="Enter your password" />
+              <button type="button" id="toggleLoginPassword" aria-label="Toggle password visibility"><i class="fa-regular fa-eye"></i></button>
+            </div>
+          </div>
 
-        <div id="loginAlert" class="auth-alert" role="alert"></div>
-        <div id="resendWrap" class="auth-resend" style="display:none;">
-          <button type="button" id="resendBtn" class="auth-link-button" data-resend-label="Resend verification email" data-resend-cooldown-prefix="Resend in">
-            Resend verification email
+          <div class="auth-captcha">
+            <div id="loginCaptcha" class="cf-turnstile" data-sitekey="{$smarty.const.RECAPTCHA_SITE_KEY}"></div>
+          </div>
+
+          <div id="loginAlert" class="auth-alert" role="alert"></div>
+          <div id="resendWrap" class="auth-resend" style="display:none;">
+            <button type="button" id="resendBtn" class="auth-link-button" data-resend-label="Resend verification email" data-resend-cooldown-prefix="Resend in">
+              Resend verification email
+            </button>
+          </div>
+
+          <button type="submit" class="auth-submit">
+            <span class="auth-submit__label">Log in</span>
+            <span class="auth-submit__spinner" aria-hidden="true"></span>
           </button>
-        </div>
+        </form>
+      </div>
 
-        <button type="submit" class="auth-submit">
-          <span class="auth-submit__label">Log in</span>
-          <span class="auth-submit__spinner" aria-hidden="true"></span>
-        </button>
-
-        <div class="auth-foot">
-          <span>Forgot password?</span>
-          <a href="#" class="auth-link" data-auth-tab="forgot">Reset it</a>
-        </div>
-        <div class="auth-foot">
-          <span>New here?</span>
-          <a href="#" class="auth-link" data-auth-tab="signup">Create an account</a>
-        </div>
-      </form>
+      <div class="auth-foot">
+        <span>Forgot password?</span>
+        <a href="#" class="auth-link" data-auth-tab="forgot">Reset it</a>
+      </div>
+      <div class="auth-foot">
+        <span>New here?</span>
+        <a href="#" class="auth-link" data-auth-tab="signup">Create an account</a>
+      </div>
     </div>
 
     <div class="auth-panel" data-auth-panel="signup" {if $auth_state != 'signup'}style="display:none;"{/if}>
-      <form id="signupForm" class="auth-form">
-        <div class="auth-grid">
+      <div class="auth-email-panel" data-email-panel="signup" style="display:none;">
+        <form id="signupForm" class="auth-form">
+          <div class="auth-grid">
+            <div class="auth-field">
+              <label>First Name</label>
+              <input type="text" name="f" autocomplete="given-name" required placeholder="First name" />
+            </div>
+            <div class="auth-field">
+              <label>Last Name</label>
+              <input type="text" name="l" autocomplete="family-name" required placeholder="Last name" />
+            </div>
+          </div>
+
           <div class="auth-field">
-            <label>First Name</label>
-            <input type="text" name="f" autocomplete="given-name" required placeholder="First name" />
+            <label>Email</label>
+            <input type="email" name="e" autocomplete="email" autocapitalize="none" required placeholder="name@company.com" />
           </div>
+
           <div class="auth-field">
-            <label>Last Name</label>
-            <input type="text" name="l" autocomplete="family-name" required placeholder="Last name" />
+            <label>Phone</label>
+            <input type="tel" id="signupPhone" name="t" autocomplete="tel" inputmode="numeric" required placeholder="Phone number" />
           </div>
-        </div>
 
-        <div class="auth-field">
-          <label>Email</label>
-          <input type="email" name="e" autocomplete="email" autocapitalize="none" required placeholder="name@company.com" />
-        </div>
-
-        <div class="auth-field">
-          <label>Phone</label>
-          <input type="tel" id="signupPhone" name="t" autocomplete="tel" inputmode="numeric" required placeholder="Phone number" />
-        </div>
-
-        <div class="auth-field">
-          <label>Password</label>
-          <div class="auth-password">
-            <input type="password" id="signupPassword" name="p" autocomplete="new-password" required placeholder="Create a password" />
-            <button type="button" id="toggleSignupPassword" aria-label="Toggle password visibility"><i class="fa-regular fa-eye"></i></button>
+          <div class="auth-field">
+            <label>Password</label>
+            <div class="auth-password">
+              <input type="password" id="signupPassword" name="p" autocomplete="new-password" required placeholder="Create a password" />
+              <button type="button" id="toggleSignupPassword" aria-label="Toggle password visibility"><i class="fa-regular fa-eye"></i></button>
+            </div>
+            <small>Use at least 5 characters.</small>
           </div>
-          <small>Use at least 5 characters.</small>
-        </div>
 
-        <div class="auth-field">
-          <label>Confirm Password</label>
-          <div class="auth-password">
-            <input type="password" id="signupConfirmPassword" name="p-c" autocomplete="new-password" required placeholder="Confirm your password" />
-            <button type="button" id="toggleSignupConfirmPassword" aria-label="Toggle password visibility"><i class="fa-regular fa-eye"></i></button>
+          <div class="auth-field">
+            <label>Confirm Password</label>
+            <div class="auth-password">
+              <input type="password" id="signupConfirmPassword" name="p-c" autocomplete="new-password" required placeholder="Confirm your password" />
+              <button type="button" id="toggleSignupConfirmPassword" aria-label="Toggle password visibility"><i class="fa-regular fa-eye"></i></button>
+            </div>
           </div>
-        </div>
 
-        <div class="auth-captcha">
-          <div id="signupCaptcha" class="cf-turnstile" data-sitekey="{$smarty.const.RECAPTCHA_SITE_KEY}"></div>
-        </div>
+          <div class="auth-captcha">
+            <div id="signupCaptcha" class="cf-turnstile" data-sitekey="{$smarty.const.RECAPTCHA_SITE_KEY}"></div>
+          </div>
 
-        <div id="signupAlert" class="auth-alert" role="alert"></div>
-        <button type="submit" class="auth-submit">
-          <span class="auth-submit__label">Create account</span>
-          <span class="auth-submit__spinner" aria-hidden="true"></span>
-        </button>
+          <div id="signupAlert" class="auth-alert" role="alert"></div>
+          <button type="submit" class="auth-submit">
+            <span class="auth-submit__label">Create account</span>
+            <span class="auth-submit__spinner" aria-hidden="true"></span>
+          </button>
 
-        <div class="auth-foot">
-          <span>Already have an account?</span>
-          <a href="#" class="auth-link" data-auth-tab="login">Log in</a>
-        </div>
-        <div class="auth-legal">
-          By continuing, you agree to our
-          <a href="{$smarty.const.APP_URL}/termsofservice/">Terms of Service</a>.
-        </div>
-      </form>
+          <div class="auth-legal">
+            By continuing, you agree to our
+            <a href="{$smarty.const.APP_URL}/termsofservice/">Terms of Service</a>.
+          </div>
+        </form>
+      </div>
+
+      <div class="auth-foot">
+        <span>Already have an account?</span>
+        <a href="#" class="auth-link" data-auth-tab="login">Log in</a>
+      </div>
     </div>
 
     <div class="auth-panel" data-auth-panel="forgot" {if $auth_state != 'forgot'}style="display:none;"{/if}>

@@ -39,7 +39,7 @@
             <li>Your account profile and login credentials.</li>
             <li>Chats, messages, uploads, and generated content.</li>
             <li>Usage logs, preferences, and onboarding data.</li>
-            <li>Social sign-in links (Google/Facebook) and sessions.</li>
+            <li>Social sign-in links (Google) and sessions.</li>
             <li>Billing records associated with your account.</li>
           </ul>
           <p class="text-brand-dark/70 text-base font-medium mt-4">
