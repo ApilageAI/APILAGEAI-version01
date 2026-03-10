@@ -84,6 +84,15 @@
     if (loadingOverlay) loadingOverlay.style.display = show ? 'flex' : 'none';
   }
 
+  function setSubmitLoading(form, isLoading) {
+    if (!form) return;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (!submitBtn) return;
+    submitBtn.classList.toggle('is-loading', isLoading);
+    submitBtn.disabled = isLoading;
+    submitBtn.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+  }
+
   function showSignupSuccess() {
     startResendCooldown();
     if (signupSuccessOverlay) signupSuccessOverlay.style.display = 'flex';
@@ -229,11 +238,16 @@
       e.preventDefault();
       if (loginForm.dataset.submitting === 'true') return;
       loginForm.dataset.submitting = 'true';
+      setSubmitLoading(loginForm, true);
       clearAlerts();
+      const stopSubmitting = () => {
+        loginForm.dataset.submitting = 'false';
+        setSubmitLoading(loginForm, false);
+      };
       const captcha = await getCaptchaToken('login', captchaIds.login);
       if (!captcha) {
         showAlert(loginAlert, 'Please complete the captcha.', 'error');
-        loginForm.dataset.submitting = 'false';
+        stopSubmitting();
         return;
       }
 
@@ -252,7 +266,7 @@
             ? parsed.raw
             : 'Login failed. Please try again.';
           showAlert(loginAlert, msg, 'error');
-          loginForm.dataset.submitting = 'false';
+          stopSubmitting();
           return;
         }
         if (result.e) {
@@ -265,17 +279,17 @@
             resendBtn.onclick = () => resendVerification(result.email, loginAlert);
             if (resendWrap) resendWrap.style.display = 'block';
           }
-          loginForm.dataset.submitting = 'false';
+          stopSubmitting();
           return;
         }
         showAlert(loginAlert, 'Login successful. Redirecting...', 'success');
         setTimeout(() => { window.location.href = `${appBase}/app`; }, 800);
-        loginForm.dataset.submitting = 'false';
+        stopSubmitting();
       } catch (err) {
         showLoading(false);
         resetCaptcha('login', captchaIds.login);
         showAlert(loginAlert, 'Login failed. Please try again.', 'error');
-        loginForm.dataset.submitting = 'false';
+        stopSubmitting();
       }
     });
   }
@@ -285,11 +299,16 @@
       e.preventDefault();
       if (signupForm.dataset.submitting === 'true') return;
       signupForm.dataset.submitting = 'true';
+      setSubmitLoading(signupForm, true);
       clearAlerts();
+      const stopSubmitting = () => {
+        signupForm.dataset.submitting = 'false';
+        setSubmitLoading(signupForm, false);
+      };
       const captcha = await getCaptchaToken('signup', captchaIds.signup);
       if (!captcha) {
         showAlert(signupAlert, 'Please complete the captcha.', 'error');
-        signupForm.dataset.submitting = 'false';
+        stopSubmitting();
         return;
       }
 
@@ -300,17 +319,17 @@
       const validPassword = /^.{5,}$/.test(password);
       if (!validPassword) {
         showAlert(signupAlert, 'Password must be at least 5 characters.', 'error');
-        signupForm.dataset.submitting = 'false';
+        stopSubmitting();
         return;
       }
       if (password !== confirmPassword) {
         showAlert(signupAlert, 'Passwords do not match.', 'error');
-        signupForm.dataset.submitting = 'false';
+        stopSubmitting();
         return;
       }
       if (!/^\+?[0-9]{10,15}$/.test(phone.replace(/\s/g, ''))) {
         showAlert(signupAlert, 'Please enter a valid phone number (10-15 digits).', 'error');
-        signupForm.dataset.submitting = 'false';
+        stopSubmitting();
         return;
       }
 
@@ -329,7 +348,7 @@
             ? parsed.raw
             : 'Registration failed. Please try again.';
           showAlert(signupAlert, msg, 'error');
-          signupForm.dataset.submitting = 'false';
+          stopSubmitting();
           return;
         }
         if (result.e) {
@@ -338,17 +357,17 @@
             ? `${result.m || 'Registration failed.'}\n${result._debug_output}`
             : (result.m || 'Registration failed.');
           showAlert(signupAlert, msg, 'error');
-          signupForm.dataset.submitting = 'false';
+          stopSubmitting();
           return;
         }
         resetCaptcha('signup', captchaIds.signup);
         showSignupSuccess();
-        signupForm.dataset.submitting = 'false';
+        stopSubmitting();
       } catch (err) {
         showLoading(false);
         resetCaptcha('signup', captchaIds.signup);
         showAlert(signupAlert, 'Registration failed. Please try again.', 'error');
-        signupForm.dataset.submitting = 'false';
+        stopSubmitting();
       }
     });
   }

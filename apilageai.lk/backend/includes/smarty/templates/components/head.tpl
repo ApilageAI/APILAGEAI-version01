@@ -138,7 +138,7 @@ window.MathJax = {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
             <link rel="stylesheet" href="{$smarty.const.APP_URL}/assets/styles/dashboard.min.css?V={get_hash_number()}" />
-        {elseif in_array($page, ["login", "register", "password_reset"])}
+        {elseif in_array($page, ["login", "register", "password_reset", "password_reset_request", "password_reset_form", "email_verification"])}
             <link rel="stylesheet" type="text/css" href="{$smarty.const.APP_URL}/assets/styles/auth.min.css?V={get_hash_number()}">
             <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
         {else}
