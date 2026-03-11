@@ -48,6 +48,7 @@
             <p class="text-brand-dark/70 text-base font-medium">Use this form to report suspicious logins, phishing messages, or account compromise. Do not include passwords or payment details.</p>
 
             <form class="mt-6 grid gap-4" data-security-form data-report-prefix="Security Report" action="{$smarty.const.APP_URL}/reportdata.php" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{$csrf_token}">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="flex flex-col gap-2">
                   <label class="text-sm font-bold text-brand-dark" for="securityEmail">Email address (optional)</label>
@@ -100,6 +101,7 @@
             </div>
 
             <form class="mt-6 grid gap-4" data-security-form data-report-prefix="Removal Request" action="{$smarty.const.APP_URL}/reportdata.php" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{$csrf_token}">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="flex flex-col gap-2">
                   <label class="text-sm font-bold text-brand-dark" for="removalEmail">Account email</label>

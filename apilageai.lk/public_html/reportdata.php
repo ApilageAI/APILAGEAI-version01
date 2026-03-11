@@ -45,6 +45,11 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     ]));
 }
 
+$csrfToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? ($_POST['csrf_token'] ?? '');
+if (!apilage_verify_csrf_token($csrfToken)) {
+    respond(false, "Invalid CSRF token.", [], 403);
+}
+
 function respond(bool $status, string $message, array $extra = [], int $code = 200): void
 {
     global $responseSent;

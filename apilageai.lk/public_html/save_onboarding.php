@@ -8,6 +8,13 @@ if (!$user->_logged_in) {
 }
 
 $data = json_decode(file_get_contents('php://input'), true);
+$csrfToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? ($data['csrf_token'] ?? '');
+
+if (!apilage_verify_csrf_token($csrfToken)) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Invalid CSRF token.']);
+    exit();
+}
 
 $user_id = (int) $user->_data['id'];
 $school = $data['school'] ?? null;

@@ -1,5 +1,5 @@
 {include file="components/head.tpl"}
-<script src="https://cdn.socket.io/4.8.1/socket.io.min.js" integrity="sha384-mkQ3/7FUtcGyoppY6bz/PORYoGqOl7/aSUMn2ymDOJcapfS6PHqxhRTMh1RR0Q6+" crossorigin="anonymous"></script>
+<script src="https://cdn.socket.io/4.8.1/socket.io.min.js" integrity="sha384-mkQ3/7FUtcGyoppY6bz/PORYoGqOl7/aSUMn2ymDOJcapfS6PHqxhRTMh1RR0Q6+" crossorigin="anonymous" defer></script>
 
 <div id="app-loading-overlay" class="app-loading-overlay" aria-hidden="false">
     <div class="app-loading-card">
@@ -53,7 +53,7 @@
     </div>
 </div>
 
-<div class="app-container">
+<div class="app-container" data-csrf="{$csrf_token}">
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header" style="display: flex; align-items: center; justify-content: center; position: relative;">
@@ -1172,9 +1172,9 @@
     </script>
     </main>
 </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/3.0.4/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://www.desmos.com/api/v1.10/calculator.js?apiKey=b77098fe4afd4179b5626ad2c0f17ad6"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/3.0.4/jspdf.umd.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" defer></script>
+<script src="https://www.desmos.com/api/v1.10/calculator.js?apiKey=b77098fe4afd4179b5626ad2c0f17ad6" defer></script>
 
 <!-- Canvas Document Editor Libraries -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
@@ -1187,18 +1187,19 @@
   window.APP_BASE_URL = '{$smarty.const.APP_URL}';
   window.NODE_API_BASE = '{$smarty.const.NODE_API_BASE}';
   window.IS_GUEST = {if $is_guest}true{else}false{/if};
+  window.CSRF_TOKEN = '{$csrf_token}';
 </script>
-<script src="{$smarty.const.APP_URL}/assets/scripts/libs/dialog-js/main.min.js?V=01.03.04.2025"></script>
-<script src="{$smarty.const.APP_URL}/assets/scripts/mp.min.js?V=01.22.22.2025"></script>
-<script src="{$smarty.const.APP_URL}/assets/scripts/appbase.min.js?V=1.30.01.2026{get_hash_token()}"></script>
-<script src="{$smarty.const.APP_URL}/assets/scripts/functions.min.js?V=1.30.01.2026{get_hash_token()}"></script>
-<script src="{$smarty.const.APP_URL}/assets/scripts/utilities.min.js?V=1.30.01.2026{get_hash_token()}"></script>
-<script src="{$smarty.const.APP_URL}/assets/scripts/prefrence.min.js?V=1.25.2.2026{get_hash_token()}"></script>
-<script src="{$smarty.const.APP_URL}/assets/scripts/learning-streak.js?V=1.00.00.2026{get_hash_token()}"></script>
-<script src="{$smarty.const.APP_URL}/assets/scripts/notifications.js?V=03.01.10.2025"></script>
+<script src="{$smarty.const.APP_URL}/assets/scripts/libs/dialog-js/main.min.js?V=01.03.04.2025" defer></script>
+<script src="{$smarty.const.APP_URL}/assets/scripts/mp.min.js?V=01.22.22.2025" defer></script>
+<script src="{$smarty.const.APP_URL}/assets/scripts/appbase.min.js?V=1.30.01.2026{get_hash_token()}" defer></script>
+<script src="{$smarty.const.APP_URL}/assets/scripts/functions.min.js?V=1.30.01.2026{get_hash_token()}" defer></script>
+<script src="{$smarty.const.APP_URL}/assets/scripts/utilities.min.js?V=1.30.01.2026{get_hash_token()}" defer></script>
+<script src="{$smarty.const.APP_URL}/assets/scripts/prefrence.min.js?V=1.25.2.2026{get_hash_token()}" defer></script>
+<script src="{$smarty.const.APP_URL}/assets/scripts/learning-streak.js?V=1.00.00.2026{get_hash_token()}" defer></script>
+<script src="{$smarty.const.APP_URL}/assets/scripts/notifications.js?V=03.01.10.2025" defer></script>
 <script type="module" src="{$smarty.const.APP_URL}/assets/scripts/gm.min.js?V=12.20.10.2025"></script>
-<script src="{$smarty.const.APP_URL}/assets/scripts/ob.js?V=10.26.09.2025{get_hash_token()}"></script>
-<script src="{$smarty.const.APP_URL}/assets/scripts/report-data.js?V=1.25.01.2026{get_hash_token()}"></script>
+<script src="{$smarty.const.APP_URL}/assets/scripts/ob.js?V=10.26.09.2025{get_hash_token()}" defer></script>
+<script src="{$smarty.const.APP_URL}/assets/scripts/report-data.js?V=1.25.01.2026{get_hash_token()}" defer></script>
 <script>
   (function () {
     const params = new URLSearchParams(window.location.search);

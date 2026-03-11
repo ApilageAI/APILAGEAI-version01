@@ -25,10 +25,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const notStudentCheckbox = document.getElementById('not-student-checkbox');
     const schoolList = document.getElementById('school-list');
     const baseUrl = (window.APP_BASE_URL||window.location.origin||"").replace(/\/$/,"");
+    const csrfToken =
+        window.CSRF_TOKEN ||
+        document.querySelector('[data-csrf]')?.getAttribute('data-csrf') ||
+        '';
 
     let currentStep = 0;
     const selectedInterests = new Set();
     let selectedPreference = null;
+    let schoolListFailed = false;
 
     const normalizeSchoolName = (value) => value.trim().toLowerCase();
     const setSchoolList = (names) => {
@@ -55,8 +60,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         try {
             const res = await fetch(`${baseUrl}/allschools.json`, { cache: 'force-cache' });
+            if (!res.ok) {
+                throw new Error(`School list request failed: ${res.status}`);
+            }
             const data = await res.json();
-            if (!Array.isArray(data)) return;
+            if (!Array.isArray(data)) {
+                schoolListFailed = true;
+                return;
+            }
             const names = data.map((entry) => {
                 if (typeof entry === 'string') return entry.trim();
                 if (!entry || typeof entry !== 'object') return '';
@@ -64,9 +75,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }).filter(Boolean);
             if (names.length) {
                 setSchoolList(names);
+                return;
             }
+            schoolListFailed = true;
         } catch (err) {
             console.error('Failed to load school list:', err);
+            schoolListFailed = true;
         }
     };
 
@@ -87,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const isSchoolValid = (value) => {
         if (!value) return false;
-        if (!window.SCHOOL_SET || window.SCHOOL_SET.size === 0) return null;
+        if (!window.SCHOOL_SET || window.SCHOOL_SET.size === 0) return schoolListFailed ? true : null;
         return window.SCHOOL_SET.has(normalizeSchoolName(value));
     };
 
@@ -171,8 +185,14 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch(`${baseUrl}/save_onboarding.php`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
+                },
+                body: JSON.stringify({
+                    ...data,
+                    ...(csrfToken ? { csrf_token: csrfToken } : {})
+                })
             });
             const response = await res.json();
             if (response.success) {
