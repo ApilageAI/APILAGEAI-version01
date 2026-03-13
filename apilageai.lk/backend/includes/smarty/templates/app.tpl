@@ -1036,6 +1036,38 @@
             </div>
             {/if}
 
+            <!-- Subject AI Modal -->
+            <div id="subject-ai-modal" class="subject-ai-modal" aria-hidden="true" style="display: none;">
+                <div class="subject-ai-backdrop"></div>
+                <div class="subject-ai-card" role="dialog" aria-modal="true" aria-labelledby="subjectAITitle">
+                    <div class="subject-ai-header">
+                        <h3 id="subjectAITitle">📚 Subject AI</h3>
+                        <button id="subjectAIClose" class="subject-ai-close" type="button" aria-label="Close">×</button>
+                    </div>
+                    <div class="subject-ai-body">
+                        <div class="subject-ai-section">
+                            <label class="subject-ai-label">Select Grade</label>
+                            <div class="subject-ai-options">
+                                <button type="button" class="subject-ai-btn grade-btn" data-grade="11">Grade 11</button>
+                                <button type="button" class="subject-ai-btn grade-btn" data-grade="10">Grade 10</button>
+                            </div>
+                        </div>
+                        <div class="subject-ai-section">
+                            <label class="subject-ai-label">Select Subject</label>
+                            <div class="subject-ai-options">
+                                <button type="button" class="subject-ai-btn subject-btn" data-subject="maths" disabled>Maths</button>
+                                <button type="button" class="subject-ai-btn subject-btn" data-subject="science" disabled>Science</button>
+                            </div>
+                        </div>
+                        <div id="subject-ai-message" class="subject-ai-message"></div>
+                    </div>
+                    <div class="subject-ai-footer">
+                        <button type="button" id="subject-ai-cancel" class="btn-secondary">Cancel</button>
+                        <button type="button" id="subject-ai-start" class="btn-primary" disabled>Start Subject Mode</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Error Banner (sticky above chat input) -->
             {if isset($error_message) && $error_message != ''}
             <div id="errorTag" class="error-banner">
@@ -1106,7 +1138,8 @@
                             <button id="toggleGraphBtn" class="dropup-menu-item" type="button"><i class="fas fa-chart-line"></i> Graph</button>
                              <button id="toggleCanvasBtn" class="dropup-menu-item" type="button"><i class="fa-solid fa-pen-to-square"></i> Canvas</button>
                              <button id="uploadDocumentBtn" class="dropup-menu-item" type="button"><i class="fa-solid fa-file-lines"></i>PDF assistant</button>
-                             
+                             <button id="openSubjectAIBtn" class="dropup-menu-item" type="button"><i class="fa-solid fa-book"></i>Subject AI</button>
+
                           </div>
                         </div>
                         
@@ -1200,6 +1233,7 @@
 <script type="module" src="{$smarty.const.APP_URL}/assets/scripts/gm.min.js?V=12.20.10.2025"></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/ob.js?V=10.26.09.2025{get_hash_token()}" defer></script>
 <script src="{$smarty.const.APP_URL}/assets/scripts/report-data.js?V=1.25.01.2026{get_hash_token()}" defer></script>
+<script src="{$smarty.const.APP_URL}/assets/scripts/subject-ai.js?V=1.0.0.2026" defer></script>
 <script>
   (function () {
     const params = new URLSearchParams(window.location.search);

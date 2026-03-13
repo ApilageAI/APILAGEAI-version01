@@ -890,6 +890,76 @@ function safeUnlinkDocMeta(docId) {
   return false;
 }
 
+/**
+ * Load PDF resources for a specific grade and subject
+ * @param {number} grade - Grade number (10 or 11)
+ * @param {string} subject - Subject name (maths or science)
+ * @returns {Promise<Array>} Array of PDF resource objects with metadata and extracted text
+ */
+async function loadResourcePDFsForGradeSubject(grade, subject) {
+  try {
+    const resourceDir = path.join(envDocTextDir, 'resources', `grade_${grade}`, subject.toLowerCase());
+
+    // Validate path to prevent directory traversal
+    if (!resourceDir.startsWith(envDocTextDir)) {
+      console.warn('Security: Invalid resource path attempt');
+      return [];
+    }
+
+    // Check if directory exists
+    if (!fs.existsSync(resourceDir)) {
+      console.warn(`Resource directory not found: ${resourceDir}`);
+      return [];
+    }
+
+    const resources = [];
+    const files = fs.readdirSync(resourceDir);
+
+    for (const file of files) {
+      if (file.endsWith('.json')) {
+        const metaPath = path.join(resourceDir, file);
+        try {
+          const metadata = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+
+          // Load corresponding text file
+          const textFile = file.replace('.json', '.txt');
+          const textPath = path.join(resourceDir, textFile);
+          let textContent = '';
+
+          if (fs.existsSync(textPath)) {
+            textContent = fs.readFileSync(textPath, 'utf8').substring(0, 20000); // Max 20K chars per doc
+          }
+
+          // Load corresponding PDF file (if exists)
+          const pdfFile = file.replace('.json', '.pdf');
+          const pdfPath = path.join(resourceDir, pdfFile);
+          const hasPDF = fs.existsSync(pdfPath);
+
+          resources.push({
+            id: metadata.id || file.replace('.json', ''),
+            filename: metadata.filename || file,
+            displayName: metadata.display_name || metadata.filename || file,
+            grade: metadata.grade || grade,
+            subject: metadata.subject || subject,
+            sections: metadata.sections || [],
+            textContent: textContent,
+            pdfPath: hasPDF ? pdfPath : null,
+            metadata: metadata
+          });
+        } catch (error) {
+          console.error(`Error loading resource ${file}:`, error);
+        }
+      }
+    }
+
+    return resources;
+  } catch (error) {
+    console.error('Error loading subject resources:', error);
+    return [];
+  }
+}
+
+
 function getImageMetaPath(filename) {
   const safeName = path.basename(String(filename || '')).trim();
   if (!safeName) return '';
@@ -1127,8 +1197,8 @@ function serializeAttachments(input) {
   return JSON.stringify(list);
 }
 
-function buildSystemInstruction(userData, chatSummary) {
-  return `
+function buildSystemInstruction(userData, chatSummary, subjectMode = null) {
+  let instruction = `
 You are ApilageAI, a long‑term personal tutor for Sri Lankan A/L and O/L. Respond only in Sinhala or English.
 
 Confidentiality & identity:
@@ -1170,8 +1240,41 @@ Output quality:
 - No emojis in code or formulas.
 
 Continuity:
-- Maintain immersion and consistency. Never reference system behavior.
-`;
+- Maintain immersion and consistency. Never reference system behavior.`;
+
+  // Add Subject Mode Instructions if active
+  if (subjectMode && subjectMode.active) {
+    instruction += `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SUBJECT-BASED LEARNING MODE (Active)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Current Context: Grade ${subjectMode.grade} - ${subjectMode.subject.charAt(0).toUpperCase() + subjectMode.subject.slice(1)}
+
+CRITICAL INSTRUCTIONS FOR THIS MODE:
+You are operating in SUBJECT-SPECIFIC MODE for Grade ${subjectMode.grade} ${subjectMode.subject.charAt(0).toUpperCase() + subjectMode.subject.slice(1)}.
+
+RULE 1: USE ONLY PROVIDED RESOURCES
+- You MUST ONLY use the provided Grade ${subjectMode.grade} ${subjectMode.subject.charAt(0).toUpperCase() + subjectMode.subject.slice(1)} PDF resources to answer questions.
+- Do NOT use your general knowledge or information outside these documents.
+- If the answer is not found in the provided PDFs, clearly state: "This topic is not covered in the provided Grade ${subjectMode.grade} ${subjectMode.subject.charAt(0).toUpperCase() + subjectMode.subject.slice(1)} resources."
+
+RULE 2: ALWAYS INCLUDE REFERENCES
+- At the end of EVERY response, include a "Referenced Materials" section.
+- List each PDF used with specific pages and sections mentioned.
+- Format: "Referenced from: [PDF Name] - Pages X, Y, Z (Section: Topic Name)"
+- If you use multiple PDFs, list them all clearly.
+
+RULE 3: TRANSPARENCY
+- Be transparent when a topic is partially covered or not covered.
+- Never try to infer or extend beyond what's in the documents.
+- If the user asks about something not in the materials, redirect them appropriately.
+
+No external knowledge allowed in this mode.`;
+  }
+
+  return instruction;
 }
 
 // ====== Model Token Map (frontend -> real model ids) ======
@@ -2020,6 +2123,13 @@ ${newMessage || ''}`;
         return;
       }
 
+      // ====== SUBJECT MODE HANDLING ======
+      const subjectMode = socket?.subjectMode || null;
+      let subjectModeResources = [];
+      if (subjectMode && subjectMode.active) {
+        subjectModeResources = subjectMode.resources || [];
+      }
+
       // ====== NEW MODEL SELECTION LOGIC WITH TRIAL SUPPORT ======
       // Get available models based on balance and trial status
       const modelInfo = await this.getAvailableModels(currentBalance, userId);
@@ -2207,7 +2317,7 @@ ${newMessage || ''}`;
 
       // Build system instruction
       const effectiveUserData = isSharedConversation ? { ...this.userData, memory: '' } : this.userData;
-      const systemInstruction = buildSystemInstruction(effectiveUserData, '');
+      const systemInstruction = buildSystemInstruction(effectiveUserData, '', subjectMode);
 
       // Build content parts for history
       const history = [];
@@ -2322,6 +2432,45 @@ ${newMessage || ''}`;
         }
         return `${referenceLabel}\n\n${body}`;
       };
+
+      // ====== SUBJECT MODE PDF INJECTION ======
+      if (subjectMode && subjectMode.active && subjectModeResources.length > 0) {
+        // Add subject mode context instruction
+        userParts.push(toGeminiTextPart(
+          `Grade ${subjectMode.grade} ${subjectMode.subject.charAt(0).toUpperCase() + subjectMode.subject.slice(1)} Subject Mode: Answer using ONLY the provided Grade ${subjectMode.grade} ${subjectMode.subject.charAt(0).toUpperCase() + subjectMode.subject.slice(1)} resources below.`
+        ));
+
+        // Inject all subject mode PDFs as text blocks
+        const subjectDocBlocks = [];
+        for (const resource of subjectModeResources) {
+          if (resource.textContent && resource.textContent.trim()) {
+            const sections = resource.sections && resource.sections.length
+              ? ` [Sections: ${resource.sections.map(s => `${s.title} (p.${s.page})`).join(', ')}]`
+              : '';
+            subjectDocBlocks.push(`[${resource.displayName}]${sections}\n${resource.textContent}`);
+          }
+        }
+
+        if (subjectDocBlocks.length) {
+          userParts.push(toGeminiTextPart(`Grade ${subjectMode.grade} ${subjectMode.subject.charAt(0).toUpperCase() + subjectMode.subject.slice(1)} Resources:\n\n${subjectDocBlocks.join('\n\n---\n\n')}`));
+        }
+
+        // Update reference label to include subject mode PDFs
+        const subjectResourceNames = subjectModeResources.map(r => r.displayName);
+        const updatedReferenceLabel = `Referenced from: ${subjectResourceNames.join(', ')}`;
+
+        // Store subject mode reference info for later use
+        const prevWithReferenceLabel = withReferenceLabel;
+        withReferenceLabel = (content) => {
+          const body = String(content || '').trim();
+          if (!body) return updatedReferenceLabel;
+          // Check if reference is already in content
+          if (body.toLowerCase().includes('referenced from')) {
+            return body;
+          }
+          return `${body}\n\n${updatedReferenceLabel}`;
+        };
+      }
 
       // If provided, include the current canvas snapshot so Gemini can read it.
       const canvasInline = dataUrlToInlineData(canvasImageDataUrl);
@@ -4802,6 +4951,82 @@ io.on('connection', (socket) => {
         trial_remaining: { messages: 0, image_uploads: 0, image_generations: 0 },
         trial_limits: DAILY_TRIAL_LIMITS,
       });
+    }
+  });
+
+  // Subject AI Mode Activation Handler
+  socket.on('activate_subject_mode', async (data, callback) => {
+    try {
+      const grade = Number(data.grade);
+      const subject = String(data.subject || '').toLowerCase();
+
+      // Validate input
+      if (![10, 11].includes(grade)) {
+        callback({ success: false, error: 'Invalid grade. Must be 10 or 11.' });
+        return;
+      }
+
+      if (!['maths', 'science'].includes(subject)) {
+        callback({ success: false, error: 'Invalid subject. Must be maths or science.' });
+        return;
+      }
+
+      // Load resource PDFs for this grade/subject
+      const resources = await loadResourcePDFsForGradeSubject(grade, subject);
+
+      if (resources.length === 0) {
+        callback({ success: false, error: 'No resources available for this grade/subject combination.' });
+        return;
+      }
+
+      // Store in socket session
+      socket.subjectMode = {
+        active: true,
+        grade: grade,
+        subject: subject,
+        resources: resources,
+        resourceIds: resources.map(r => r.id),
+        activatedAt: new Date().toISOString()
+      };
+
+      // Notify client of successful activation
+      callback({ success: true, resourceCount: resources.length });
+
+      // Emit event to client with resources info
+      socket.emit('subject_mode_activated', {
+        grade: grade,
+        subject: subject,
+        resourceCount: resources.length
+      });
+
+      console.log(`Subject mode activated for user ${socket.userData.id}: Grade ${grade} ${subject}`);
+    } catch (error) {
+      console.error('Error activating subject mode:', error);
+      callback({ success: false, error: 'Failed to activate subject mode' });
+    }
+  });
+
+  // Subject AI Mode Deactivation Handler
+  socket.on('deactivate_subject_mode', async (data, callback) => {
+    try {
+      if (socket.subjectMode) {
+        const grade = socket.subjectMode.grade;
+        const subject = socket.subjectMode.subject;
+        socket.subjectMode = null;
+
+        callback({ success: true });
+
+        socket.emit('subject_mode_deactivated', {
+          message: 'Subject mode deactivated'
+        });
+
+        console.log(`Subject mode deactivated for user ${socket.userData.id}: Grade ${grade} ${subject}`);
+      } else {
+        callback({ success: false, error: 'Subject mode not active' });
+      }
+    } catch (error) {
+      console.error('Error deactivating subject mode:', error);
+      callback({ success: false, error: 'Failed to deactivate subject mode' });
     }
   });
 

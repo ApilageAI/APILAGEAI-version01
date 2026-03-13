@@ -129,6 +129,7 @@ window.MathJax = {
             <link rel="stylesheet" type="text/css" href="{$smarty.const.APP_URL}/assets/styles/appbase.min.css?V={get_hash_number()}">
             <link rel="stylesheet" type="text/css" href="{$smarty.const.APP_URL}/assets/styles/functions.min.css?V={get_hash_number()}">
             <link rel="stylesheet" type="text/css" href="{$smarty.const.APP_URL}/assets/styles/utilities.min.css?V={get_hash_number()}">
+            <link rel="stylesheet" type="text/css" href="{$smarty.const.APP_URL}/assets/styles/app-inline.css?V={get_hash_number()}">
         {elseif $page == "dashboard"}
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
