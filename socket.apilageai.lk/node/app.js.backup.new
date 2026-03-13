@@ -890,53 +890,6 @@ function safeUnlinkDocMeta(docId) {
   return false;
 }
 
-function getImageMetaPath(filename) {
-  const safeName = path.basename(String(filename || '')).trim();
-  if (!safeName) return '';
-  const metaName = `${safeName}.json`;
-  const filePath = path.join(userImgMetaDir, metaName);
-  if (!filePath.startsWith(userImgMetaDir)) return '';
-  return filePath;
-}
-
-function writeImageMeta(filename, meta) {
-  const filePath = getImageMetaPath(filename);
-  if (!filePath) return false;
-  try {
-    fs.writeFileSync(filePath, JSON.stringify(meta || {}, null, 2), 'utf8');
-    return true;
-  } catch (error) {
-    console.error('Failed to write image meta:', error);
-    return false;
-  }
-}
-
-function readImageMeta(filename) {
-  const filePath = getImageMetaPath(filename);
-  if (!filePath) return null;
-  try {
-    if (!fs.existsSync(filePath)) return null;
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
-  } catch (error) {
-    console.error('Failed to read image meta:', error);
-    return null;
-  }
-}
-
-function safeUnlinkImageMeta(filename) {
-  const filePath = getImageMetaPath(filename);
-  if (!filePath) return false;
-  try {
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-      return true;
-    }
-  } catch (error) {
-    console.error('Failed to delete image meta:', error);
-  }
-  return false;
-}
-
 /**
  * Load PDF resources for a specific grade and subject
  * @param {number} grade - Grade number (10 or 11)
@@ -1004,6 +957,54 @@ async function loadResourcePDFsForGradeSubject(grade, subject) {
     console.error('Error loading subject resources:', error);
     return [];
   }
+}
+
+
+function getImageMetaPath(filename) {
+  const safeName = path.basename(String(filename || '')).trim();
+  if (!safeName) return '';
+  const metaName = `${safeName}.json`;
+  const filePath = path.join(userImgMetaDir, metaName);
+  if (!filePath.startsWith(userImgMetaDir)) return '';
+  return filePath;
+}
+
+function writeImageMeta(filename, meta) {
+  const filePath = getImageMetaPath(filename);
+  if (!filePath) return false;
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(meta || {}, null, 2), 'utf8');
+    return true;
+  } catch (error) {
+    console.error('Failed to write image meta:', error);
+    return false;
+  }
+}
+
+function readImageMeta(filename) {
+  const filePath = getImageMetaPath(filename);
+  if (!filePath) return null;
+  try {
+    if (!fs.existsSync(filePath)) return null;
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch (error) {
+    console.error('Failed to read image meta:', error);
+    return null;
+  }
+}
+
+function safeUnlinkImageMeta(filename) {
+  const filePath = getImageMetaPath(filename);
+  if (!filePath) return false;
+  try {
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      return true;
+    }
+  } catch (error) {
+    console.error('Failed to delete image meta:', error);
+  }
+  return false;
 }
 
 function isImageOwnedByUser(filename, userId) {
@@ -2122,6 +2123,13 @@ ${newMessage || ''}`;
         return;
       }
 
+      // ====== SUBJECT MODE HANDLING ======
+      const subjectMode = socket?.subjectMode || null;
+      let subjectModeResources = [];
+      if (subjectMode && subjectMode.active) {
+        subjectModeResources = subjectMode.resources || [];
+      }
+
       // ====== NEW MODEL SELECTION LOGIC WITH TRIAL SUPPORT ======
       // Get available models based on balance and trial status
       const modelInfo = await this.getAvailableModels(currentBalance, userId);
@@ -2309,7 +2317,7 @@ ${newMessage || ''}`;
 
       // Build system instruction
       const effectiveUserData = isSharedConversation ? { ...this.userData, memory: '' } : this.userData;
-      const systemInstruction = buildSystemInstruction(effectiveUserData, '');
+      const systemInstruction = buildSystemInstruction(effectiveUserData, '', subjectMode);
 
       // Build content parts for history
       const history = [];
@@ -2424,6 +2432,45 @@ ${newMessage || ''}`;
         }
         return `${referenceLabel}\n\n${body}`;
       };
+
+      // ====== SUBJECT MODE PDF INJECTION ======
+      if (subjectMode && subjectMode.active && subjectModeResources.length > 0) {
+        // Add subject mode context instruction
+        userParts.push(toGeminiTextPart(
+          `Grade ${subjectMode.grade} ${subjectMode.subject.charAt(0).toUpperCase() + subjectMode.subject.slice(1)} Subject Mode: Answer using ONLY the provided Grade ${subjectMode.grade} ${subjectMode.subject.charAt(0).toUpperCase() + subjectMode.subject.slice(1)} resources below.`
+        ));
+
+        // Inject all subject mode PDFs as text blocks
+        const subjectDocBlocks = [];
+        for (const resource of subjectModeResources) {
+          if (resource.textContent && resource.textContent.trim()) {
+            const sections = resource.sections && resource.sections.length
+              ? ` [Sections: ${resource.sections.map(s => `${s.title} (p.${s.page})`).join(', ')}]`
+              : '';
+            subjectDocBlocks.push(`[${resource.displayName}]${sections}\n${resource.textContent}`);
+          }
+        }
+
+        if (subjectDocBlocks.length) {
+          userParts.push(toGeminiTextPart(`Grade ${subjectMode.grade} ${subjectMode.subject.charAt(0).toUpperCase() + subjectMode.subject.slice(1)} Resources:\n\n${subjectDocBlocks.join('\n\n---\n\n')}`));
+        }
+
+        // Update reference label to include subject mode PDFs
+        const subjectResourceNames = subjectModeResources.map(r => r.displayName);
+        const updatedReferenceLabel = `Referenced from: ${subjectResourceNames.join(', ')}`;
+
+        // Store subject mode reference info for later use
+        const prevWithReferenceLabel = withReferenceLabel;
+        withReferenceLabel = (content) => {
+          const body = String(content || '').trim();
+          if (!body) return updatedReferenceLabel;
+          // Check if reference is already in content
+          if (body.toLowerCase().includes('referenced from')) {
+            return body;
+          }
+          return `${body}\n\n${updatedReferenceLabel}`;
+        };
+      }
 
       // If provided, include the current canvas snapshot so Gemini can read it.
       const canvasInline = dataUrlToInlineData(canvasImageDataUrl);
@@ -4907,6 +4954,82 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Subject AI Mode Activation Handler
+  socket.on('activate_subject_mode', async (data, callback) => {
+    try {
+      const grade = Number(data.grade);
+      const subject = String(data.subject || '').toLowerCase();
+
+      // Validate input
+      if (![10, 11].includes(grade)) {
+        callback({ success: false, error: 'Invalid grade. Must be 10 or 11.' });
+        return;
+      }
+
+      if (!['maths', 'science'].includes(subject)) {
+        callback({ success: false, error: 'Invalid subject. Must be maths or science.' });
+        return;
+      }
+
+      // Load resource PDFs for this grade/subject
+      const resources = await loadResourcePDFsForGradeSubject(grade, subject);
+
+      if (resources.length === 0) {
+        callback({ success: false, error: 'No resources available for this grade/subject combination.' });
+        return;
+      }
+
+      // Store in socket session
+      socket.subjectMode = {
+        active: true,
+        grade: grade,
+        subject: subject,
+        resources: resources,
+        resourceIds: resources.map(r => r.id),
+        activatedAt: new Date().toISOString()
+      };
+
+      // Notify client of successful activation
+      callback({ success: true, resourceCount: resources.length });
+
+      // Emit event to client with resources info
+      socket.emit('subject_mode_activated', {
+        grade: grade,
+        subject: subject,
+        resourceCount: resources.length
+      });
+
+      console.log(`Subject mode activated for user ${socket.userData.id}: Grade ${grade} ${subject}`);
+    } catch (error) {
+      console.error('Error activating subject mode:', error);
+      callback({ success: false, error: 'Failed to activate subject mode' });
+    }
+  });
+
+  // Subject AI Mode Deactivation Handler
+  socket.on('deactivate_subject_mode', async (data, callback) => {
+    try {
+      if (socket.subjectMode) {
+        const grade = socket.subjectMode.grade;
+        const subject = socket.subjectMode.subject;
+        socket.subjectMode = null;
+
+        callback({ success: true });
+
+        socket.emit('subject_mode_deactivated', {
+          message: 'Subject mode deactivated'
+        });
+
+        console.log(`Subject mode deactivated for user ${socket.userData.id}: Grade ${grade} ${subject}`);
+      } else {
+        callback({ success: false, error: 'Subject mode not active' });
+      }
+    } catch (error) {
+      console.error('Error deactivating subject mode:', error);
+      callback({ success: false, error: 'Failed to deactivate subject mode' });
+    }
+  });
+
   socket.on('stop_stream', async (data) => {
     try {
       const messageId = Number(data?.message_id || 0);
@@ -5499,82 +5622,6 @@ io.on('connection', (socket) => {
     const idx = liveQueue.indexOf(socket);
     if (idx !== -1) liveQueue.splice(idx, 1);
     console.log('User disconnected:', socket.id);
-  });
-
-  // Subject AI Mode Activation Handler
-  socket.on('activate_subject_mode', async (data, callback) => {
-    try {
-      const grade = Number(data.grade);
-      const subject = String(data.subject || '').toLowerCase();
-
-      // Validate input
-      if (![10, 11].includes(grade)) {
-        callback({ success: false, error: 'Invalid grade. Must be 10 or 11.' });
-        return;
-      }
-
-      if (!['maths', 'science'].includes(subject)) {
-        callback({ success: false, error: 'Invalid subject. Must be maths or science.' });
-        return;
-      }
-
-      // Load resource PDFs for this grade/subject
-      const resources = await loadResourcePDFsForGradeSubject(grade, subject);
-
-      if (resources.length === 0) {
-        callback({ success: false, error: 'No resources available for this grade/subject combination.' });
-        return;
-      }
-
-      // Store in socket session
-      socket.subjectMode = {
-        active: true,
-        grade: grade,
-        subject: subject,
-        resources: resources,
-        resourceIds: resources.map(r => r.id),
-        activatedAt: new Date().toISOString()
-      };
-
-      // Notify client of successful activation
-      callback({ success: true, resourceCount: resources.length });
-
-      // Emit event to client with resources info
-      socket.emit('subject_mode_activated', {
-        grade: grade,
-        subject: subject,
-        resourceCount: resources.length
-      });
-
-      console.log(`Subject mode activated for user ${socket.userData.id}: Grade ${grade} ${subject}`);
-    } catch (error) {
-      console.error('Error activating subject mode:', error);
-      callback({ success: false, error: 'Failed to activate subject mode' });
-    }
-  });
-
-  // Subject AI Mode Deactivation Handler
-  socket.on('deactivate_subject_mode', async (data, callback) => {
-    try {
-      if (socket.subjectMode) {
-        const grade = socket.subjectMode.grade;
-        const subject = socket.subjectMode.subject;
-        socket.subjectMode = null;
-
-        callback({ success: true });
-
-        socket.emit('subject_mode_deactivated', {
-          message: 'Subject mode deactivated'
-        });
-
-        console.log(`Subject mode deactivated for user ${socket.userData.id}: Grade ${grade} ${subject}`);
-      } else {
-        callback({ success: false, error: 'Subject mode not active' });
-      }
-    } catch (error) {
-      console.error('Error deactivating subject mode:', error);
-      callback({ success: false, error: 'Failed to deactivate subject mode' });
-    }
   });
 
   socket.on('error', (error) => {
