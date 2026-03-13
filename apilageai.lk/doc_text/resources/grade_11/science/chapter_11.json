@@ -1,0 +1,22 @@
+{
+  "id": "science-ch11-1773376459912",
+  "filename": "chapter_11.pdf",
+  "display_name": "Chapter 11: Science",
+  "grade": 11,
+  "subject": "science",
+  "sections": [
+    {
+      "page": 1,
+      "title": "Introduction - Chapter 11"
+    },
+    {
+      "page": 5,
+      "title": "Core Concepts - Chapter 11"
+    },
+    {
+      "page": 10,
+      "title": "Advanced Topics - Chapter 11"
+    }
+  ],
+  "createdAt": 1773376459912
+}

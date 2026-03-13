@@ -1041,7 +1041,7 @@
                 <div class="subject-ai-backdrop"></div>
                 <div class="subject-ai-card" role="dialog" aria-modal="true" aria-labelledby="subjectAITitle">
                     <div class="subject-ai-header">
-                        <h3 id="subjectAITitle">📚 Subject AI</h3>
+                        <h3 id="subjectAITitle">📚 Subject AI <span class="beta-badge">BETA</span></h3>
                         <button id="subjectAIClose" class="subject-ai-close" type="button" aria-label="Close">×</button>
                     </div>
                     <div class="subject-ai-body">
@@ -1049,13 +1049,19 @@
                             <label class="subject-ai-label">Select Grade</label>
                             <div class="subject-ai-options">
                                 <button type="button" class="subject-ai-btn grade-btn" data-grade="11">Grade 11</button>
-                                <button type="button" class="subject-ai-btn grade-btn" data-grade="10">Grade 10</button>
+                                <button type="button" class="subject-ai-btn grade-btn coming-soon" data-grade="10" disabled>
+                                    Grade 10
+                                    <span class="coming-soon-badge">Coming Soon</span>
+                                </button>
                             </div>
                         </div>
                         <div class="subject-ai-section">
                             <label class="subject-ai-label">Select Subject</label>
                             <div class="subject-ai-options">
-                                <button type="button" class="subject-ai-btn subject-btn" data-subject="maths" disabled>Maths</button>
+                                <button type="button" class="subject-ai-btn subject-btn coming-soon" data-subject="maths" disabled>
+                                    Maths
+                                    <span class="coming-soon-badge">Coming Soon</span>
+                                </button>
                                 <button type="button" class="subject-ai-btn subject-btn" data-subject="science" disabled>Science</button>
                             </div>
                         </div>

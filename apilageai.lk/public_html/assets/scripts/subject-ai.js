@@ -92,10 +92,21 @@ const SubjectAI = (() => {
     messageEl.textContent = '';
     messageEl.className = 'subject-ai-message';
 
-    gradeBtns.forEach(btn => btn.classList.remove('active'));
+    gradeBtns.forEach(btn => {
+      btn.classList.remove('active');
+      // Keep Grade 10 disabled (coming soon)
+      if (btn.getAttribute('data-grade') === '10') {
+        btn.disabled = true;
+      }
+    });
+
     subjectBtns.forEach(btn => {
       btn.classList.remove('active');
       btn.disabled = true;
+      // Keep Maths disabled (coming soon)
+      if (btn.getAttribute('data-subject') === 'maths') {
+        btn.disabled = true;
+      }
     });
     startBtn.disabled = true;
   }
@@ -103,6 +114,13 @@ const SubjectAI = (() => {
   function selectGrade(e) {
     const grade = e.target.getAttribute('data-grade');
     if (!grade) return;
+
+    // Disable Grade 10 selection (coming soon)
+    if (grade === '10') {
+      messageEl.textContent = '⏳ Grade 10 resources will be available soon!';
+      messageEl.className = 'subject-ai-message';
+      return;
+    }
 
     // Update state
     state.selectedGrade = grade;
@@ -112,11 +130,17 @@ const SubjectAI = (() => {
     gradeBtns.forEach(btn => btn.classList.remove('active'));
     e.target.classList.add('active');
 
-    // Enable subject buttons
-    subjectBtns.forEach(btn => {
-      btn.classList.remove('active');
-      btn.disabled = false;
-    });
+    // For Grade 11: Only enable Science, disable Maths
+    if (grade === '11') {
+      const mathsBtn = Array.from(subjectBtns).find(btn => btn.getAttribute('data-subject') === 'maths');
+      const scienceBtn = Array.from(subjectBtns).find(btn => btn.getAttribute('data-subject') === 'science');
+
+      // Disable Maths (coming soon)
+      if (mathsBtn) mathsBtn.disabled = true;
+
+      // Enable Science (available)
+      if (scienceBtn) scienceBtn.disabled = false;
+    }
 
     startBtn.disabled = true;
     messageEl.textContent = '';
@@ -125,6 +149,13 @@ const SubjectAI = (() => {
   function selectSubject(e) {
     const subject = e.target.getAttribute('data-subject');
     if (!subject) return;
+
+    // Prevent Maths selection (coming soon)
+    if (subject === 'maths') {
+      messageEl.textContent = '⏳ Grade 11 Maths will be available soon!';
+      messageEl.className = 'subject-ai-message';
+      return;
+    }
 
     // Update state
     state.selectedSubject = subject;

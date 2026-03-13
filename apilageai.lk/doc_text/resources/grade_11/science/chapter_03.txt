@@ -1,0 +1,5 @@
+Chapter 3: Chapter 3: Science
+
+This is a resource file for Grade 11 science. Content will be extracted from the PDF for context-based AI responses.
+
+Source: chapter_03.pdf
