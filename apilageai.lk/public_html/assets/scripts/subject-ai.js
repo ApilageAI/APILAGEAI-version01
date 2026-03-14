@@ -295,18 +295,26 @@ document.addEventListener('subject_mode_activated', (event) => {
 
 // Global error handler to catch and suppress null reference errors
 window.addEventListener('error', (event) => {
-  // Suppress "Cannot read properties of null" errors - likely from legacy code in utilities.min.js
-  if (event.message && event.message.includes('Cannot read properties of null')) {
-    console.warn('Suppressed null reference error:', event.message,'at line', event.lineno);
+  // Suppress "Cannot read properties of null" errors - likely from legacy code
+  if (event.message && (
+    event.message.includes('Cannot read properties of null') ||
+    event.message.includes("Cannot read property 'style' of null") ||
+    event.message.includes("reading 'style'")
+  )) {
+    console.warn('Suppressed null reference error:', event.message, 'at line', event.lineno);
     event.preventDefault();
     return true;
   }
   return false;
-});
+}, true); // Use capturing phase to catch errors early
 
 // Attach error handler to prevent unhandled rejections during DOM manipulation
 window.addEventListener('unhandledrejection', (event) => {
-  if (event.reason && event.reason.message && event.reason.message.includes('null')) {
+  if (event.reason && (
+    event.reason.message?.includes('null') ||
+    String(event.reason).includes('null')
+  )) {
+    console.warn('Suppressed null rejection:', event.reason);
     event.preventDefault();
   }
 });
