@@ -190,14 +190,14 @@ try {
       key: fs.readFileSync(sslKeyPath),
       cert: fs.readFileSync(sslCertPath),
     };
-    server = http.createServer(options, app);
-    console.log('HTTPS server initialized');
+    server = https.createServer(options, app);
+    console.log('✓ HTTPS server initialized (WSS enabled for Socket.IO)');
   } else {
-    console.log('SSL files not found, falling back to HTTP');
+    console.log('⚠ SSL files not found, falling back to HTTP');
     server = http.createServer(app);
   }
 } catch (error) {
-  console.log('Error reading SSL files, falling back to HTTP:', error.message);
+  console.log('⚠ Error reading SSL files, falling back to HTTP:', error.message);
   server = http.createServer(app);
 }
 
