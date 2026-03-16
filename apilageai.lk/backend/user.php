@@ -152,24 +152,6 @@ class User
         $stmt->close();
     }
 
-    private function link_facebook_auth_by_email($userId, $email)
-    {
-        global $db;
-
-        if (empty($userId) || empty($email)) {
-            return;
-        }
-
-        $email = strtolower(trim($email));
-
-        $stmt = $db->prepare(
-            "UPDATE facebook_auth SET user_id = ? WHERE facebook_email = ? AND user_id <> ?"
-        );
-        $stmt->bind_param("isi", $userId, $email, $userId);
-        $stmt->execute();
-        $stmt->close();
-    }
-
     // Rate limiting helper
     private function check_rate_limit($key, $max_attempts = 5, $time_window = 900)
     {
@@ -413,8 +395,6 @@ class User
             // Auth + sessions
             $delete_by_user_id("sessions", "user_id");
             $delete_by_user_id("google_auth", "user_id");
-            $delete_by_user_id("facebook_auth", "user_id");
-            $delete_by_user_id("gb_auth", "user_id");
             $delete_by_user_id("magic_login_tokens", "user_id");
 
             // Usage + billing
@@ -520,7 +500,6 @@ class User
                 $resetStmt->close();
 
                 $this->link_google_auth_by_email((int)$row["id"], $email);
-                $this->link_facebook_auth_by_email((int)$row["id"], $email);
                 $this->create_session($row["id"]);
                 $stmt->close();
                 returnJSON(["e" => false]);
@@ -632,16 +611,7 @@ class User
         
         // Handle image upload securely
         $imageName = null;
-        if (is_empty($data["image"]["tmp_name"]) && !is_empty($_SESSION["gb_auth"]["picture"] ?? '')) {
-            $imagePrefix = $this->get_unique_media_prefix();
-            // save_picture_from_url returns filename for database storage
-            $imageName = save_picture_from_url(
-                $_SESSION["gb_auth"]["picture"],
-                $imagePrefix,
-                "low",
-                "profile"
-            );
-        } elseif (!is_empty($data["image"]["tmp_name"] ?? '')) {
+        if (!is_empty($data["image"]["tmp_name"] ?? '')) {
             // Validate file type
             $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -696,22 +666,6 @@ class User
         $stmt->execute();
         $userId = $db->insert_id;
         $stmt->close();
-
-        if (!is_empty($_SESSION["gb_auth"] ?? '')) {
-            if (!is_empty($_SESSION["gb_auth"]["user_id"] ?? '')) {
-                $stmt = $db->prepare(
-                    "INSERT INTO gb_auth (user_id, auth) VALUES (?, ?)"
-                );
-                $stmt->bind_param(
-                    "is",
-                    $userId,
-                    $_SESSION["gb_auth"]["user_id"]
-                );
-                $stmt->execute();
-                $stmt->close();
-            }
-            unset($_SESSION["gb_auth"]);
-        }
 
         // Send verification email
         $emailSent = $this->send_verification_email(
@@ -1240,8 +1194,6 @@ class User
                 $row = $result->fetch_assoc();
                 $userId = $row["id"];
                 $stmt->close();
-
-                $this->link_facebook_auth_by_email((int)$userId, $email);
 
                 $stmt = $db->prepare(
                     "UPDATE users SET email_verified = 1 WHERE id = ?"

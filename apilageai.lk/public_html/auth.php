@@ -12,7 +12,7 @@ require_once __DIR__ . '/../backend/bootstrap.php';
 $do = $_GET['do'] ?? '';
 
 // Prevent authenticated users from viewing auth pages
-$allowWhenLoggedIn = ["out", "google", "google-callback", "facebook", "facebook-callback", "facebook-deauthorize"];
+$allowWhenLoggedIn = ["out", "google", "google-callback"];
 if ($user->_logged_in && !in_array($do, $allowWhenLoggedIn, true)) {
     header("Location: " . APP_URL . "/app");
     exit;
@@ -96,18 +96,6 @@ elseif ($do === "google" || $do === "google-callback") {
     // This will handle its own exit() with header redirect
     $user->google_sign_in();
     // Should not reach here as google_sign_in() calls exit()
-    exit;
-}
-// Facebook OAuth
-elseif ($do === "facebook" || $do === "facebook-callback") {
-    // This will handle its own exit() with header redirect
-    $user->facebook_sign_in();
-    // Should not reach here as facebook_sign_in() calls exit()
-    exit;
-}
-// Facebook deauthorize callback
-elseif ($do === "facebook-deauthorize") {
-    $user->facebook_deauthorize();
     exit;
 }
 // Email verification
