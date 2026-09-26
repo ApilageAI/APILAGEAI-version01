@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>404 — ApilageAI</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    height: 100vh;
+    background: #ffffff;
+    color: #000;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+/* Floating background particles */
+body::before {
+    content: "";
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    background-image: radial-gradient(#000 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.05;
+    animation: drift 60s linear infinite;
+}
+
+@keyframes drift {
+    from { transform: translate(0,0); }
+    to { transform: translate(-200px,-200px); }
+}
+
+.container {
+    text-align: center;
+    z-index: 2;
+    padding: 40px;
+    animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%,100% { transform: translateY(0px); }
+    50% { transform: translateY(-15px); }
+}
+
+/* Glitch 404 */
+.glitch {
+    font-size: 90px;
+    font-weight: 600;
+    position: relative;
+    letter-spacing: 4px;
+    animation: glitch 2s infinite;
+}
+
+.glitch::before,
+.glitch::after {
+    content: "404";
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0.2;
+}
+
+.glitch::before {
+    transform: translate(-2px, -2px);
+}
+
+.glitch::after {
+    transform: translate(2px, 2px);
+}
+
+@keyframes glitch {
+    0% { transform: skew(0deg); }
+    20% { transform: skew(2deg); }
+    40% { transform: skew(-2deg); }
+    60% { transform: skew(1deg); }
+    80% { transform: skew(-1deg); }
+    100% { transform: skew(0deg); }
+}
+
+p {
+    margin-top: 20px;
+    font-size: 18px;
+    color: #333;
+    animation: breathe 5s ease-in-out infinite;
+}
+
+@keyframes breathe {
+    0%,100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+.button {
+    margin-top: 35px;
+    padding: 12px 28px;
+    border: 1px solid #000;
+    text-decoration: none;
+    color: #000;
+    display: inline-block;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    letter-spacing: 1px;
+}
+
+.button:hover {
+    background: #000;
+    color: #fff;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <div class="glitch">404</div>
+    <p><strong>This space is thinking…</strong></p>
+    <p>What you asked for isn’t here yet.</p>
+
+    <a href="/" class="button">Return Home</a>
+</div>
+
+</body>
+</html>

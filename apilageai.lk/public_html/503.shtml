@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>500 — ApilageAI</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    height: 100vh;
+    background: #ffffff;
+    color: #000;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+/* soft fading grid */
+body::before {
+    content: "";
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    background-image: linear-gradient(#000 1px, transparent 1px),
+                      linear-gradient(90deg, #000 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: 0.04;
+    animation: drift 80s linear infinite;
+}
+
+@keyframes drift {
+    from { transform: translate(0,0); }
+    to { transform: translate(-300px,-300px); }
+}
+
+.container {
+    text-align: center;
+    z-index: 2;
+    padding: 40px;
+    animation: float 7s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-14px); }
+}
+
+.code {
+    font-size: 90px;
+    font-weight: 600;
+    letter-spacing: 6px;
+    margin-bottom: 20px;
+}
+
+p {
+    font-size: 18px;
+    margin: 8px 0;
+    color: #333;
+    animation: breathe 6s ease-in-out infinite;
+}
+
+@keyframes breathe {
+    0%,100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+.button {
+    margin-top: 35px;
+    padding: 12px 28px;
+    border: 1px solid #000;
+    text-decoration: none;
+    color: #000;
+    display: inline-block;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    letter-spacing: 1px;
+}
+
+.button:hover {
+    background: #000;
+    color: #fff;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <div class="code">500</div>
+    <p><strong>Something went wrong on our side.</strong></p>
+    <p>We’re already looking into it.</p>
+
+    <a href="/" class="button">Return Home</a>
+</div>
+
+</body>
+</html>

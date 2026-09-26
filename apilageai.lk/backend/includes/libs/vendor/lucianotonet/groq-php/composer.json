@@ -1,0 +1,33 @@
+{
+    "name": "lucianotonet/groq-php",
+    "description": "A powerful PHP library for seamless integration with the GroqCloud API",
+    "type": "package",
+    "require": {
+        "php": "^8.1.0",
+        "guzzlehttp/guzzle": "^7.9",
+        "vlucas/phpdotenv": "^5.6"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "LucianoTonet\\GroqPHP\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LucianoTonet\\GroqPHP\\Tests\\": "tests/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Luciano Tonet",
+            "email": "tonetlds@gmail.com"
+        }
+    ],
+    "require-dev": {
+        "phpunit/phpunit": "^11.3"
+    },
+    "scripts": {
+        "test": "phpunit tests/"
+    }
+}

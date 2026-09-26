@@ -1,0 +1,108 @@
+# Friendly URL routing for ApilageAI
+# Requires Apache mod_rewrite and AllowOverride All
+
+Options -Indexes
+
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "DENY"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  Header set Permissions-Policy "camera=(), microphone=(), geolocation=(), unload=(self)"
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+</IfModule>
+
+<FilesMatch "^(\.env|\.git|\.htaccess|composer\.json|composer\.lock|package\.json|package-lock\.json|yarn\.lock|pnpm-lock\.yaml|apilageai_main_db\.sql|README\.md|SECURITY\.md)$">
+  Require all denied
+</FilesMatch>
+
+# Block direct access to internal folders
+RedirectMatch 403 ^backend/
+RedirectMatch 403 ^node/
+RedirectMatch 403 ^doc_text/
+RedirectMatch 403 ^uploads/userdocs/
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Allow direct access to existing files and directories
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Favicon fallback
+  RewriteRule ^favicon\.ico$ /assets/images/icon.png [L]
+
+  # App routes
+  RewriteRule ^app/?$ app.php [L,QSA]
+  RewriteRule ^app/([^/]+)/?$ app.php?view=$1 [L,QSA]
+  RewriteRule ^app/([^/]+)/([^/]+)/?$ app.php?view=$1&sub_view=$2 [L,QSA]
+
+  # Admin route (hidden, access-controlled in admin.php)
+  RewriteRule ^apilage-admin/?$ admin.php [L,QSA]
+
+  # Images routes (renamed from /dashboard)
+  RewriteRule ^dashboard/?$ /images [R=301,L]
+  RewriteRule ^dashboard/([^/]+)/?$ /images/$1 [R=301,L]
+  RewriteRule ^images/?$ dashboard.php [L,QSA]
+  RewriteRule ^images/([^/]+)/?$ dashboard.php?view=$1 [L,QSA]
+
+  # Auth routes
+  RewriteRule ^auth/?$ auth.php?do=log [L,QSA]
+  RewriteRule ^auth/login/?$ auth.php?do=log [L,QSA]
+  RewriteRule ^auth/register/?$ auth.php?do=reg [L,QSA]
+  RewriteRule ^auth/logout/?$ auth.php?do=out [L,QSA]
+  RewriteRule ^auth/signout/?$ auth.php?do=out [L,QSA]
+  RewriteRule ^auth/reset-request/?$ auth.php?do=reset-request [L,QSA]
+  RewriteRule ^auth/reset-password/?$ auth.php?do=reset-password [L,QSA]
+  RewriteRule ^auth/verify-email/?$ auth.php?do=verify-email [L,QSA]
+  RewriteRule ^auth/resend-verification/?$ auth.php?do=resend-verification [L,QSA]
+  RewriteRule ^auth/guest/?$ auth.php?do=guest [L,QSA]
+  RewriteRule ^auth/continue/?$ auth.php?do=guest [L,QSA]
+  RewriteRule ^auth/google/?$ auth.php?do=google [L,QSA]
+  RewriteRule ^auth/google-callback/?$ auth.php?do=google-callback [L,QSA]
+  RewriteRule ^auth/facebook/?$ auth.php?do=facebook [L,QSA]
+  RewriteRule ^auth/facebook-callback/?$ auth.php?do=facebook-callback [L,QSA]
+  RewriteRule ^auth/facebook-deauthorize/?$ auth.php?do=facebook-deauthorize [L,QSA]
+
+  # Account routes
+  RewriteRule ^account/security/?$ account_security.php [L,QSA]
+  RewriteRule ^receipt/([A-Za-z0-9_-]+)/?$ receipt.php?invoice=$1 [L,QSA]
+  RewriteRule ^how_apilageai_credit_works/?$ how_apilageai_credit_works.php [L,QSA]
+
+  # Legal routes
+  RewriteRule ^privacypolicy/?$ privacypolicy.php [L,QSA]
+  RewriteRule ^termsofservice/?$ termsofservice.php [L,QSA]
+  RewriteRule ^termsconditions/?$ termsofservice.php [L,QSA]
+  RewriteRule ^data-deletion/?$ data-deletion.php [L,QSA]
+  RewriteRule ^parents/?$ parents.php [L,QSA]
+
+  # About routes
+  RewriteRule ^about/?$ about.php [L,QSA]
+  RewriteRule ^about-us/?$ about.php [L,QSA]
+
+  # Help routes
+  RewriteRule ^help/?$ help.php [L,QSA]
+
+  # Developer routes
+  RewriteRule ^developers/?$ developer.php [L,QSA]
+  RewriteRule ^developer/?$ /developers [R=301,L]
+  RewriteRule ^devloper/?$ /developers [R=301,L]
+  RewriteRule ^developer-api-documentation/?$ developer_api_documentation.php [L,QSA]
+
+  # Developer API (PHP)
+  RewriteRule ^api/developer/text/?$ api/developer_text.php [L,QSA]
+  RewriteRule ^api/developer/stream/?$ api/developer_stream.php [L,QSA]
+
+  # Blog routes
+  RewriteRule ^blog/?$ blog.php [L,QSA]
+
+  # Explore routes
+  RewriteRule ^explore/?$ public_explore.php [L,QSA]
+
+  # Payment routes (amount is parsed inside pay.php)
+  RewriteRule ^pay/([0-9]+(?:\.[0-9]+)?)/?$ pay.php [L,QSA]
+
+  # Public profile routes (username or token)
+  RewriteRule ^([A-Za-z0-9][A-Za-z0-9_-]{2,63})/?$ public_profile.php?u=$1 [L,QSA]
+</IfModule>
