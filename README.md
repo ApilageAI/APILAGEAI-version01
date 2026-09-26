@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="apilageai.lk/public_html/assets/images/logo.png" alt="ApilageAI Logo" width="220" />
+  <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSoPYBRLr2PsBlhDs_2blrYXZSm2RatD63bCSrN-fCpNgIUSfnkozRd5rYe&s=10" alt="ApilageAI Logo" width="220" />
 </p>
 
 <h1 align="center">ApilageAI — High-Secured Education AI Platform</h1>
@@ -19,7 +19,7 @@
 
 ---
 
-## 🌟 Overview
+##  Overview
 
 **ApilageAI** is an advanced multimodal educational intelligence platform purpose-built to revolutionize K-12 learning in Sri Lanka. It combines cutting-edge Google Gemini large language models, dynamic search grounding, interactive canvas rendering, and real-time multiplayer gamification to provide curriculum-accurate learning in **Sinhala, Tamil, and English**.
 
@@ -27,7 +27,7 @@ Built with a high-security enterprise architecture, the platform features multi-
 
 ---
 
-## 📸 Interface Preview
+##  Interface Preview
 
 <p align="center">
   <img src="apilageai.lk/public_html/assets/images/preview1.png" alt="ApilageAI Learning Studio" width="48%" style="border-radius: 8px; border: 1px solid #e2e8f0; margin-right: 1%;" />
@@ -36,38 +36,38 @@ Built with a high-security enterprise architecture, the platform features multi-
 
 ---
 
-## ✨ Key Features
+##  Key Features
 
-### 🧠 Multimodal AI & Intelligent Tutoring
+###  Multimodal AI & Intelligent Tutoring
 - **Curriculum-Aligned Responses:** Strictly guided by Sri Lankan National Institute of Education (NIE) syllabuses for Grades 1–13.
 - **Trilingual Comprehension:** Full native support for Sinhala, Tamil, and English.
 - **Live Search Grounding:** Real-time web citations prioritizing verified educational and government resources.
 - **Thinking Mode & Token Budgeting:** Visualized step-by-step reasoning for complex math and science problem solving.
 - **Multimodal Document Parsing:** Upload PDFs, textbook chapters, and images with automatic text extraction and OCR.
 
-### 🎨 Visual & Interactive Studio
+### Visual & Interactive Studio
 - **Excalidraw Whiteboard Integration:** Real-time collaborative sketching, diagram generation, and mindmap exports.
 - **KaTeX / LaTeX Mathematical Typesetting:** Clean mathematical and chemical formula rendering.
 - **Dynamic Mindmaps & Flowcharts:** Automatic breakdown of complex subjects into digestible visual structures.
 
-### 🎮 Gamified Learning & Multiplayer
+###  Gamified Learning & Multiplayer
 - **Quiz Blust:** Real-time multiplayer competitive quiz battles powered by WebSockets.
 - **Daily Learning Streaks:** Engagement milestones with streak tracking and badge rewards.
 - **Automated MCQ Generation:** Rapid quiz synthesis customized by grade level, topic, and difficulty.
 
-### 🛡️ Enterprise Security Hardening
+###  Enterprise Security Hardening
 - **Multi-Tier Rate Limiting:** Redis-backed token bucket rate limiters protecting socket events and REST endpoints.
 - **Credential & Session Isolation:** Strict HTTP-only, SameSite cookies, session locking, and brute-force lockouts.
 - **Input Sanitization:** Deep input validation, prompt injection shields, and XSS sanitization.
 - **Developer API Defense:** SHA-256 hashed API keys with strict domain whitelisting and automated leak detection.
 
-### 💳 Billing & Monetization
+###  Billing & Monetization
 - **Payment Gateways:** Integrated Sri Lankan **Payable** payment gateway and international **PayPal** processing.
 - **Granular Token Accounting:** Transparent per-token and thinking-mode credit calculations with student-friendly trial tiers.
 
 ---
 
-## 🏛️ Architecture & Tech Stack
+## Architecture & Tech Stack
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -98,7 +98,7 @@ Built with a high-security enterprise architecture, the platform features multi-
 
 ---
 
-## 📁 Repository Structure
+##  Repository Structure
 
 ```plaintext
 ├── .env.example                      # Unified environment configuration template
@@ -134,7 +134,7 @@ Built with a high-security enterprise architecture, the platform features multi-
 
 ---
 
-## 🚀 Quick Start Guide
+##  Quick Start Guide
 
 ### Prerequisites
 - **PHP** >= 8.2 with `mysqli`, `curl`, `mbstring`, `openssl`, `gd` extensions
@@ -198,7 +198,7 @@ npm run start
 
 ---
 
-## ⚙️ Environment Variables Reference
+## Environment Variables Reference
 
 | Variable | Component | Description | Default / Example |
 | :--- | :--- | :--- | :--- |
@@ -216,7 +216,7 @@ npm run start
 
 ---
 
-## 🔒 Security Practices
+##  Security Practices
 
 - **Never commit `.env` or `config.php`** files. They are strictly ignored by `.gitignore`.
 - Always use `config.example.php` and `.env.example` as templates for deployment.
@@ -225,7 +225,7 @@ npm run start
 
 ---
 
-## 🤝 Contributing
+##  Contributing
 
 Contributions, bug reports, and suggestions are welcome!
 
@@ -237,7 +237,7 @@ Contributions, bug reports, and suggestions are welcome!
 
 ---
 
-## 📄 License & Credits
+##  License & Credits
 
 Developed with ❤️ for Sri Lankan students by the **ApilageAI Team**.  
 All rights reserved © 2026 [ApilageAI](https://apilageai.lk).
