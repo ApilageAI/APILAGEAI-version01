@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSoPYBRLr2PsBlhDs_2blrYXZSm2RatD63bCSrN-fCpNgIUSfnkozRd5rYe&s=10" alt="ApilageAI Logo" width="220" />
+  <img src="[https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSoPYBRLr2PsBlhDs_2blrYXZSm2RatD63bCSrN-fCpNgIUSfnkozRd5rYe&s=10](https://avatars.githubusercontent.com/u/231803507?s=200&v=4)" alt="ApilageAI Logo" width="220" />
 </p>
 
 <h1 align="center">ApilageAI — High-Secured Education AI Platform</h1>
