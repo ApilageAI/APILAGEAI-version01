@@ -198,7 +198,7 @@ npm run start
 
 ---
 
-## ⚙️ Environment Variables Reference
+## Environment Variables Reference
 
 | Variable | Component | Description | Default / Example |
 | :--- | :--- | :--- | :--- |
@@ -237,7 +237,7 @@ Contributions, bug reports, and suggestions are welcome!
 
 ---
 
-## 📄 License & Credits
+##  License & Credits
 
 Developed with ❤️ for Sri Lankan students by the **ApilageAI Team**.  
 All rights reserved © 2026 [ApilageAI](https://apilageai.lk).
