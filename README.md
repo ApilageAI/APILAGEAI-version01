@@ -1,3 +1,6 @@
+Source-Available Archive — Not Open Source
+This repository is publicly available for archival and educational purposes. Commercial use, redistribution, copying and rebranding, white-labeling, and publication of substantially copied versions are prohibited without written permission from ApilageAI PVT LTD.
+
 <p align="center">
   <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSoPYBRLr2PsBlhDs_2blrYXZSm2RatD63bCSrN-fCpNgIUSfnkozRd5rYe&s=10](https://avatars.githubusercontent.com/u/231803507?s=200&v=4" alt="ApilageAI Logo" width="220" />
 </p>
